@@ -1,7 +1,8 @@
 /** Ndihmësa datash dhe kalendari, në shqip. */
 
-export const WEEKDAYS_LONG = ["Diel", "Hën", "Mar", "Mër", "Enj", "Pre", "Sht"];
-export const WEEKDAYS_SHORT = ["Di", "Hë", "Ma", "Më", "En", "Pr", "Sh"];
+/* Tri shkronja për secilën — etiketat e grafikëve rreshtohen vetëm nëse
+   kanë gjerësi të njëjtë. */
+export const WEEKDAYS = ["Die", "Hën", "Mar", "Mër", "Enj", "Pre", "Sht"];
 export const MONTHS_SHORT = [
   "Jan", "Shk", "Mar", "Pri", "Maj", "Qer",
   "Kor", "Gsh", "Sht", "Tet", "Nën", "Dhj",
@@ -47,8 +48,7 @@ export function lastDays(count) {
     return {
       key: dayKey(date),
       date,
-      weekday: WEEKDAYS_LONG[date.getDay()],
-      weekdayShort: WEEKDAYS_SHORT[date.getDay()],
+      weekday: WEEKDAYS[date.getDay()],
       dayOfMonth: String(date.getDate()),
     };
   });

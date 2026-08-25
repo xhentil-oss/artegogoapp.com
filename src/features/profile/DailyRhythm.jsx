@@ -73,8 +73,8 @@ export function DailyRhythm() {
       </div>
 
       <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20, position: "relative" }}>
-        <Chip emoji="🔥" label={`${doneCount} streak`} />
-        <Chip emoji="⭐" label={`${doneCount >= DAILY_RHYTHM_STEPS.length ? 1 : 0} milestone`} />
+        <Chip emoji="🔥" label={`${doneCount} hapa sot`} />
+        <Chip emoji="⭐" label={`${doneCount >= DAILY_RHYTHM_STEPS.length ? 1 : 0} arritje`} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
@@ -90,7 +90,7 @@ export function DailyRhythm() {
       </div>
 
       <div style={{ textAlign: "center", color: T.faint, fontSize: 12.5, marginTop: 16, position: "relative" }}>
-        Plotësimi i të gjitha hapave e rrit streak-un tënd.
+        Plotësoji të tri hapat që dita të hyjë në ditët rresht.
       </div>
     </section>
   );

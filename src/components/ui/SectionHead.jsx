@@ -13,8 +13,12 @@ import { sx } from "../../theme/styles.js";
  * veprim, që dukej si lidhje dhe nuk bënte asgjë kur klikohej. Tani një
  * "Shih të gjitha" pa `onAction` nuk kompilohet si buton — nuk mund të
  * rilindë një lidhje e vdekur.
+ *
+ * `flush` heq gutter-in. Titulli e mban vetë sepse shumica e ekraneve janë
+ * pa padding, që rreshtat rrëshqitës të prekin buzët; por brenda një ene që
+ * e ka tashmë gutter-in — si Profili — ai do të dyfishohej.
  */
-export function SectionHead({ title, accent, action, onAction, hint }) {
+export function SectionHead({ title, accent, action, onAction, hint, flush = false }) {
   return (
     <div
       style={{
@@ -22,7 +26,7 @@ export function SectionHead({ title, accent, action, onAction, hint }) {
         alignItems: "center",
         justifyContent: "space-between",
         gap: 12,
-        padding: `0 ${layout.gutter}px`,
+        padding: flush ? 0 : `0 ${layout.gutter}px`,
         margin: "26px 0 14px",
       }}
     >

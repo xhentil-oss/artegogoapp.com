@@ -48,11 +48,14 @@ export function MoodTracker() {
 
       <SegmentedControl options={PERIODS} value={period} onChange={setPeriod} style={{ marginBottom: 16 }} />
 
+      {/* `lastDays`/`lastMonths` mbarojnë gjithmonë me çastin e tanishëm, ndaj
+          e sotmja është pika e fundit — në të tria periudhat. */}
       <DotChart
         points={points}
         colorFor={moodColor}
         dense={period === "month"}
         labelEvery={period === "month" ? 5 : 1}
+        highlight={points.length - 1}
       />
     </section>
   );
@@ -81,7 +84,7 @@ function buildPoints(period, moods) {
 
   const days = period === "week" ? 7 : 30;
   return lastDays(days).map((day) => ({
-    label: period === "week" ? day.weekdayShort : day.dayOfMonth,
+    label: period === "week" ? day.weekday : day.dayOfMonth,
     value: moods[day.key] ?? null,
   }));
 }

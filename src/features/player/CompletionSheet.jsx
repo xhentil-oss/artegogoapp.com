@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
-import { T, onDark, radii } from "../../theme/tokens.js";
+import { Bookmark, Check } from "lucide-react";
+import { T, fonts, onDark, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { immersiveBackdrop } from "../../theme/gradients.js";
 import { FLUID, padTop, padBottom } from "../../theme/responsive.js";
@@ -9,17 +9,27 @@ import { intentMeta } from "../../domain/intent.js";
 import { totalMinutes } from "../../domain/sequence.js";
 import { useSession } from "../../store/SessionContext.jsx";
 import { usePlayer } from "../../store/PlayerContext.jsx";
+import { useProgress } from "../../store/ProgressContext.jsx";
+import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { StatRow } from "../../components/ui/Charts.jsx";
 
 const CONFETTI_COUNT = 14;
 
 /** Ekrani i përmbylljes: statistika, zgjedhje gjendjeje, konfeti. */
-export function CompletionSheet({ sequence, streak = 7 }) {
+export function CompletionSheet({ sequence }) {
   const { name } = useSession();
-  const { dismissCompletion } = usePlayer();
+  const { dismissCompletion, completedSource } = usePlayer();
+  /* Seanca regjistrohet te `complete()` përpara se kjo fletë të dalë, ndaj
+     streak-u këtu e përfshin edhe ditën e sotme. */
+  const { streak } = useProgress();
+  const { saveSession } = useCollections();
   const [mood, setMood] = useState(null);
   useBodyScrollLock();
+
+  /* Kutia e ruajtjes ka kuptim vetëm për seanca të ndërtuara nga përdoruesi —
+     një meditim i katalogut ekziston tashmë dhe s'ka pse të ruhet sërish. */
+  const fromBuilder = completedSource === "builder";
 
   const meta = intentMeta(sequence[0]?.intent ?? "calm");
   const confetti = buildConfetti(meta.g);
@@ -85,7 +95,8 @@ export function CompletionSheet({ sequence, streak = 7 }) {
             fontSize: "clamp(23px, 7.5vw, 30px)",
             fontWeight: 800,
             margin: "0 0 10px",
-            fontFamily: "Georgia, serif",
+            /* moment i veçantë — serif sipas specifikimit */
+            fontFamily: fonts.display,
           }}
         >
           Bravo, {name}
@@ -100,10 +111,14 @@ export function CompletionSheet({ sequence, streak = 7 }) {
             stats={[
               { value: `+${totalMinutes(sequence)}`, label: "MINUTA" },
               { value: sequence.length, label: "HAPA" },
-              { value: streak, label: "DITË RRJESHT" },
+              { value: streak, label: "DITË RRESHT" },
             ]}
           />
         </div>
+
+        {fromBuilder && (
+          <SaveSessionBox onSave={(sessionName) => saveSession(sessionName, sequence)} />
+        )}
 
         <div style={{ color: onDark.primary, fontSize: 15, fontWeight: 600, marginBottom: 14 }}>Si u ndjeve?</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 30, flexWrap: "wrap" }}>
@@ -159,6 +174,100 @@ export function CompletionSheet({ sequence, streak = 7 }) {
           style={{ ...sx.bareButton, color: "rgba(255,255,255,0.6)", fontSize: 14 }}
         >
           Shih progresin tim
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * "Ruaje këtë meditim?" — shfaqet vetëm kur seanca vjen nga Ndërtuesi.
+ * Pas ruajtjes shkon te Profili → "Të krijuara" dhe mund të luhet sërish.
+ */
+function SaveSessionBox({ onSave }) {
+  const [name, setName] = useState("");
+  const [done, setDone] = useState(false);
+
+  if (done) {
+    return (
+      <div
+        style={{
+          background: "rgba(255,255,255,0.12)",
+          border: "1px solid rgba(255,255,255,0.22)",
+          borderRadius: radii.lg,
+          padding: "14px 16px",
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          color: "#fff",
+          fontSize: 14,
+        }}
+      >
+        <Check size={17} /> U ruajt te Profili → Të krijuara
+      </div>
+    );
+  }
+
+  const save = () => {
+    if (!name.trim()) return;
+    onSave(name);
+    setDone(true);
+  };
+
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.10)",
+        border: "1px solid rgba(255,255,255,0.20)",
+        borderRadius: radii.lg,
+        padding: 16,
+        marginBottom: 24,
+        textAlign: "left",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <Bookmark size={16} color="#fff" />
+        <span style={{ color: "#fff", fontSize: 14.5, fontWeight: 700 }}>Ruaje këtë meditim?</span>
+      </div>
+      <p style={{ color: onDark.secondary, fontSize: 12.5, margin: "0 0 12px", lineHeight: 1.5 }}>
+        Jepi një emër dhe do ta gjesh te Profili → Të krijuara.
+      </p>
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && save()}
+          placeholder="Emri i meditimit"
+          style={{
+            ...sx.flexText,
+            background: "rgba(255,255,255,0.14)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            borderRadius: radii.pill,
+            padding: "11px 16px",
+            color: "#fff",
+            outline: "none",
+          }}
+        />
+        <button
+          onClick={save}
+          disabled={!name.trim()}
+          className="ag-press"
+          style={{
+            background: name.trim() ? "#fff" : "rgba(255,255,255,0.2)",
+            color: name.trim() ? T.ink : "rgba(255,255,255,0.6)",
+            border: "none",
+            borderRadius: radii.pill,
+            padding: "0 18px",
+            height: 44,
+            cursor: name.trim() ? "pointer" : "default",
+            fontSize: 14,
+            fontWeight: 700,
+            flexShrink: 0,
+          }}
+        >
+          Ruaj
         </button>
       </div>
     </div>

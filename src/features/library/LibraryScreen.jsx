@@ -1,10 +1,12 @@
 import { T, layout } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
-import { autoGrid } from "../../theme/responsive.js";
 import {
-  listCollections,
+  listCategories,
+  listTechniques,
   listSeries,
   popularBlocks,
+  techniqueFolder,
+  categoryFolder,
   totalMeditations,
 } from "../../services/contentRepository.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
@@ -12,22 +14,25 @@ import { Row } from "../../components/ui/Row.jsx";
 import { SectionHead } from "../../components/ui/SectionHead.jsx";
 import { MedCard } from "../../components/cards/MedCard.jsx";
 import { SeriesCard } from "../../components/cards/ShowcaseCards.jsx";
-import { FolderCard } from "../../components/cards/FolderCard.jsx";
-import { PracticeRow } from "./PracticeRow.jsx";
+import { TechniqueGrid } from "./TechniqueGrid.jsx";
+import { CategoryList } from "./CategoryList.jsx";
 
 /**
- * Biblioteka. Dy rrugë për të gjetur një praktikë:
- *   · "Eksploro praktikat" — sipas modalitetit (meditim, frymëmarrje, EFT…)
- *   · "Kategoritë" — sipas situatës (emergjencë, në punë, fëmijët…)
+ * Zemra e bibliotekës — dy pamjet e klasifikimit të dyfishtë.
+ *
+ *   Eksploro praktikat  → zgjedh një TEKNIKË, brenda saj grupohet sipas kategorive
+ *   Eksploro kategoritë → zgjedh një KATEGORI, brenda saj grupohet sipas teknikave
+ *
+ * I njëjti meditim shfaqet në të dyja; nuk kopjohet askund.
  */
 export function LibraryScreen() {
   const { openCategory, openFolder } = useNavigation();
-  const collections = listCollections();
+
+  const techniques = listTechniques();
+  const categories = listCategories();
 
   return (
     <div style={sx.screen}>
-      {/* Shiriti i gjelbër u hoq: specifikimi kërkon sfond të bardhë me aurorë
-          në krye të çdo ekrani — aurora vjen nga `AppShell`. */}
       <div style={{ padding: `8px ${layout.gutter}px 0` }}>
         <h2 style={{ fontSize: 28, fontWeight: 800, color: T.ink, margin: "0 0 8px", letterSpacing: -0.5 }}>
           Meditim
@@ -35,16 +40,22 @@ export function LibraryScreen() {
         <p style={{ fontSize: 15, color: T.sub, margin: 0, lineHeight: 1.5 }}>
           Praktikë e udhëhequr për ndërgjegjësim, çlodhje dhe vetëdije.
         </p>
-        {/* numrat llogaritohen nga katalogu, nuk shkruhen me dorë */}
+        {/* numrat llogariten nga të dhënat, nuk shkruhen me dorë */}
         <p style={{ fontSize: 13.5, color: T.faint, margin: "8px 0 0" }}>
-          {totalMeditations()} meditime · {collections.length} kategori
+          {totalMeditations()} meditime · {techniques.length} teknika · {categories.length} kategori
         </p>
       </div>
 
-      <SectionHead title="Eksploro" accent="praktikat" hint="8 modalitete" />
-      <PracticeRow />
+      {/* ---------- PAMJA 1: sipas teknikës — grid 2-kolonësh ---------- */}
+      <SectionHead title="Eksploro" accent="praktikat" hint="si bëhet" />
+      <div style={{ padding: `0 ${layout.gutter}px` }}>
+        <TechniqueGrid techniques={techniques} onOpen={(t) => openFolder(techniqueFolder(t.id))} />
+      </div>
 
-      {/* `hint`, jo `action`: nuk ka ekran "të gjitha seritë" ku të çojë */}
+      {/* ---------- PAMJA 2: sipas qëllimit — listë kutish ---------- */}
+      <SectionHead title="Eksploro" accent="kategoritë" hint="për çfarë qëllimi" />
+      <CategoryList categories={categories} onOpen={(c) => openFolder(categoryFolder(c.id))} />
+
       <SectionHead title="Seri të kuruara" hint={`${listSeries().length}`} />
       <Row>
         {listSeries().map((series) => (
@@ -58,18 +69,6 @@ export function LibraryScreen() {
           <MedCard key={block.id} block={block} index={i} square />
         ))}
       </Row>
-
-      <SectionHead title="Kategoritë" hint="Prek për të hapur" />
-      {/* 2 kolona në telefon, 4 në kornizë të plotë — grid-i vendos vetë */}
-      <div className="ag-stagger" style={{ ...autoGrid(130), padding: `0 ${layout.gutter}px` }}>
-        {collections.map((collection) => (
-          <FolderCard
-            key={collection.id}
-            collection={collection}
-            onOpen={() => openFolder(collection)}
-          />
-        ))}
-      </div>
     </div>
   );
 }

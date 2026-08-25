@@ -1,3 +1,9 @@
+/**
+ * Llojet e postimeve — të mbledhura këtu që paneli i admin-it t'i ofrojë si
+ * zgjedhje, në vend që t'i shkruajë sërish si literale.
+ */
+export const POST_TYPES = ["Frymëzim", "Perceptim", "Njoftim"];
+
 /** Postimet e komunitetit. Zëvendësohen nga `GET /feed` kur vjen backend-i. */
 export const FEED = [
   {

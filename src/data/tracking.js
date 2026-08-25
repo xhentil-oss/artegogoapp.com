@@ -2,7 +2,9 @@
 
 export const HABITS = [
   { id: "water",     label: "Ujë",         emoji: "💧" },
-  { id: "walk",      label: "Ecje",        emoji: "🚶" },
+  /* Specifikimi e quan "Ecje/Aktivitet fizik"; te pllaka e ngushtë të dyja
+     s'hyjnë, dhe vetëm "Ecje" do të linte jashtë palestrën apo notin. */
+  { id: "walk",      label: "Lëvizje",     emoji: "🚶" },
   { id: "meditate",  label: "Meditim",     emoji: "🧘" },
   { id: "breathe",   label: "Frymëmarrje", emoji: "🌬️" },
   { id: "read",      label: "Lexim",       emoji: "📖" },

@@ -11,7 +11,7 @@ import { useNavigation } from "../../store/NavigationContext.jsx";
  * (dhe si PWA pa shirit browser-i) të mos hyjë nën shiritin e statusit.
  */
 export function TopBar() {
-  const { openSearch, goToCommunity, goToProfile } = useNavigation();
+  const { openSearch, openNotifications, goToProfile } = useNavigation();
 
   return (
     <div
@@ -47,9 +47,9 @@ export function TopBar() {
         <IconButton onClick={openSearch} label="Kërko">
           <Search size={24} color={T.ink} />
         </IconButton>
-        {/* njoftimet nuk ekzistojnë si sistem; postimet e tipit "Njoftim"
-            jetojnë në feed, ndaj zilja çon atje */}
-        <IconButton onClick={() => goToCommunity("feed")} label="Njoftime">
+        {/* zilja hap njoftimet ditore (seksioni 9) — më parë çonte te feed-i,
+            sepse njoftimet nuk ekzistonin ende si sistem */}
+        <IconButton onClick={openNotifications} label="Njoftime">
           <Bell size={24} color={T.ink} />
         </IconButton>
       </div>

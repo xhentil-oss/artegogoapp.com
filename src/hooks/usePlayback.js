@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { toSequence } from "../domain/sequence.js";
+import { isFreeMeditation } from "../domain/access.js";
 import { useSession } from "../store/SessionContext.jsx";
 import { useNavigation } from "../store/NavigationContext.jsx";
 import { usePlayer } from "../store/PlayerContext.jsx";
@@ -19,9 +20,15 @@ export function usePlayback() {
   const { openUpsell } = useNavigation();
   const { play } = usePlayer();
 
-  /** A është një meditim i kyçur për këtë përdorues? */
+  /**
+   * A është një meditim i kyçur për këtë përdorues?
+   *
+   * Kyçur = gjithçka që nuk është një nga tre meditimet falas. Pyetja i
+   * drejtohet `domain/access`, jo një flamuri te vetë përmbajtja: rregulli i
+   * modelit është një, dhe qëndron në një vend të vetëm.
+   */
   const isLocked = useCallback(
-    (item) => Boolean(item?.premium) && !isPremium,
+    (item) => !isPremium && !isFreeMeditation(item),
     [isPremium]
   );
 
@@ -39,5 +46,17 @@ export function usePlayback() {
     [isLocked, openUpsell, play]
   );
 
-  return { isLocked, playItems, isPremium, openUpsell };
+  /**
+   * Çfarë duhet të tregojë distinktivi mbi kapak.
+   * Për një abonent të dyja janë false — asgjë nuk shënohet, gjithçka e hapur.
+   */
+  const accessBadge = useCallback(
+    (item) => ({
+      locked: !isPremium && !isFreeMeditation(item),
+      free: !isPremium && isFreeMeditation(item),
+    }),
+    [isPremium]
+  );
+
+  return { isLocked, accessBadge, playItems, isPremium, openUpsell };
 }

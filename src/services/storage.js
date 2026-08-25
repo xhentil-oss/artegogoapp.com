@@ -73,4 +73,14 @@ export const STORAGE_KEYS = {
   session: "session",
   /** Seancat që përdoruesi ndërton vetë dhe i ruan me emër. */
   customSessions: "custom-sessions",
+  /** Emri + oraret e kujtesave, nga onboarding-u. */
+  onboarding: "onboarding",
+  /** Abonimi: plani, data e nisjes, prova, anulimi. */
+  subscription: "subscription",
+  /** Meditimet e shënuara me bookmark. */
+  favorites: "favorites",
+  /** Meditimet e shkarkuara për dëgjim jashtë linje. */
+  downloads: "downloads",
+  /** Ndryshimet e bëra nga paneli i admin-it (klasifikim, pool-e, programe…). */
+  admin: "admin",
 };

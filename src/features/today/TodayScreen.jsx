@@ -1,5 +1,5 @@
 import { ChevronRight, Hexagon, Play } from "lucide-react";
-import { T, layout, radii } from "../../theme/tokens.js";
+import { T, fonts, layout, radii } from "../../theme/tokens.js";
 import { sx, iconBox } from "../../theme/styles.js";
 import { tile, readabilityVeil } from "../../theme/gradients.js";
 import { dayPart } from "../../lib/time.js";
@@ -14,6 +14,7 @@ import {
 } from "../../services/contentRepository.js";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
+import { useProgress } from "../../store/ProgressContext.jsx";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { CoverArt } from "../../components/art/CoverArt.jsx";
 import { Row } from "../../components/ui/Row.jsx";
@@ -40,6 +41,7 @@ import {
 export function TodayScreen() {
   const { name } = useSession();
   const { goToTab } = useNavigation();
+  const { streak } = useProgress();
   const part = dayPart();
   const greeting = GREETINGS[part];
   const picks = blocksForDayPart(part);
@@ -47,7 +49,7 @@ export function TodayScreen() {
   return (
     <div style={sx.screen}>
       <Greeting name={name} greeting={greeting} />
-      <StreakCard days={6} onOpen={() => goToTab(TABS.COMMUNITY)} />
+      <StreakCard days={streak} onOpen={() => goToTab(TABS.COMMUNITY)} />
       <DayBanner greeting={greeting} picks={picks} />
 
       <SectionHead
@@ -155,7 +157,7 @@ function StreakCard({ days, onOpen }) {
       </div>
       <span style={{ flex: 1, fontSize: 15, fontWeight: 700, color: T.ink }}>
         {days}{" "}
-        <span style={{ color: T.sub, fontWeight: 500, letterSpacing: 1, fontSize: 13 }}>DITË RRJESHT</span>
+        <span style={{ color: T.sub, fontWeight: 500, letterSpacing: 1, fontSize: 13 }}>DITË RRESHT</span>
       </span>
       <ChevronRight size={20} color={T.faint} />
     </button>
@@ -196,7 +198,7 @@ function DayBanner({ greeting, picks }) {
             fontWeight: 800,
             marginBottom: 4,
             lineHeight: 1.2,
-            fontFamily: "Georgia, serif",
+            fontFamily: fonts.display,
           }}
         >
           {greeting.sub}

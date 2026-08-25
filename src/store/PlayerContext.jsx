@@ -15,14 +15,22 @@ export function PlayerProvider({ children }) {
   const [active, setActive] = useState(null);
   const [minimized, setMinimized] = useState(null);
   const [completed, setCompleted] = useState(null);
+  /**
+   * Nga erdhi seanca: "builder" ose "catalog".
+   * Ekrani i përmbylljes e përdor për të vendosur nëse shfaq kutinë
+   * "Ruaje këtë meditim?" — ajo ka kuptim vetëm për seanca të ndërtuara.
+   */
+  const [source, setSource] = useState("catalog");
+  const [completedSource, setCompletedSource] = useState("catalog");
 
   const { goToTab } = useNavigation();
   const { recordSession, tagLastSession } = useProgress();
 
   /** Nis një sekuencë të re (e vesh me uid `domain/sequence`). */
-  const play = useCallback((sequence) => {
+  const play = useCallback((sequence, from = "catalog") => {
     if (!sequence?.length) return;
     setMinimized(null);
+    setSource(from);
     setActive(sequence);
   }, []);
 
@@ -49,11 +57,12 @@ export function PlayerProvider({ children }) {
       if (current) {
         recordSession(current);
         setCompleted(current);
+        setCompletedSource(source);
       }
       setMinimized(null);
       return null;
     });
-  }, [recordSession]);
+  }, [recordSession, source]);
 
   /**
    * Mbyll përmbylljen, duke ruajtur etiketën emocionale nëse u zgjodh.
@@ -73,6 +82,7 @@ export function PlayerProvider({ children }) {
       active,
       minimized,
       completed,
+      completedSource,
       play,
       minimize,
       resume,
@@ -80,7 +90,7 @@ export function PlayerProvider({ children }) {
       complete,
       dismissCompletion,
     }),
-    [active, minimized, completed, play, minimize, resume, dismissMinimized, complete, dismissCompletion]
+    [active, minimized, completed, completedSource, play, minimize, resume, dismissMinimized, complete, dismissCompletion]
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;

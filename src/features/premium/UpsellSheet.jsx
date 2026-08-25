@@ -1,27 +1,27 @@
 import { useState } from "react";
-import { Check, Crown } from "lucide-react";
+import { Check, Crown, Unlock, Bell, CreditCard } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
-import { sx, circle } from "../../theme/styles.js";
+import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
+import { PLANS, TRIAL_DAYS, planNote, trialTimeline } from "../../domain/subscription.js";
+import { FREE_LIMIT } from "../../domain/access.js";
+import { cancelPath } from "../../services/billing.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { goldButton } from "./Paywall.jsx";
 
-const BENEFITS = [
-  "Akses i plotë në të gjitha kategoritë",
-  "Krijim i pakufizuar meditimesh",
-  "Programe ekskluzive (7–21 ditë)",
-  "Audio somatike premium",
-  "Pa reklama",
-];
+/** Ikona e secilit hap të timeline-it, sipas radhës së `trialTimeline()`. */
+const STEP_ICONS = { start: Unlock, remind: Bell, bill: CreditCard };
 
-const PLANS = [
-  { id: "month", label: "Mujor", price: "9.99€", note: "/muaj" },
-  { id: "year", label: "Vjetor", price: "59.99€", note: "kurse 50%", best: true },
-];
-
-/** Fletë abonimi që rrëshqet nga poshtë. */
+/**
+ * EKRANI I PAYWALL-IT (seksioni 8).
+ *
+ * Zemra e tij është timeline-i i qartë me tre hapa — modeli Headspace/Calm.
+ * Arsyeja nuk është zbukurim: pjesa më e madhe e ankesave për abonime vjen
+ * nga përdorues që nuk e kuptuan kur nis faturimi. Kur tri datat shihen
+ * përpara se të shtypet butoni, kjo pyetje nuk mbetet e hapur.
+ */
 export function UpsellSheet() {
   const [plan, setPlan] = useState("year");
   const { closeUpsell } = useNavigation();
@@ -29,7 +29,7 @@ export function UpsellSheet() {
   useBodyScrollLock();
 
   const confirm = () => {
-    subscribe();
+    subscribe(plan);
     closeUpsell();
   };
 
@@ -55,84 +55,176 @@ export function UpsellSheet() {
           background: "#fff",
           borderRadius: `${radii.sheet}px ${radii.sheet}px 0 0`,
           padding: `26px 26px ${padBottom(26)}`,
-          /* 88% e viewport-it dinamik: fletja mbetet e kapshme edhe kur
-             shiriti i browser-it është i dukshëm */
-          maxHeight: "88%",
+          maxHeight: "92%",
           overflowY: "auto",
           WebkitOverflowScrolling: "touch",
         }}
       >
         <div style={{ width: 40, height: 4, borderRadius: 2, background: T.line, margin: "0 auto 22px" }} />
 
-        <div style={{ textAlign: "center", marginBottom: 22 }}>
-          <Crown size={36} color={T.gold} style={{ marginBottom: 10 }} />
-          <h2 style={{ color: T.ink, fontSize: 24, fontWeight: 800, margin: "0 0 6px" }}>Bëhu Premium</h2>
-          <p style={{ color: T.sub, fontSize: 13.5, margin: 0 }}>
-            Zhblloko të gjithë eksperiencën Arte Gogo
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <Crown size={34} color={T.gold} style={{ marginBottom: 10 }} />
+          <h2 style={{ color: T.ink, fontSize: 24, fontWeight: 800, margin: "0 0 6px" }}>
+            Provoje {TRIAL_DAYS} ditë falas
+          </h2>
+          <p style={{ color: T.sub, fontSize: 13.5, margin: 0, lineHeight: 1.5 }}>
+            Falas janë vetëm {FREE_LIMIT} meditime. Me abonim hapet i gjithë katalogu.
           </p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 22 }}>
-          {BENEFITS.map((benefit) => (
-            <div key={benefit} style={{ display: "flex", alignItems: "center", gap: 11, color: T.ink, fontSize: 14 }}>
-              <div style={circle(22, "rgba(224,169,60,0.15)")}>
-                <Check size={13} color={T.gold} />
-              </div>
-              {benefit}
-            </div>
-          ))}
-        </div>
+        <Timeline />
 
-        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+        <div style={{ display: "flex", gap: 10, margin: "24px 0 16px" }}>
           {PLANS.map((option) => (
-            <button
+            <PlanOption
               key={option.id}
-              onClick={() => setPlan(option.id)}
-              style={{
-                flex: 1,
-                background: plan === option.id ? "rgba(224,169,60,0.1)" : T.bg2,
-                border: `1.5px solid ${plan === option.id ? T.gold : T.line}`,
-                borderRadius: radii.lg,
-                padding: 16,
-                cursor: "pointer",
-                textAlign: "left",
-                position: "relative",
-              }}
-            >
-              {option.best && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -9,
-                    right: 12,
-                    background: T.gold,
-                    color: "#3A2410",
-                    fontSize: 9,
-                    fontWeight: 800,
-                    padding: "3px 8px",
-                    borderRadius: 10,
-                  }}
-                >
-                  MË E MIRA
-                </span>
-              )}
-              <div style={{ color: T.sub, fontSize: 12, marginBottom: 4 }}>{option.label}</div>
-              <div style={{ color: T.ink, fontSize: 22, fontWeight: 800 }}>{option.price}</div>
-              <div style={{ color: T.faint, fontSize: 11 }}>{option.note}</div>
-            </button>
+              option={option}
+              selected={plan === option.id}
+              onSelect={() => setPlan(option.id)}
+            />
           ))}
         </div>
 
         <button onClick={confirm} style={{ ...goldButton, padding: 15, fontSize: 15 }}>
-          Fillo provën 7-ditore falas
+          Fillo provën {TRIAL_DAYS}-ditore falas
         </button>
+
+        {/* Kërkesë e Apple-it dhe e Google-it: kushtet duhen thënë pranë butonit,
+            jo të fshehura pas një lidhjeje. */}
+        <p style={{ color: T.faint, fontSize: 11.5, textAlign: "center", margin: "12px 0 0", lineHeight: 1.6 }}>
+          Anulo kurdo nga {cancelPath()}, të paktën 24 orë para përfundimit.
+          Pa anulim, abonimi rinovohet vetvetiu.
+        </p>
+
         <button
           onClick={closeUpsell}
-          style={{ ...sx.bareButton, color: T.sub, width: "100%", marginTop: 12, fontSize: 14 }}
+          style={{ ...sx.bareButton, color: T.sub, width: "100%", marginTop: 14, fontSize: 14 }}
         >
           Ndoshta më vonë
         </button>
       </div>
     </div>
+  );
+}
+
+/** Tre hapat e provës, të lidhur me një vijë vertikale. */
+function Timeline() {
+  const steps = trialTimeline();
+
+  return (
+    <div style={{ position: "relative" }}>
+      {/* Vija ndalon te hapi i fundit, jo poshtë tij — përndryshe do të dukej
+          sikur pas faturimit vjen edhe diçka tjetër. */}
+      <div
+        style={{
+          position: "absolute",
+          left: 17,
+          top: 18,
+          bottom: 34,
+          width: 2,
+          background: `linear-gradient(180deg, ${T.gold}, ${T.line})`,
+        }}
+      />
+
+      {steps.map((step, i) => {
+        const Icon = STEP_ICONS[step.id];
+        const isLast = i === steps.length - 1;
+
+        return (
+          <div key={step.id} style={{ display: "flex", gap: 14, marginBottom: isLast ? 0 : 18, position: "relative" }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: isLast ? T.bg2 : "rgba(224,169,60,0.16)",
+                border: `1.5px solid ${isLast ? T.line : T.gold}`,
+              }}
+            >
+              <Icon size={16} color={isLast ? T.sub : T.gold} />
+            </div>
+
+            <div style={{ paddingTop: 1 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ color: T.ink, fontSize: 14.5, fontWeight: 800 }}>{step.title}</span>
+                <span style={{ color: T.faint, fontSize: 11.5, fontWeight: 600 }}>{step.day}</span>
+              </div>
+              <div style={{ color: T.sub, fontSize: 12.5, marginTop: 2, lineHeight: 1.45 }}>
+                {step.detail}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Kartelë plani me shenjë të qartë zgjedhjeje — ✓ ari kur është aktive. */
+function PlanOption({ option, selected, onSelect }) {
+  return (
+    <button
+      onClick={onSelect}
+      role="radio"
+      aria-checked={selected}
+      aria-label={`Plani ${option.label}, ${option.price}`}
+      style={{
+        flex: 1,
+        background: selected ? "rgba(224,169,60,0.10)" : T.bg2,
+        border: `2px solid ${selected ? T.gold : T.line}`,
+        borderRadius: radii.lg,
+        padding: "16px 14px",
+        cursor: "pointer",
+        textAlign: "left",
+        position: "relative",
+      }}
+    >
+      {option.best && (
+        <span
+          style={{
+            position: "absolute",
+            top: -9,
+            right: 12,
+            background: T.gold,
+            color: T.ink,
+            fontSize: 9,
+            fontWeight: 800,
+            padding: "3px 8px",
+            borderRadius: 10,
+            letterSpacing: 0.3,
+          }}
+        >
+          MË E MIRA
+        </span>
+      )}
+
+      {/* Shenja e zgjedhjes rri gjithmonë në të njëjtin vend: pa vendin e
+          rezervuar, kartelat do të kërcenin sa herë ndërrohej plani. */}
+      <div
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          border: `2px solid ${selected ? T.gold : T.line}`,
+          background: selected ? T.gold : "transparent",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 10,
+        }}
+      >
+        {selected && <Check size={12} color="#fff" strokeWidth={3.5} />}
+      </div>
+
+      <div style={{ color: T.sub, fontSize: 12, marginBottom: 3 }}>{option.label}</div>
+      <div style={{ color: T.ink, fontSize: 21, fontWeight: 800, letterSpacing: -0.4 }}>
+        {option.price}
+      </div>
+      <div style={{ color: T.faint, fontSize: 11, marginTop: 2 }}>{planNote(option)}</div>
+    </button>
   );
 }

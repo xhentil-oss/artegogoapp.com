@@ -10,7 +10,7 @@ import { AppShell } from "./components/layout/AppShell.jsx";
 import { TopBar } from "./components/layout/TopBar.jsx";
 import { BottomNav } from "./components/layout/BottomNav.jsx";
 
-import { LoginScreen } from "./features/auth/LoginScreen.jsx";
+import { OnboardingScreen } from "./features/onboarding/OnboardingScreen.jsx";
 import { CommunityScreen } from "./features/community/CommunityScreen.jsx";
 import { LibraryScreen } from "./features/library/LibraryScreen.jsx";
 import { CategoryScreen } from "./features/library/CategoryScreen.jsx";
@@ -24,6 +24,8 @@ import { AdminPanel } from "./features/admin/AdminPanel.jsx";
 import { PlayerSheet } from "./features/player/PlayerSheet.jsx";
 import { MiniPlayer } from "./features/player/MiniPlayer.jsx";
 import { CompletionSheet } from "./features/player/CompletionSheet.jsx";
+import { NotificationsSheet } from "./features/notifications/NotificationsSheet.jsx";
+import { useAdminVersion } from "./hooks/useAdmin.js";
 
 /**
  * Rrënja e aplikacionit — vetëm kompozim.
@@ -40,12 +42,20 @@ export default function App() {
 }
 
 function Root() {
-  const { isAuthenticated } = useSession();
+  const { isAuthenticated, ready } = useSession();
+  /* Abonimi rri këtu, në rrënjë: një ndryshim i admin-it prek klasifikimin,
+     pool-et, programet dhe feed-in njëherësh, ndaj ripërpunimi i tërë pemës
+     është edhe më i thjeshtë edhe më i saktë se abonime nëpër çdo ekran. */
+  useAdminVersion();
+
+  /* derisa të lexohet ruajtja nuk dimë nëse duhet onboarding-u — një pamje
+     bosh e shkurtër është më e mirë se një pulsim i ekranit të gabuar */
+  if (!ready) return <AppShell light />;
 
   if (!isAuthenticated) {
     return (
       <AppShell>
-        <LoginScreen />
+        <OnboardingScreen />
       </AppShell>
     );
   }
@@ -95,6 +105,7 @@ function Overlays() {
       {active && <PlayerSheet sequence={active} />}
       {completed && <CompletionSheet sequence={completed} />}
       {overlay.admin && <AdminPanel />}
+      {overlay.notifications && <NotificationsSheet />}
       {overlay.upsell && <UpsellSheet />}
     </>
   );

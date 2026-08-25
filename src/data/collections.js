@@ -11,21 +11,27 @@ import { PHASES } from "./blocks.js";
 let sequence = 0;
 const nextId = () => `c${1000 + ++sequence}`;
 
-/** Krijon një meditim brenda një nën-grupi. */
-const mk = (title, intent, dur, premium) => ({
+/**
+ * Krijon një meditim brenda një nën-grupi.
+ *
+ * Nuk ka fushë `premium`: sipas seksionit 8 falas janë vetëm tre meditime në
+ * gjithë aplikacionin, dhe ato tre emërohen te `domain/access.js`. Kur rregulli
+ * rrinte edhe këtu si flamur, të dyja anët devijuan — katalogu kishte 92
+ * meditime falas ndërsa modeli lejonte 3.
+ */
+const mk = (title, intent, dur) => ({
   id: nextId(),
   title,
   intent,
   dur,
-  premium,
   phase: PHASES.CORE,
   desc: `${title} — praktikë e udhëhequr nga Arte Gogo.`,
 });
 
 /** Krijon një nën-grup me titujt e dhënë. */
-const grp = (name, intent, titles, premium = true, dur = 10) => ({
+const grp = (name, intent, titles, dur = 10) => ({
   name,
-  items: titles.map((title) => mk(title, intent, dur, premium)),
+  items: titles.map((title) => mk(title, intent, dur)),
 });
 
 export const COLLECTIONS = [
@@ -35,11 +41,11 @@ export const COLLECTIONS = [
     intent: "heart",
     desc: "Emocione, zemra, vetëbesim, truri, gjumë, energji, manifestim",
     groups: [
-      grp("Emocione", "stress", ["Liro ankthin në 10 minuta", "Dil nga paniku", "Qetëso zemërimin", "Shkrij trishtimin", "Largo fajin", "Largo turpin", "Kapërce zilinë", "Liro xhelozinë", "Çliro frikën", "Përballo pasigurinë", "Liro mërzinë", "Qetëso mendimet obsesive", "Rikthe shpresën", "Ndërprit mbingarkesën emocionale"], false),
+      grp("Emocione", "stress", ["Liro ankthin në 10 minuta", "Dil nga paniku", "Qetëso zemërimin", "Shkrij trishtimin", "Largo fajin", "Largo turpin", "Kapërce zilinë", "Liro xhelozinë", "Çliro frikën", "Përballo pasigurinë", "Liro mërzinë", "Qetëso mendimet obsesive", "Rikthe shpresën", "Ndërprit mbingarkesën emocionale"]),
       grp("Zemra", "heart", ["Hap zemrën", "Aktivizo dhembshurinë", "Fal veten", "Fal dikë", "Liro dhimbjen e tradhtisë", "Shëro ndarjen", "Rikthe besimin", "Ndje dashurinë pa kushte", "Meditim për marrëdhënien në çift"]),
       grp("Vetëbesimi", "energy", ["Para një interviste", "Para një prezantimi", "Para një fjalimi", "Para kamerës", "Para një takimi biznesi", "Para negociatave", "Rrit karizmën", "Aktivizo liderin", "Aktivizo autoritetin"]),
-      grp("Truri", "focus", ["Fokus ekstrem", "Kujtesë më e mirë", "Studim intensiv", "Për provime", "Për moshën mbi 50 vjeç", "Kreativitet", "Vendimmarrje", "Intuitë", "Zgjidh probleme", "Mendo qartë"], false),
-      grp("Gjumi", "sleep", ["Fli shpejt", "Gjumi i thellë", "Pas pagjumësisë", "Pas zgjimit natën", "Rikthe ritmin cirkadian", "Zgjohu me energji"], false),
+      grp("Truri", "focus", ["Fokus ekstrem", "Kujtesë më e mirë", "Studim intensiv", "Për provime", "Për moshën mbi 50 vjeç", "Kreativitet", "Vendimmarrje", "Intuitë", "Zgjidh probleme", "Mendo qartë"]),
+      grp("Gjumi", "sleep", ["Fli shpejt", "Gjumi i thellë", "Pas pagjumësisë", "Pas zgjimit natën", "Rikthe ritmin cirkadian", "Zgjohu me energji"]),
       grp("Energjia", "energy", ["Energjia e mëngjesit", "Pasdite pa lodhje", "Pas punës", "Pas udhëtimit", "Pas stresit", "Rimbush energjinë", "Ndjehu i lehtë"]),
       grp("Manifestimi", "abundance", ["Manifesto bollëk", "Manifesto partner", "Manifesto shtëpi", "Manifesto punë", "Manifesto klientë", "Manifesto shëndet", "Manifesto sukses"]),
     ],
@@ -50,7 +56,7 @@ export const COLLECTIONS = [
     intent: "stress",
     desc: "Çlirim emocional përmes tapping-ut",
     groups: [
-      grp("Ankthi", "stress", ["Ankth i përgjithshëm", "Ankth para fluturimit", "Ankth para provimit", "Ankth para prezantimit", "Ankth social", "Ankth në trafik", "Ankth para gjumit"], false),
+      grp("Ankthi", "stress", ["Ankth i përgjithshëm", "Ankth para fluturimit", "Ankth para provimit", "Ankth para prezantimit", "Ankth social", "Ankth në trafik", "Ankth para gjumit"]),
       grp("Marrëdhënie", "heart", ["Pas debatit", "Para një bisede të vështirë", "Pas tradhtisë", "Xhelozia", "Frika nga refuzimi", "Frika nga braktisja"]),
       grp("Biznes", "energy", ["Frika nga shitja", "Frika nga refuzimi", "Frika nga çmimet e larta", "Frika nga suksesi", "Frika nga dështimi", "Sindroma e mashtruesit"]),
       grp("Trupi", "heal", ["Dhimbje koke", "Dhimbje qafe", "Dhimbje shpine", "Migrenë", "Tension muskulor"]),
@@ -63,11 +69,11 @@ export const COLLECTIONS = [
     intent: "calm",
     desc: "Aktivizim, qetësim, performancë, shërim",
     groups: [
-      grp("Aktivizim", "energy", ["Energji në mëngjes", "Aktivizo motivimin", "Para palestrës", "Para punës"], false),
-      grp("Qetësim", "calm", ["Për panik", "Për ankth", "Për stres", "Pas debatit", "Në trafik"], false),
+      grp("Aktivizim", "energy", ["Energji në mëngjes", "Aktivizo motivimin", "Para palestrës", "Para punës"]),
+      grp("Qetësim", "calm", ["Për panik", "Për ankth", "Për stres", "Pas debatit", "Në trafik"]),
       grp("Performancë", "focus", ["Fokus", "Kreativitet", "Para provimit", "Para negociatës", "Para sportit"]),
       grp("Manifestim", "abundance", ["Manifesto bollëk", "Manifesto shtëpi", "Manifesto klientë", "Manifesto partner", "Manifesto shëndet"]),
-      grp("Shërim", "heal", ["Frymëmarrje vagale", "Frymëmarrje diafragmatike", "Coherence breathing", "Box breathing", "Resonant breathing"], false),
+      grp("Shërim", "heal", ["Frymëmarrje vagale", "Frymëmarrje diafragmatike", "Coherence breathing", "Box breathing", "Resonant breathing"]),
     ],
   },
   {
@@ -77,7 +83,7 @@ export const COLLECTIONS = [
     desc: "Lirim trupor dhe rregullim i sistemit nervor",
     groups: [
       grp("Lirim & Çlirim", "heal", ["Shkundja neurogjene", "Trauma release", "Somatic shaking", "Somatic orienting", "Pendulation", "Titration"]),
-      grp("Tokëzim & Lëvizje", "calm", ["Grounding", "Body scan", "Somatic walking", "Somatic dancing"], false),
+      grp("Tokëzim & Lëvizje", "calm", ["Grounding", "Body scan", "Somatic walking", "Somatic dancing"]),
       grp("Lirim i zonave", "heal", ["Lirim i nofullës", "Lirim i legenit", "Lirim i diafragmës", "Lirim i kraharorit", "Hapja e qafës"]),
     ],
   },
@@ -108,7 +114,7 @@ export const COLLECTIONS = [
     intent: "selflove",
     desc: "Riprogramim përmes fjalës pohuese",
     groups: [
-      grp("Zhvillim personal", "selflove", ["Bollëk", "Vetëvlerësim", "Dashuri", "Shëndet", "Manifestim", "Falje", "Besim"], false),
+      grp("Zhvillim personal", "selflove", ["Bollëk", "Vetëvlerësim", "Dashuri", "Shëndet", "Manifestim", "Falje", "Besim"]),
       grp("Role", "energy", ["Prindërim", "Biznes", "Karrierë", "Gratë", "Burrat", "Fëmijët", "Studentët"]),
     ],
   },
@@ -127,10 +133,10 @@ export const COLLECTIONS = [
     intent: "calm",
     desc: "Praktika të shkurtra për çdo pjesë të ditës",
     groups: [
-      grp("Mëngjes", "energy", ["3 minuta energji", "Vendos qëllimin", "Aktivizo zemrën"], false, 3),
-      grp("Në makinë", "focus", ["Në trafik", "Para punës", "Pas punës"], false, 5),
-      grp("Në punë", "focus", ["Para mbledhjes", "Pas mbledhjes", "Kur je i stresuar", "Kur nuk ke fokus"], false, 5),
-      grp("Në shtëpi", "calm", ["Pas debatit", "Para gjumit", "Para darkës", "Pas lajmit të keq"], false, 5),
+      grp("Mëngjes", "energy", ["3 minuta energji", "Vendos qëllimin", "Aktivizo zemrën"],3),
+      grp("Në makinë", "focus", ["Në trafik", "Para punës", "Pas punës"],5),
+      grp("Në punë", "focus", ["Para mbledhjes", "Pas mbledhjes", "Kur je i stresuar", "Kur nuk ke fokus"],5),
+      grp("Në shtëpi", "calm", ["Pas debatit", "Para gjumit", "Para darkës", "Pas lajmit të keq"],5),
     ],
   },
   {
@@ -139,7 +145,7 @@ export const COLLECTIONS = [
     intent: "stress",
     desc: "Ndihmë e shpejtë në momente krize",
     groups: [
-      grp("Krizë akute", "stress", ["Sulm paniku", "Zemërim ekstrem", "Ankth akut", "Lajm i keq", "Humbje", "Frikë", "Krizë emocionale", "Të qara", "Overthinking"], false, 8),
+      grp("Krizë akute", "stress", ["Sulm paniku", "Zemërim ekstrem", "Ankth akut", "Lajm i keq", "Humbje", "Frikë", "Krizë emocionale", "Të qara", "Overthinking"],8),
     ],
   },
   {
@@ -179,8 +185,8 @@ export const COLLECTIONS = [
     intent: "calm",
     desc: "Praktika të buta për fëmijë dhe familje",
     groups: [
-      grp("Për fëmijë", "calm", ["Para gjumit", "Ankthi", "Vetëbesimi", "Përqendrimi", "Mirënjohja", "Menaxhimi i emocioneve"], false, 6),
-      grp("Familje", "heart", ["Meditime familjare"], false, 8),
+      grp("Për fëmijë", "calm", ["Para gjumit", "Ankthi", "Vetëbesimi", "Përqendrimi", "Mirënjohja", "Menaxhimi i emocioneve"],6),
+      grp("Familje", "heart", ["Meditime familjare"],8),
     ],
   },
   {

@@ -32,9 +32,9 @@ export const T = {
   /* aksente */
   /** Theksi i titujve. Violet sipas paletës — më parë ishte teal jashtë saj. */
   accent: "#7C5CE0",    // Violet (fillim)
-  gold: "#E0A93C",
-  eve1: "#7C5CE0",      // Violet (fillim) — butoni qendror, gradiente, aksente
-  eve2: "#5A8CE0",      // Violet (fund)
+  gold: "#E0A93C",      // Ari (Premium) — kurora, medaljet e arta, theksime
+  eve1: "#7C5CE0",      // Violet (Eve/aksent, fillim) — butoni qendror, gradiente
+  eve2: "#5A8CE0",      // Violet (Eve/aksent, fund)
 
   /* semantike */
   success: "#2BB673",
@@ -66,9 +66,18 @@ export const shadows = {
   immersive: "0 18px 60px rgba(0,0,0,0.5)",
 };
 
+/**
+ * TIPOGRAFIA sipas specifikimit:
+ *   · `body`    — sans geometrik (Poppins) për ndërfaqen e përgjithshme
+ *   · `display` — serif (Playfair/Georgia) për tituj hero dhe momente të
+ *                 veçanta: emri i programit, ekrani i përmbylljes
+ *
+ * Fontet ngarkohen te `index.html`. Fallback-et e sistemit vijnë menjëherë
+ * pas tyre, ndaj teksti lexohet edhe nëse Google Fonts nuk arrihet.
+ */
 export const fonts = {
-  body: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-  display: "Georgia, 'Times New Roman', serif",
+  body: "'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif",
+  display: "'Playfair Display', Georgia, 'Times New Roman', serif",
 };
 
 /**
@@ -80,6 +89,23 @@ export const nav = {
   pink: "#FF1F9B",
   yellow: "#F5C400",
   blue: "#00B0EA",
+};
+
+/**
+ * NGJYRAT E MEDALJEVE — materiale, jo role.
+ *
+ * Bronzi dhe argjendi nuk gjenden te paleta e brand-it sepse aty ka role
+ * (tekst, sfond, sukses), jo metale; ashtu si `nav`, ky grup qëndron veçmas
+ * dhe nuk përzihet me `T`. Ari është pikërisht `T.gold` i paletës, që medalja
+ * më e lartë të flasë të njëjtën gjuhë me Premium-in.
+ */
+export const medal = {
+  bronze: "#C87A3C",
+  bronzeSoft: "#F4E2D2",
+  silver: "#93A0AE",
+  silverSoft: "#E6EAEF",
+  gold: "#E0A93C",
+  goldSoft: "#FAEBCC",
 };
 
 /** Përmasat e strukturës së faqes. */

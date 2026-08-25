@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { T } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
-import { autoGrid } from "../../theme/responsive.js";
 import { HABITS, PERIODS } from "../../data/tracking.js";
 import { lastDays, lastMonths } from "../../lib/time.js";
 import { useProgress } from "../../store/ProgressContext.jsx";
@@ -23,8 +22,10 @@ export function HabitTracker() {
         {completed} nga {habitCount} të plotësuara sot
       </div>
 
-      {/* 3 kolona në telefon, më shumë në tablet */}
-      <div style={{ ...autoGrid(70, 10), marginBottom: 20 }}>
+      {/* Gjithmonë 3 kolona: 6 zakonet mbushin saktësisht dy rreshta. Me grid
+          që shton kolona vetë, korniza e gjerë nxirrte 4 kolona dhe linte një
+          rresht jetim me dy pllaka. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 20 }}>
         {HABITS.map((habit) => {
           const on = Boolean(habitsToday[habit.id]);
           return (
@@ -58,11 +59,14 @@ export function HabitTracker() {
 
       <SegmentedControl options={PERIODS} value={period} onChange={setPeriod} style={{ marginBottom: 14 }} />
 
+      {/* Shtylla e fundit është gjithmonë e sotmja — rritet sapo shënohet një
+          zakon më lart, pa asnjë hap tjetër. */}
       <BarChart
         bars={bars}
         max={HABITS.length}
         dense={period === "month"}
         labelEvery={period === "month" ? 5 : 1}
+        highlight={bars.length - 1}
       />
     </section>
   );

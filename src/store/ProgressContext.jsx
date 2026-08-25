@@ -4,6 +4,7 @@ import { STORAGE_KEYS } from "../services/storage.js";
 import { usePersistentMap } from "../hooks/usePersistentMap.js";
 import { dayKey } from "../lib/time.js";
 import { totalMinutes } from "../domain/sequence.js";
+import { bestStreak, currentStreak, medalCounts } from "../domain/medals.js";
 
 /**
  * Progresi i përdoruesit: historiku i seancave, zakonet, gjendja emocionale.
@@ -56,6 +57,14 @@ export function ProgressProvider({ children }) {
     [sessions, today]
   );
 
+  /*
+   * Zakonet dhe gjendja shkruhen VETËM te dita e sotme.
+   *
+   * Specifikimi (seksioni 10) e kërkon shprehimisht: "mbushen me kalimin e
+   * ditëve reale — nuk mund të plotësohen ditët e kaluara". Ndaj `today` nuk
+   * merret si parametër: pa datë hyrëse, asnjë ekran nuk ka si të shkruajë
+   * prapa në kohë, edhe nëse dikush e kërkon më vonë.
+   */
   const toggleHabit = useCallback(
     (habitId) => {
       habits.update((prev) => {
@@ -77,11 +86,58 @@ export function ProgressProvider({ children }) {
     [habits.data]
   );
 
+  /**
+   * Ditët me të paktën një meditim — baza e streak-ut dhe e medaljeve.
+   *
+   * `SEED_HISTORY` nuk hyn këtu: ajo mban etiketa demo ("8 Qer"), jo çelësa
+   * datash, ndaj nuk përfaqëson ditë të vërteta. Streak-u duhet të matet mbi
+   * atë që përdoruesi ka bërë vërtet.
+   */
+  const meditationDays = useMemo(
+    () => Object.keys(sessions.data).filter((key) => sessions.data[key]?.length > 0),
+    [sessions.data]
+  );
+
+  const streak = useMemo(() => currentStreak(meditationDays, today), [meditationDays, today]);
+  const record = useMemo(() => bestStreak(meditationDays), [meditationDays]);
+  const medals = useMemo(() => medalCounts(meditationDays), [meditationDays]);
+
+  /**
+   * DEMO — mbush historikun me `days` ditë rresht që mbyllen sot.
+   *
+   * Ekziston që klienti t'i shohë medaljet pa pritur tri javë. Shkruan te i
+   * njëjti çelës si seancat e vërteta me qëllim: një burim i dytë të dhënash
+   * do të mund të shpërputhej me atë që tregon historiku.
+   */
+  const seedStreakDemo = useCallback(
+    (days) => {
+      const seeded = {};
+      for (let i = days - 1; i >= 0; i -= 1) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        seeded[dayKey(date)] = [{ date: "Demo", min: 10, intent: "calm" }];
+      }
+      sessions.update(() => seeded);
+    },
+    [sessions]
+  );
+
+  /** DEMO — pastron historikun e seancave (bashkë me streak-un dhe medaljet). */
+  const clearHistoryDemo = useCallback(() => sessions.update(() => ({})), [sessions]);
+
   const value = useMemo(
     () => ({
       history,
       recordSession,
       tagLastSession,
+
+      /* shpërblimi: ditët rresht dhe medaljet e mbledhura */
+      meditationDays,
+      streak,
+      record,
+      medals,
+      seedStreakDemo,
+      clearHistoryDemo,
 
       habits: habits.data,
       habitsToday: habits.data[today] ?? {},
@@ -93,7 +149,11 @@ export function ProgressProvider({ children }) {
       moodToday: moods.data[today],
       setMood,
     }),
-    [history, recordSession, tagLastSession, habits.data, today, habitScore, toggleHabit, moods.data, setMood]
+    [
+      history, recordSession, tagLastSession,
+      meditationDays, streak, record, medals, seedStreakDemo, clearHistoryDemo,
+      habits.data, today, habitScore, toggleHabit, moods.data, setMood,
+    ]
   );
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;

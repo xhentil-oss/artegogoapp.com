@@ -85,10 +85,15 @@ export function SegmentedControl({ options, value, onChange, style }) {
 }
 
 /** Ndërprerës on/off. */
-export function ToggleSwitch({ checked, onChange }) {
+export function ToggleSwitch({ checked, onChange, label }) {
   return (
     <button
       onClick={() => onChange(!checked)}
+      /* Pa këto, çelësi njoftohet si buton bosh: teksti pranë tij është një
+         element më vete dhe lexuesi i ekranit nuk i lidh dot vetë. */
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
       style={{
         width: 46,
         height: 26,

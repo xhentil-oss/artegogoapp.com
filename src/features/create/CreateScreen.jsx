@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { Bookmark, Check, Layers, Sparkles, Wand2, X } from "lucide-react";
+import { Layers, Lock, Sparkles, Wand2 } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
-import { sx, circle } from "../../theme/styles.js";
+import { sx } from "../../theme/styles.js";
 import { toSequence, totalMinutes } from "../../domain/sequence.js";
 import { useSession } from "../../store/SessionContext.jsx";
+import { useNavigation } from "../../store/NavigationContext.jsx";
 import { usePlayer } from "../../store/PlayerContext.jsx";
 import { Paywall } from "../premium/Paywall.jsx";
 import { IntentWizard } from "./IntentWizard.jsx";
 import { BlockBuilder } from "./BlockBuilder.jsx";
 import { GenerateProgress } from "./GenerateProgress.jsx";
-import { SavedSessions } from "./SavedSessions.jsx";
-import { useSavedSessions } from "./useSavedSessions.js";
 
 const MODES = [
   { id: "wizard", label: "Gjenero", icon: Wand2 },
@@ -19,27 +18,24 @@ const MODES = [
 
 /**
  * Skeda "Krijo": dy rrugë për të montuar një seancë — wizard i udhëhequr
- * ose ndërtues manual — dhe ruajtja e saj me emër.
+ * ose ndërtues manual.
+ *
+ * Ruajtja me emër NUK ndodh këtu: sipas specifikimit ajo i takon ekranit të
+ * përmbylljes, pasi seanca të jetë dëgjuar.
  */
 export function CreateScreen() {
   const { isPremium } = useSession();
   const { play } = usePlayer();
-  const { sessions, save, remove } = useSavedSessions();
 
   const [mode, setMode] = useState("wizard");
   const [sequence, setSequence] = useState([]);
   const [generating, setGenerating] = useState(false);
-  const [saved, setSaved] = useState(false);
 
+  /* "builder" e njofton ekranin e përmbylljes se seanca u ndërtua këtu —
+     vetëm atëherë ai ofron ruajtjen me emër. */
   const startPlayback = () => {
     setGenerating(false);
-    play(sequence);
-  };
-
-  const handleSave = (name) => {
-    if (!save(name, sequence)) return;
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    play(sequence, "builder");
   };
 
   return (
@@ -65,8 +61,6 @@ export function CreateScreen() {
         <GenerateProgress onDone={startPlayback} />
       ) : (
         <>
-          <SavedSessions sessions={sessions} onRemove={remove} />
-
           <ModeSwitch value={mode} onChange={setMode} />
 
           {mode === "wizard" ? (
@@ -81,12 +75,7 @@ export function CreateScreen() {
           )}
 
           {sequence.length > 0 && (
-            <SummaryBar
-              sequence={sequence}
-              saved={saved}
-              onSave={handleSave}
-              onCreate={() => setGenerating(true)}
-            />
+            <SummaryBar sequence={sequence} onCreate={() => setGenerating(true)} />
           )}
         </>
       )}
@@ -94,15 +83,59 @@ export function CreateScreen() {
   );
 }
 
-/** Wizard-i i shuar pas paywall-it, sa për të treguar vlerën. */
+/**
+ * Parapamja e kyçur për llogaritë falas.
+ *
+ * Wizard-i shfaqet i zbehtë vetëm si shembull i asaj që shkyçet. Më parë ishte
+ * thjesht `pointerEvents: none` — prekja nuk bënte asgjë dhe dukej e prishur,
+ * jo e kyçur. Tani e gjithë zona është buton që hap abonimin, dhe një shenjë
+ * dryni e thotë hapur pse nuk reagon.
+ */
 function LockedPreview() {
+  const { openUpsell } = useNavigation();
+
   return (
     <div style={{ padding: `0 ${layout.gutter}px` }}>
       <Paywall feature="Ndërtuesi i pakufizuar i meditimit" />
-      <div style={{ marginTop: 16, opacity: 0.5, pointerEvents: "none" }}>
-        <div style={{ margin: `0 -${layout.gutter}px` }}>
-          <IntentWizard onGenerate={() => {}} />
+
+      <div style={{ position: "relative", marginTop: 16 }}>
+        <div style={{ opacity: 0.4, pointerEvents: "none", filter: "grayscale(0.35)" }}>
+          <div style={{ margin: `0 -${layout.gutter}px` }}>
+            <IntentWizard onGenerate={() => {}} />
+          </div>
         </div>
+
+        <button
+          onClick={openUpsell}
+          aria-label="Shkyç ndërtuesin e meditimit"
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: T.ink,
+              color: "#fff",
+              borderRadius: radii.pill,
+              padding: "11px 18px",
+              fontSize: 13.5,
+              fontWeight: 700,
+              boxShadow: "0 6px 20px rgba(0,0,0,0.22)",
+            }}
+          >
+            <Lock size={15} /> Kyçur — prek për ta hapur
+          </span>
+        </button>
       </div>
     </div>
   );
@@ -139,20 +172,8 @@ function ModeSwitch({ value, onChange }) {
   );
 }
 
-/**
- * Shirit i ngjitur poshtë: totali, ruajtja me emër, dhe nisja.
- * Fusha e emrit shfaqet vetëm kur kërkohet — shiriti mbetet i qetë.
- */
-function SummaryBar({ sequence, saved, onSave, onCreate }) {
-  const [naming, setNaming] = useState(false);
-  const [name, setName] = useState("");
-
-  const confirm = () => {
-    onSave(name);
-    setName("");
-    setNaming(false);
-  };
-
+/** Shirit i ngjitur poshtë: totali i seancës dhe nisja. */
+function SummaryBar({ sequence, onCreate }) {
   return (
     <div
       style={{
@@ -161,106 +182,40 @@ function SummaryBar({ sequence, saved, onSave, onCreate }) {
         margin: `18px ${layout.gutter}px 0`,
         background: T.ink,
         borderRadius: radii.lg,
-        padding: naming ? "14px 14px" : "14px 18px",
+        padding: "14px 18px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
         boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
       }}
     >
-      {naming ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") confirm();
-              if (e.key === "Escape") setNaming(false);
-            }}
-            placeholder="Emri i seancës…"
-            style={{
-              ...sx.flexText,
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              borderRadius: radii.pill,
-              padding: "11px 16px",
-              color: "#fff",
-              outline: "none",
-            }}
-          />
-          <button
-            onClick={confirm}
-            disabled={!name.trim()}
-            aria-label="Ruaj seancën"
-            className="ag-press"
-            style={{
-              ...circle(44, name.trim() ? "#fff" : "rgba(255,255,255,0.2)"),
-              border: "none",
-              padding: 0,
-              cursor: name.trim() ? "pointer" : "default",
-            }}
-          >
-            <Check size={19} color={name.trim() ? T.ink : "rgba(255,255,255,0.6)"} />
-          </button>
-          <button
-            onClick={() => setNaming(false)}
-            aria-label="Anulo"
-            className="ag-press"
-            style={{ ...sx.bareButton, ...sx.center, width: 40, height: 40, flexShrink: 0 }}
-          >
-            <X size={20} color="rgba(255,255,255,0.7)" />
-          </button>
-        </div>
-      ) : (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ ...sx.flexText, color: "rgba(255,255,255,0.7)", fontSize: 13 }}>
-            {sequence.length} hapa ·{" "}
-            <span style={{ color: "#fff", fontWeight: 700 }}>{totalMinutes(sequence)}m</span>
-          </div>
+      <div style={{ ...sx.flexText, color: "rgba(255,255,255,0.7)", fontSize: 13 }}>
+        {sequence.length} hapa ·{" "}
+        <span style={{ color: "#fff", fontWeight: 700 }}>{totalMinutes(sequence)}m</span>
+      </div>
 
-          <button
-            onClick={() => setNaming(true)}
-            aria-label="Ruaj seancën me emër"
-            className="ag-press"
-            style={{
-              ...sx.bareButton,
-              ...sx.center,
-              gap: 6,
-              width: "auto",
-              height: 44,
-              padding: "0 12px",
-              borderRadius: radii.pill,
-              border: "1px solid rgba(255,255,255,0.3)",
-              color: saved ? "#fff" : "rgba(255,255,255,0.85)",
-              fontSize: 13,
-              fontWeight: 700,
-              flexShrink: 0,
-            }}
-          >
-            {saved ? <Check size={15} /> : <Bookmark size={15} />}
-            {saved ? "U ruajt" : "Ruaj"}
-          </button>
-
-          <button
-            onClick={onCreate}
-            style={{
-              background: "#fff",
-              color: T.ink,
-              border: "none",
-              borderRadius: radii.pill,
-              height: 44,
-              padding: "0 16px",
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              flexShrink: 0,
-            }}
-          >
-            <Sparkles size={16} /> Luaj
-          </button>
-        </div>
-      )}
+      <button
+        onClick={onCreate}
+        className="ag-press"
+        style={{
+          background: "#fff",
+          color: T.ink,
+          border: "none",
+          borderRadius: radii.pill,
+          height: 44,
+          padding: "0 18px",
+          cursor: "pointer",
+          fontSize: 14,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          flexShrink: 0,
+        }}
+      >
+        <Sparkles size={16} /> Krijo &amp; Luaj
+      </button>
     </div>
   );
 }

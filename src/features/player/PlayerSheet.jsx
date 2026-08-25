@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Bookmark,
   ChevronLeft,
@@ -16,8 +15,10 @@ import { sx, circle } from "../../theme/styles.js";
 import { tile, immersiveBackdrop } from "../../theme/gradients.js";
 import { FLUID, padTop, padBottom } from "../../theme/responsive.js";
 import { fmt } from "../../lib/format.js";
+import { shareText } from "../../lib/share.js";
 import { intentMeta } from "../../domain/intent.js";
 import { usePlayer } from "../../store/PlayerContext.jsx";
+import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { Leaf } from "../../components/icons/BrandIcons.jsx";
 import { usePlayerEngine } from "./usePlayerEngine.js";
@@ -29,8 +30,13 @@ import { usePlayerEngine } from "./usePlayerEngine.js";
 export function PlayerSheet({ sequence }) {
   const { minimize, complete } = usePlayer();
   const engine = usePlayerEngine(sequence, complete);
-  const [saved, setSaved] = useState(false);
+  const { isFavorite, toggleFavorite, isDownloaded, toggleDownload } = useCollections();
   useBodyScrollLock();
+
+  /* Të dyja listat i takojnë meditimit që po luhet tani, jo gjithë seancës. */
+  const currentId = engine.current?.id;
+  const favorite = currentId ? isFavorite(currentId) : false;
+  const downloaded = currentId ? isDownloaded(currentId) : false;
 
   const meta = intentMeta(engine.current?.intent);
   const Icon = meta.icon;
@@ -39,6 +45,13 @@ export function PlayerSheet({ sequence }) {
     engine.detach();
     minimize();
   };
+
+  /** Shpërndan meditimin aktual me fletën native, ose e kopjon. */
+  const share = () =>
+    shareText({
+      title: "Arte Gogo",
+      text: `${engine.current?.title} — ${meta.label}\n${engine.current?.desc ?? ""}`,
+    });
 
   return (
     <div
@@ -75,14 +88,24 @@ export function PlayerSheet({ sequence }) {
         </button>
 
         <div style={{ display: "flex", gap: 14 }}>
-          <OutlineCircle>
-            <Download size={17} color="#fff" />
+          <OutlineCircle
+            onClick={() => currentId && toggleDownload(currentId)}
+            label={downloaded ? "Hiq nga të shkarkuarat" : "Shkarko"}
+            active={downloaded}
+          >
+            <Download size={17} color={downloaded ? T.gold : "#fff"} />
           </OutlineCircle>
-          <OutlineCircle>
+
+          <OutlineCircle onClick={share} label="Shpërndaj">
             <Share2 size={17} color="#fff" />
           </OutlineCircle>
-          <OutlineCircle onClick={() => setSaved(!saved)}>
-            <Bookmark size={17} color={saved ? T.gold : "#fff"} fill={saved ? T.gold : "none"} />
+
+          <OutlineCircle
+            onClick={() => currentId && toggleFavorite(currentId)}
+            label={favorite ? "Hiq nga të preferuarat" : "Ruaj te të preferuarat"}
+            active={favorite}
+          >
+            <Bookmark size={17} color={favorite ? T.gold : "#fff"} fill={favorite ? T.gold : "none"} />
           </OutlineCircle>
         </div>
       </div>
@@ -296,15 +319,19 @@ export function PlayerSheet({ sequence }) {
   );
 }
 
-function OutlineCircle({ onClick, children }) {
+function OutlineCircle({ onClick, children, label, active }) {
   return (
     <button
       onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      className="ag-press"
       style={{
-        ...circle(42, "none"),
-        border: `1.5px solid ${onDark.hairline}`,
+        ...circle(42, active ? "rgba(224,169,60,0.18)" : "none"),
+        border: `1.5px solid ${active ? T.gold : onDark.hairline}`,
         padding: 0,
         cursor: onClick ? "pointer" : "default",
+        transition: "background .2s, border-color .2s",
       }}
     >
       {children}

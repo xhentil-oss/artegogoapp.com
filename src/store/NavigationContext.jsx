@@ -15,7 +15,12 @@ export function NavigationProvider({ children }) {
   const [tab, setTab] = useState(DEFAULT_TAB);
   const [category, setCategory] = useState(null);
   const [folder, setFolder] = useState(null);
-  const [overlay, setOverlay] = useState({ search: false, upsell: false, admin: false });
+  const [overlay, setOverlay] = useState({
+    search: false,
+    upsell: false,
+    admin: false,
+    notifications: false,
+  });
   /* nën-pamja e skedës "Komunitet" — e mbajtur këtu, që avatari dhe zilja
      te shiriti i sipërm të mund të çojnë direkt në profil ose në feed */
   const [communityView, setCommunityView] = useState("feed");
@@ -66,6 +71,8 @@ export function NavigationProvider({ children }) {
       closeUpsell: () => setOverlayFlag("upsell", false),
       openAdmin: () => setOverlayFlag("admin", true),
       closeAdmin: () => setOverlayFlag("admin", false),
+      openNotifications: () => setOverlayFlag("notifications", true),
+      closeNotifications: () => setOverlayFlag("notifications", false),
     }),
     [tab, category, folder, overlay, communityView, goToCommunity, goToProfile, goToTab, openCategory, setOverlayFlag]
   );

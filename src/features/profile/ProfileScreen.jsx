@@ -7,7 +7,10 @@ import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useProgress } from "../../store/ProgressContext.jsx";
 import { StatRow } from "../../components/ui/Charts.jsx";
 import { ToggleSwitch } from "../../components/ui/Controls.jsx";
-import { Paywall } from "../premium/Paywall.jsx";
+import { STATUS_LABEL } from "../../domain/subscription.js";
+import { SubscriptionCard, SubscriptionDemoControls } from "../premium/SubscriptionCard.jsx";
+import { UserCollections } from "./UserCollections.jsx";
+import { MedalCase, MedalDemoControls } from "./MedalCase.jsx";
 import { DailyRhythm } from "./DailyRhythm.jsx";
 import { MoodTracker } from "./MoodTracker.jsx";
 import { HabitTracker } from "./HabitTracker.jsx";
@@ -18,9 +21,9 @@ const AVATAR_GRADIENT = brandPair;
 
 /** Profili: identiteti, statistikat, trackerat, historiku, opsioni admin. */
 export function ProfileScreen() {
-  const { name, isPremium, isAdmin, setIsAdmin } = useSession();
+  const { name, isPremium, isAdmin, setIsAdmin, subscriptionStatus } = useSession();
   const { openAdmin } = useNavigation();
-  const { history } = useProgress();
+  const { history, streak } = useProgress();
 
   const totalMinutes = history.reduce((sum, entry) => sum + entry.min, 0);
 
@@ -35,10 +38,10 @@ export function ProfileScreen() {
           <div style={{ color: T.sub, fontSize: 13.5, marginTop: 2 }}>
             {isPremium ? (
               <span style={{ color: T.gold, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                <Crown size={13} /> Premium
+                <Crown size={13} /> {STATUS_LABEL[subscriptionStatus.status]}
               </span>
             ) : (
-              "Llogari Falas"
+              STATUS_LABEL[subscriptionStatus.status]
             )}
           </div>
         </div>
@@ -49,17 +52,16 @@ export function ProfileScreen() {
           stats={[
             { value: totalMinutes, label: "MINUTA" },
             { value: history.length, label: "SEANCA" },
-            { value: 6, label: "RRJESHT" },
+            { value: streak, label: "RRESHT" },
           ]}
         />
       </div>
 
-      {!isPremium && (
-        <div style={{ marginBottom: 20 }}>
-          <Paywall feature="Akses i plotë në të gjitha kategoritë dhe programet" />
-        </div>
-      )}
+      <SubscriptionCard />
 
+      <UserCollections />
+
+      <MedalCase />
       <DailyRhythm />
       <MoodTracker />
       <HabitTracker />
@@ -80,8 +82,11 @@ export function ProfileScreen() {
           <Settings size={18} color={T.sub} />
           <span style={{ color: T.ink, fontSize: 14, fontWeight: 600 }}>Modaliteti Admin (demo)</span>
         </div>
-        <ToggleSwitch checked={isAdmin} onChange={setIsAdmin} />
+        <ToggleSwitch checked={isAdmin} onChange={setIsAdmin} label="Modaliteti Admin" />
       </div>
+
+      {isAdmin && <SubscriptionDemoControls />}
+      {isAdmin && <MedalDemoControls />}
 
       {isAdmin && (
         <button

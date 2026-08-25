@@ -1,8 +1,7 @@
-import { layout } from "../../theme/tokens.js";
+import { fonts, layout } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { heroVeil } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
-import { collectionItems } from "../../services/contentRepository.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { CoverArt } from "../../components/art/CoverArt.jsx";
@@ -16,7 +15,9 @@ import { CompactMedCard } from "../../components/cards/MedCard.jsx";
  */
 export function FolderSheet({ collection }) {
   const { closeFolder } = useNavigation();
-  const total = collectionItems(collection).length;
+  /* i njëjti komponent shërben të dyja pamjet: `desc` thotë "sipas kategorive"
+     kur hapet një teknikë, dhe "sipas teknikave" kur hapet një kategori */
+  const total = collection.groups.reduce((sum, g) => sum + g.items.length, 0);
   useBodyScrollLock();
 
   return (
@@ -47,7 +48,8 @@ export function FolderSheet({ collection }) {
               fontSize: "clamp(21px, 6vw, 27px)",
               fontWeight: 800,
               margin: 0,
-              fontFamily: "Georgia, serif",
+              /* titull hero — serif */
+              fontFamily: fonts.display,
               lineHeight: 1.15,
             }}
           >

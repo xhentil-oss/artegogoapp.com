@@ -30,10 +30,14 @@ export function Paywall({ feature }) {
   );
 }
 
-/** Stili i butonit të artë — i ndarë sepse përdoret edhe në upsell-in. */
+/**
+ * Stili i butonit të artë — i ndarë sepse përdoret edhe në upsell-in.
+ * Ar i plotë nga paleta, jo gradient: tabela jep një vlerë të vetme për
+ * "Ari (Premium)", ndaj toni i çelët `#F0D49B` dhe kafja `#3A2410` u hoqën.
+ */
 export const goldButton = {
-  background: "linear-gradient(135deg,#F0D49B,#E0A93C)",
-  color: "#3A2410",
+  background: T.gold,
+  color: T.ink,
   border: "none",
   borderRadius: radii.pill,
   padding: 13,

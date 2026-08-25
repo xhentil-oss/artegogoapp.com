@@ -1,4 +1,4 @@
-import { Crown, Lock, Play } from "lucide-react";
+import { Lock, Play } from "lucide-react";
 import { T, radii } from "../../theme/tokens.js";
 import { sx, iconBox, circle } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
@@ -38,7 +38,7 @@ export function MeditationRow({ block, index = 0 }) {
       <div style={sx.flexText}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span style={{ color: T.ink, fontSize: 16, fontWeight: 700 }}>{block.title}</span>
-          {block.premium && <Crown size={13} color={T.gold} />}
+
         </div>
         <div style={{ color: T.sub, fontSize: 13, marginTop: 3, display: "flex", alignItems: "center", gap: 5 }}>
           {authorFor(index)} · {block.dur}m · <Rating index={index} size={11} />
@@ -80,7 +80,7 @@ export function SearchResultRow({ block, index = 0, onBeforePlay }) {
       <div style={sx.flexText}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ color: T.ink, fontSize: 15, fontWeight: 700 }}>{block.title}</span>
-          {block.premium && <Crown size={12} color={T.gold} />}
+
         </div>
         <div style={{ color: T.sub, fontSize: 12.5, marginTop: 2 }}>
           {meta.label} · {authorFor(index)} · {block.dur}m

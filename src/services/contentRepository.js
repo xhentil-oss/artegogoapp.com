@@ -1,10 +1,24 @@
 import { BLOCKS, DAY_PART_INTENTS, PHASES } from "../data/blocks.js";
 import { COLLECTIONS } from "../data/collections.js";
 import { INTENTIONS } from "../data/intentions.js";
-import { FEED } from "../data/feed.js";
+import { FEED, POST_TYPES } from "../data/feed.js";
+import { TECHNIQUES } from "../data/techniques.js";
+import { CATEGORIES } from "../data/categories.js";
+import { REMINDER_SLOTS } from "../data/reminders.js";
+import { SLOT_POOLS } from "../data/slotPools.js";
 import { SERIES, PROGRAMS, SHORTS, SOUNDSCAPES, LIVE_SESSIONS } from "../data/catalog.js";
-import { PRACTICES } from "../data/practices.js";
 import { LIFE_AREAS, ALL_AREAS } from "../data/lifeAreas.js";
+import { adminState } from "./adminStore.js";
+import {
+  MEDITATIONS,
+  listTechniques,
+  listCategories,
+  emptyCategories,
+  techniqueFolder,
+  categoryFolder,
+  unclassified,
+  listSubGroups,
+} from "../domain/classification.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -29,6 +43,17 @@ export const listBlocks = () => BLOCKS;
 
 export const blockById = (id) => BLOCKS.find((b) => b.id === id);
 
+/**
+ * Gjen një meditim nga ID, kudo qoftë: mes 15 mini-meditimeve të ndërtuesit
+ * ose mes 244 meditimeve të katalogut. Listat e përdoruesit (të preferuarat,
+ * të shkarkuarat) ruajnë vetëm ID, ndaj u duhet ky kërkim i përbashkët.
+ */
+export const findMeditation = (id) =>
+  BLOCKS.find((b) => b.id === id) ?? MEDITATIONS.find((m) => m.id === id) ?? null;
+
+/** Zgjidh një listë ID-sh; ato që nuk gjenden hiqen në heshtje. */
+export const findMeditations = (ids = []) => ids.map(findMeditation).filter(Boolean);
+
 /** Zgjidh një listë id-sh në blloqe; id-të e panjohura hiqen. */
 export const blocksByIds = (ids = []) => ids.map(blockById).filter(Boolean);
 
@@ -47,7 +72,17 @@ export const blocksForDayPart = (part) => {
   return matches.length >= 3 ? matches : BLOCKS.slice(0, 4);
 };
 
-export const popularBlocks = (limit = 6) => BLOCKS.filter((b) => b.premium).slice(0, limit);
+/**
+ * Rreshti "Popullore".
+ *
+ * Më parë filtronte `b.premium` — flamur që nuk ekziston më (seksioni 8 e
+ * zhvendosi rregullin te `domain/access`), ndaj rreshti kishte mbetur bosh.
+ * Popullariteti i vërtetë do të vijë nga numri i dëgjimeve te backend-i;
+ * deri atëherë merren blloqet kryesore, që rreshti të mos gënjejë me radhë
+ * të shpikur.
+ */
+export const popularBlocks = (limit = 6) =>
+  BLOCKS.filter((b) => b.phase === PHASES.CORE).slice(0, limit);
 
 /** Blloqet hyrëse të një programi — deri në `limit` hapa. */
 export const blocksForProgram = (program, limit = 3) =>
@@ -67,39 +102,69 @@ export const collectionItems = (collection) => collection.groups.flatMap((g) => 
 export const collectionSize = (collection) => collectionItems(collection).length;
 
 /** Numri i të gjitha meditimeve në bibliotekë — i llogaritur, jo i shkruar. */
-export const totalMeditations = () =>
-  COLLECTIONS.reduce((sum, collection) => sum + collectionSize(collection), 0);
+export const totalMeditations = () => MEDITATIONS.length;
 
-/* ---------- praktikat (modalitetet) ---------- */
+/* ---------- klasifikimi i dyfishtë ---------- */
 
 /**
- * Tetë modalitetet e praktikës, secili me koleksionin dhe numrin e vet.
- * Praktikat pa koleksion përkatës hiqen — lista nuk mund të prodhojë
- * një kartelë që nuk hapet.
+ * Dy pamjet mbi TË NJËJTAT meditime — teknika (si bëhet) dhe kategoria
+ * (për çfarë qëllimi). Asgjë nuk kopjohet; ndryshon vetëm grupimi.
+ * Shih `domain/classification.js`.
  */
-export const listPractices = () =>
-  PRACTICES.map((practice) => {
-    const collection = collectionById(practice.collectionId);
-    return collection ? { ...practice, collection, count: collectionSize(collection) } : null;
-  }).filter(Boolean);
+export {
+  listTechniques,
+  listCategories,
+  techniqueFolder,
+  categoryFolder,
+  emptyCategories,
+  unclassified,
+  listSubGroups,
+};
+
+/** Të gjitha meditimet e klasifikuara, si listë e rrafshët. */
+export const listMeditations = () => MEDITATIONS;
+
+/*
+ * Listat e plota për panelin e admin-it.
+ *
+ * Ndryshe nga `listTechniques`/`listCategories`, këtu NUK filtrohen ato pa
+ * meditime: admin-i duhet të mund t'i caktojë pikërisht kategoritë bosh —
+ * përndryshe një kategori e re nuk do të mbushej dot kurrë.
+ */
+export const allTechniques = () => TECHNIQUES;
+export const allCategories = () => CATEGORIES;
+
+/* ---------- njoftimet ---------- */
+export const listReminderSlots = () => REMINDER_SLOTS;
+export const defaultPools = () => SLOT_POOLS;
+
+/* ---------- komuniteti ---------- */
+export const listPostTypes = () => POST_TYPES;
 
 /* ---------- fushat e jetës ---------- */
 export const listLifeAreas = () => LIFE_AREAS;
 
 /** Programet e një fushe jete; `ALL_AREAS` i kthen të gjitha. */
 export const programsByLifeArea = (areaId) => {
-  if (!areaId || areaId === ALL_AREAS) return PROGRAMS;
+  const all = listPrograms();
+  if (!areaId || areaId === ALL_AREAS) return all;
   const area = LIFE_AREAS.find((a) => a.id === areaId);
-  if (!area) return PROGRAMS;
-  return PROGRAMS.filter((program) => area.intents.includes(program.intent));
+  if (!area) return all;
+  return all.filter((program) => area.intents.includes(program.intent));
 };
 
 /* ---------- vitrina ---------- */
 export const listSeries = () => SERIES;
-export const listPrograms = () => PROGRAMS;
 export const listShorts = () => SHORTS;
 export const listSoundscapes = () => SOUNDSCAPES;
-export const listLiveSessions = () => LIVE_SESSIONS;
+
+/*
+ * Përmbajtja e krijuar nga paneli i admin-it (seksioni 11) vjen PARA asaj
+ * bazë: ajo që sapo u shtua duhet të duket menjëherë, pa u kërkuar.
+ * Ekranet nuk e dinë ndryshimin — lexojnë të njëjtin funksion si më parë.
+ */
+export const listPrograms = () => [...adminState().programs, ...PROGRAMS];
+export const listLiveSessions = () => [...adminState().live, ...LIVE_SESSIONS];
 
 /* ---------- komunitet ---------- */
-export const listFeed = () => FEED;
+export const listFeed = () => [...adminState().posts, ...FEED];

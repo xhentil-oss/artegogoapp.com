@@ -94,6 +94,10 @@ function IntentStep({ value, onChange }) {
   return (
     <div>
       <StepTitle>Çfarë ke nevojë sot?</StepTitle>
+      {/* pa këtë, butoni "Vazhdo" rri i zbehtë pa shpjegim */}
+      <p style={{ fontSize: 13, color: T.sub, margin: "6px 0 0" }}>
+        {value ? "Gati — kalo te hapi tjetër." : "Zgjidh një qëllim për të nisur."}
+      </p>
       {/* 100px minimum: 2 kolona edhe brenda panelit në ekran 320px */}
       <div style={{ ...autoGrid(100, 10), marginTop: 16 }}>
         {listIntentions().map((intention) => {

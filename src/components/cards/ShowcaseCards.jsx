@@ -1,5 +1,5 @@
 import { Play, Star } from "lucide-react";
-import { T, radii } from "../../theme/tokens.js";
+import { T, fonts, radii } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { tile, rayTexture, veil } from "../../theme/gradients.js";
 import { CARD_WIDTH } from "../../theme/responsive.js";
@@ -64,7 +64,16 @@ export function ProgramProgressCard({ program }) {
             marginTop: 10,
           }}
         >
-          <div style={{ ...sx.flexText, fontSize: 17, fontWeight: 800, color: T.ink, letterSpacing: -0.3 }}>
+          {/* emri i programit — serif, sipas specifikimit */}
+          <div
+            style={{
+              ...sx.flexText,
+              fontFamily: fonts.display,
+              fontSize: 18,
+              fontWeight: 700,
+              color: T.ink,
+            }}
+          >
             {program.title}
           </div>
           <div style={circle(44, T.ink)}>
@@ -107,7 +116,10 @@ export function SeriesCard({ series, onOpen }) {
       >
         <div style={{ ...sx.absoluteFill, background: "linear-gradient(110deg, rgba(0,0,0,0.4), transparent)" }} />
         <div style={{ position: "relative" }}>
-          <div style={{ color: "#fff", fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}>{series.title}</div>
+          {/* titull hero — serif */}
+          <div style={{ color: "#fff", fontFamily: fonts.display, fontSize: 23, fontWeight: 700, lineHeight: 1.15 }}>
+            {series.title}
+          </div>
           <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 11, letterSpacing: 1.5, marginTop: 8 }}>
             {series.sub}
           </div>

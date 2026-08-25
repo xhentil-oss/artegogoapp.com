@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { List, Lock, Play, Search } from "lucide-react";
-import { T, layout, radii } from "../../theme/tokens.js";
+import { T, fonts, layout, radii } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { tile, rayTexture } from "../../theme/gradients.js";
 import { CARD_WIDTH } from "../../theme/responsive.js";
@@ -122,9 +122,10 @@ function TrendingCard({ program, rank }) {
           <span
             style={{
               color: "#fff",
-              fontSize: 20,
-              fontWeight: 800,
-              letterSpacing: 1,
+              fontFamily: fonts.display,
+              fontSize: 21,
+              fontWeight: 700,
+              letterSpacing: 0.5,
               position: "relative",
               textAlign: "center",
               padding: 12,
@@ -137,7 +138,10 @@ function TrendingCard({ program, rank }) {
         <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "baseline" }}>
           <span style={{ fontSize: 22, fontWeight: 800, color: T.faint, flexShrink: 0 }}>{rank}</span>
           <div style={sx.flexText}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: T.ink }}>{program.title}</div>
+            {/* emri i programit — serif */}
+            <div style={{ fontFamily: fonts.display, fontSize: 17, fontWeight: 700, color: T.ink }}>
+              {program.title}
+            </div>
             <div style={{ fontSize: 12.5, color: T.sub }}>{program.sub}</div>
           </div>
         </div>
@@ -168,14 +172,26 @@ function ContinueCard({ program }) {
       <div style={{ height: 180, background: tile(meta.g), position: "relative", ...sx.center }}>
         <div style={{ ...sx.absoluteFill, background: rayTexture }} />
         <DurationTag minutes={program.lessons * 4} />
-        <span style={{ color: "#fff", fontSize: 24, fontWeight: 800, letterSpacing: 1, position: "relative" }}>
+        <span
+          style={{
+            color: "#fff",
+            fontFamily: fonts.display,
+            fontSize: 25,
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            position: "relative",
+          }}
+        >
           {program.title}
         </span>
       </div>
 
       <div style={{ padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div style={sx.flexText}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: T.ink }}>{program.title}</div>
+          {/* emri i programit — serif */}
+          <div style={{ fontFamily: fonts.display, fontSize: 18, fontWeight: 700, color: T.ink }}>
+            {program.title}
+          </div>
           <div style={{ fontSize: 12.5, color: T.sub, marginTop: 2 }}>
             0 nga {program.lessons} të përfunduara
           </div>

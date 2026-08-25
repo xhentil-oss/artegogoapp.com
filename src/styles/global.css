@@ -21,7 +21,8 @@ body,
 }
 
 body {
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Sans geometrik sipas specifikimit — duhet të përputhet me `fonts.body`. */
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--ag-ink, #0e0e12);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

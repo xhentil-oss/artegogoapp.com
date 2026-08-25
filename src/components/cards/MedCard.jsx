@@ -4,7 +4,7 @@ import { CARD_WIDTH } from "../../theme/responsive.js";
 import { authorFor, extraSecondsFor } from "../../lib/placeholders.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { CoverArt } from "../art/CoverArt.jsx";
-import { PremiumBadge, Rating } from "../ui/Badges.jsx";
+import { AccessBadge, Rating } from "../ui/Badges.jsx";
 import { RowItem } from "../ui/Row.jsx";
 
 /* Raporte, jo lartësi fikse — kartelat tkurren në telefon pa u deformuar. */
@@ -15,8 +15,7 @@ const ASPECT_WIDE = "22 / 15";
  * `square` = kapak 1:1 me titull të madh; përndryshe kapak i shtypur.
  */
 export function MedCard({ block, index = 0, square = false }) {
-  const { isLocked, playItems } = usePlayback();
-  const locked = isLocked(block);
+  const { accessBadge, playItems } = usePlayback();
   const author = authorFor(index);
 
   return (
@@ -24,7 +23,7 @@ export function MedCard({ block, index = 0, square = false }) {
       <button onClick={() => playItems(block)} className="ag-card" style={sx.cardButton}>
         <div style={cover(square ? "square" : ASPECT_WIDE)}>
           <CoverArt intent={block.intent} title={block.title} sub={author} big={square} />
-          <PremiumBadge premium={block.premium} locked={locked} />
+          <AccessBadge {...accessBadge(block)} />
         </div>
       </button>
 
@@ -41,8 +40,7 @@ export function MedCard({ block, index = 0, square = false }) {
 
 /** Varianti në grid (gjerësia vjen nga grid-i), me shigjetë poshtë kapakut. */
 export function GridCard({ block, index = 0 }) {
-  const { isLocked, playItems } = usePlayback();
-  const locked = isLocked(block);
+  const { accessBadge, playItems } = usePlayback();
   const author = authorFor(index);
 
   return (
@@ -50,7 +48,7 @@ export function GridCard({ block, index = 0 }) {
       <button onClick={() => playItems(block)} className="ag-card" style={sx.cardButton}>
         <div style={cover("square")}>
           <CoverArt intent={block.intent} title={block.title} sub={author} big />
-          <PremiumBadge premium={block.premium} locked={locked} />
+          <AccessBadge {...accessBadge(block)} />
           <div
             style={{
               position: "absolute",
@@ -78,26 +76,45 @@ export function GridCard({ block, index = 0 }) {
   );
 }
 
-/** Kartelë e ngushtë, e përdorur brenda folderave. */
+/**
+ * Kartelë folderi në stil Mindvalley: **imazh i pastër** (pa titull mbi të),
+ * pastaj poshtë titulli, autori, vlerësimi dhe minutat.
+ *
+ * Titulli u hoq nga kapaku me qëllim — mbi imazh ai konkurronte me artin dhe
+ * lexohej më keq; poshtë tij lexohet gjithmonë.
+ */
 export function CompactMedCard({ item, index = 0 }) {
-  const { isLocked, playItems } = usePlayback();
-  const locked = isLocked(item);
+  const { accessBadge, playItems } = usePlayback();
 
   return (
     <RowItem width={CARD_WIDTH.compact}>
-      <button onClick={() => playItems(item)} className="ag-card" style={sx.cardButton}>
+      <button
+        onClick={() => playItems(item)}
+        className="ag-card"
+        style={{ ...sx.cardButton, textAlign: "left" }}
+      >
         <div style={cover("square", 16)}>
-          <CoverArt intent={item.intent} title={item.title} />
-          <PremiumBadge premium={item.premium} locked={locked} size={12} />
+          <CoverArt intent={item.intent} />
+          <AccessBadge {...accessBadge(item)} size={12} />
+        </div>
+
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink, marginTop: 9, lineHeight: 1.3 }}>
+          {item.title}
+        </div>
+        <div style={{ fontSize: 11.5, color: T.sub, marginTop: 3 }}>Arte Gogo</div>
+        <div
+          style={{
+            fontSize: 11.5,
+            color: T.sub,
+            marginTop: 3,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+        >
+          <Rating index={index} size={10} /> · {item.dur} min
         </div>
       </button>
-
-      <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink, marginTop: 8, lineHeight: 1.25 }}>
-        {item.title}
-      </div>
-      <div style={{ fontSize: 11.5, color: T.sub, marginTop: 3, display: "flex", alignItems: "center", gap: 4 }}>
-        {item.dur}m · <Rating index={index} size={10} />
-      </div>
     </RowItem>
   );
 }
