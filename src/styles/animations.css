@@ -1,0 +1,183 @@
+/* Animacionet e ndarjes së aplikacionit.
+   Klasat `.ag-*` aplikohen nëpër komponentë; keyframes-at jetojnë vetëm këtu. */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.86);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(-20px) rotate(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(420px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* ---------- klasat e përdorimit ---------- */
+
+/** Hyrja e një faqeje/pamjeje të re. */
+.ag-page {
+  animation: fadeUp 0.42s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+/** Fëmijët hyjnë me shkallëzim — për grid-e dhe lista. */
+.ag-stagger > * {
+  animation: fadeUp 0.5s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+.ag-stagger > *:nth-child(1) {
+  animation-delay: 0.02s;
+}
+.ag-stagger > *:nth-child(2) {
+  animation-delay: 0.07s;
+}
+.ag-stagger > *:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.ag-stagger > *:nth-child(4) {
+  animation-delay: 0.17s;
+}
+.ag-stagger > *:nth-child(5) {
+  animation-delay: 0.22s;
+}
+.ag-stagger > *:nth-child(6) {
+  animation-delay: 0.27s;
+}
+.ag-stagger > *:nth-child(7) {
+  animation-delay: 0.32s;
+}
+.ag-stagger > *:nth-child(8) {
+  animation-delay: 0.37s;
+}
+
+/** Reagim i shtypjes për butona të vegjël. */
+.ag-press {
+  transition: transform 0.12s ease;
+}
+.ag-press:active {
+  transform: scale(0.95);
+}
+
+/** Reagim i shtypjes për kartela. */
+.ag-card {
+  transition: transform 0.22s cubic-bezier(0.22, 0.9, 0.3, 1), box-shadow 0.22s ease;
+}
+.ag-card:active {
+  transform: scale(0.97);
+}
+
+/** Fletë që rrëshqet nga poshtë. */
+.ag-sheet {
+  animation: slideUp 0.34s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+
+/** Vend-mbajtës gjatë ngarkimit. */
+.ag-skel {
+  background: linear-gradient(
+    90deg,
+    var(--ag-bg2) 25%,
+    var(--ag-bg-skeleton, #ececf0) 50%,
+    var(--ag-bg2) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

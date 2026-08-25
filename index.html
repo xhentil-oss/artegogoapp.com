@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="sq">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- viewport-fit=cover: faqja shtrihet nën notch, dhe `env(safe-area-inset-*)`
+         bëhet i përdorshëm. interactive-widget: tastiera zvogëlon përmbajtjen
+         në vend që të shtypë layout-in. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+
+    <title>Arte Gogo — Meditim · Transformim</title>
+    <meta name="description" content="Meditime të udhëhequra, frymëmarrje dhe praktika somatike në shqip." />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- ngjyra e shiritit të browser-it -->
+    <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0E0E12" media="(prefers-color-scheme: dark)" />
+
+    <!-- "Shto në ekranin bazë" në iOS: pa shirit browser-i, statusi i lexueshëm -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Arte Gogo" />
+
+    <!-- numrat e telefonit të mos kthehen në lidhje nga Safari -->
+    <meta name="format-detection" content="telephone=no" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,157 @@
+/* Reset minimal + baza e dokumentit + fortesim për mobile.
+   Ngjyrat vijnë nga CSS variables që injektohen prej `theme/tokens.js`. */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* iOS e "fryn" tekstin kur telefoni rrotullohet horizontalisht */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--ag-bg, #fff);
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ag-ink, #0e0e12);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* pa "pull-to-refresh" dhe pa kërcim elastik në fund të faqes */
+  overscroll-behavior-y: none;
+}
+
+/* ---------- lartësia e viewport-it ----------
+   `100vh` në mobile përfshin shiritin e URL-së: përmbajtja pritet dhe kërcen
+   kur shiriti fshihet. `100dvh` ndjek viewport-in e vërtetë; `100vh` mbetet
+   fallback për browser-at e vjetër. */
+.ag-viewport {
+  min-height: 100vh;
+}
+
+.ag-fullscreen {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  .ag-viewport {
+    min-height: 100dvh;
+  }
+  .ag-fullscreen {
+    height: 100dvh;
+  }
+}
+
+/* ---------- korniza e aplikacionit ----------
+   Arte Gogo është aplikacion mobil. Në ekrane të gjera nuk shtrihet: mbetet
+   kolonë sa një telefon, e centruar.
+
+   Fletët `position: fixed` ankorohen te viewport-i, ndaj nuk e trashëgojnë
+   `max-width` të prindit. Kufizohen njësoj këtu — `left/right: 0` plus
+   `margin-inline: auto` i centron pa `transform`, që të mos përplaset me
+   animacionin `slideUp` të fletëve. */
+.ag-frame,
+.ag-fullscreen {
+  width: 100%;
+  max-width: var(--ag-frame, 480px);
+  margin-inline: auto;
+}
+
+.ag-frame {
+  position: relative;
+}
+
+.ag-fullscreen {
+  left: 0;
+  right: 0;
+}
+
+/* Mbi gjerësinë e kornizës: sfond neutral përreth dhe një buzë e lehtë,
+   që korniza të lexohet si sipërfaqe aplikacioni, jo si faqe e prerë. */
+@media (min-width: 520px) {
+  body {
+    background: var(--ag-canvas, #f7f7f9);
+  }
+
+  .ag-frame,
+  .ag-fullscreen {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 18px 50px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* ---------- kontrollet ---------- */
+button {
+  font-family: inherit;
+  /* pa flash blu në prekje dhe pa vonesën 300ms të double-tap-it */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  /* prekja e gjatë mbi një buton nuk duhet të zgjedhë tekstin */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--ag-eve1, #7c5ce0);
+  outline-offset: 2px;
+}
+
+input,
+textarea {
+  font-family: inherit;
+  /* iOS zoom-on-focus aktivizohet nën 16px — kurrë mos shko më poshtë */
+  font-size: 16px;
+}
+
+input[type="range"] {
+  height: 4px;
+  /* rrëshqitja e slider-it nuk duhet të scroll-ojë faqen */
+  touch-action: pan-x;
+}
+
+textarea::placeholder,
+input::placeholder {
+  color: var(--ag-faint, #9a9aa4);
+}
+
+/* Teksti i përmbajtjes mbetet i zgjedhshëm (postime, përshkrime). */
+p,
+h1,
+h2,
+h3 {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ---------- scroll ---------- */
+/* Rreshtat horizontale rrëshqitin pa shirit të dukshëm... */
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+* {
+  scrollbar-width: none;
+}
+
+/* ...dhe rrëshqitja brenda tyre nuk kalon në faqen prapa. */
+.ag-scroll-x {
+  overscroll-behavior-x: contain;
+}
+
+/* Media nuk kalon kurrë jashtë enës. */
+img,
+svg,
+video {
+  max-width: 100%;
+}
