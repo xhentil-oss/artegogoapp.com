@@ -1,4 +1,4 @@
-import { Crown, Settings, User } from "lucide-react";
+import { Crown, LogOut, Settings, User } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { tile, brandPair } from "../../theme/gradients.js";
@@ -21,7 +21,7 @@ const AVATAR_GRADIENT = brandPair;
 
 /** Profili: identiteti, statistikat, trackerat, historiku, opsioni admin. */
 export function ProfileScreen() {
-  const { name, isPremium, isAdmin, setIsAdmin, subscriptionStatus } = useSession();
+  const { name, email, isPremium, isAdmin, setIsAdmin, subscriptionStatus, signOut } = useSession();
   const { openAdmin } = useNavigation();
   const { history, streak } = useProgress();
 
@@ -33,8 +33,11 @@ export function ProfileScreen() {
         <div style={circle(64, tile(AVATAR_GRADIENT))}>
           <User size={28} color="#fff" />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={sx.flexText}>
           <div style={{ color: T.ink, fontSize: 20, fontWeight: 800 }}>{name}</div>
+          {email && (
+            <div style={{ color: T.faint, fontSize: 12, marginTop: 1, ...sx.truncate }}>{email}</div>
+          )}
           <div style={{ color: T.sub, fontSize: 13.5, marginTop: 2 }}>
             {isPremium ? (
               <span style={{ color: T.gold, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
@@ -108,6 +111,29 @@ export function ProfileScreen() {
           <Settings size={16} /> Hap Panelin e Admin-it
         </button>
       )}
+
+      {/* Dalja nga llogaria. Progresi mbetet në pajisje — një shkëputje nuk
+          duhet të fshijë punën e javëve. */}
+      <button
+        onClick={signOut}
+        className="ag-press"
+        style={{
+          width: "100%",
+          background: "none",
+          border: `1px solid ${T.line}`,
+          borderRadius: 14,
+          padding: 13,
+          marginTop: 12,
+          cursor: "pointer",
+          fontSize: 14,
+          fontWeight: 600,
+          color: T.sub,
+          ...sx.center,
+          gap: 8,
+        }}
+      >
+        <LogOut size={15} /> Dil nga llogaria
+      </button>
     </div>
   );
 }

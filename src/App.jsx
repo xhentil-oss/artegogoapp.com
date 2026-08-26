@@ -10,7 +10,9 @@ import { AppShell } from "./components/layout/AppShell.jsx";
 import { TopBar } from "./components/layout/TopBar.jsx";
 import { BottomNav } from "./components/layout/BottomNav.jsx";
 
+import { AuthScreen } from "./features/auth/AuthScreen.jsx";
 import { OnboardingScreen } from "./features/onboarding/OnboardingScreen.jsx";
+import { TodayScreen } from "./features/today/TodayScreen.jsx";
 import { CommunityScreen } from "./features/community/CommunityScreen.jsx";
 import { LibraryScreen } from "./features/library/LibraryScreen.jsx";
 import { CategoryScreen } from "./features/library/CategoryScreen.jsx";
@@ -42,7 +44,7 @@ export default function App() {
 }
 
 function Root() {
-  const { isAuthenticated, ready } = useSession();
+  const { hasAccount, isOnboarded, ready } = useSession();
   /* Abonimi rri këtu, në rrënjë: një ndryshim i admin-it prek klasifikimin,
      pool-et, programet dhe feed-in njëherësh, ndaj ripërpunimi i tërë pemës
      është edhe më i thjeshtë edhe më i saktë se abonime nëpër çdo ekran. */
@@ -52,7 +54,16 @@ function Root() {
      bosh e shkurtër është më e mirë se një pulsim i ekranit të gabuar */
   if (!ready) return <AppShell light />;
 
-  if (!isAuthenticated) {
+  /* Dy porta, në rend: pa llogari → hyrje; me llogari po pa profil → onboarding. */
+  if (!hasAccount) {
+    return (
+      <AppShell>
+        <AuthScreen />
+      </AppShell>
+    );
+  }
+
+  if (!isOnboarded) {
     return (
       <AppShell>
         <OnboardingScreen />
@@ -79,6 +90,7 @@ function ActiveTab() {
 
   return (
     <div key={`${tab}-${category ?? ""}`} className="ag-page" style={sx.page}>
+      {tab === TABS.TODAY && <TodayScreen />}
       {tab === TABS.COMMUNITY && <CommunityScreen />}
       {tab === TABS.LIBRARY && (category ? <CategoryScreen intent={category} /> : <LibraryScreen />)}
       {tab === TABS.CREATE && <CreateScreen />}

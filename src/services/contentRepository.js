@@ -124,6 +124,20 @@ export {
 /** Të gjitha meditimet e klasifikuara, si listë e rrafshët. */
 export const listMeditations = () => MEDITATIONS;
 
+/**
+ * Gjithçka që mund të hyjë në një seancë të ndërtuar me dorë.
+ *
+ * Ndërtuesi më parë ofronte vetëm 15 mini-blloqet, ndërsa katalogu ka 244
+ * meditime të tjera — dhe fusha e kërkimit premtonte "të gjithë katalogun".
+ * Të dyja bashkë japin 259 zgjedhje.
+ *
+ * Blloqet vijnë TË PARAT dhe kjo renditje mban peshë: vetëm ato kanë faza
+ * hyrjeje dhe mbylljeje, ndërsa 244 meditimet e katalogut janë të gjitha
+ * `Korpi`. Të vendosura në krye, të katër blloqet strukturore mbeten të
+ * dukshme pa u dashur asnjë filtër më shumë.
+ */
+export const listBuilderLibrary = () => [...BLOCKS, ...MEDITATIONS];
+
 /*
  * Listat e plota për panelin e admin-it.
  *

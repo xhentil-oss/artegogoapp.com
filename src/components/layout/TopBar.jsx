@@ -2,6 +2,7 @@ import { Bell, Search, User } from "lucide-react";
 import { T, layout } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { padTop } from "../../theme/responsive.js";
+import { TABS } from "../../config/navigation.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 
 /**
@@ -11,7 +12,10 @@ import { useNavigation } from "../../store/NavigationContext.jsx";
  * (dhe si PWA pa shirit browser-i) të mos hyjë nën shiritin e statusit.
  */
 export function TopBar() {
-  const { openSearch, openNotifications, goToProfile } = useNavigation();
+  const { openSearch, openNotifications, goToProfile, tab } = useNavigation();
+  /* Profili doli nga shiriti i poshtëm, ndaj avatari është e vetmja hyrje te
+     ai. Pa një shenjë aktive, asgjë në ekran nuk do të tregonte se ku je. */
+  const onProfile = tab === TABS.PROFILE;
 
   return (
     <div
@@ -30,16 +34,18 @@ export function TopBar() {
       <button
         onClick={goToProfile}
         aria-label="Profili"
+        aria-current={onProfile ? "page" : undefined}
         className="ag-press"
         style={{
-          ...circle(44, T.bg2),
-          border: `1px solid ${T.line}`,
+          ...circle(44, onProfile ? "rgba(124,92,224,0.12)" : T.bg2),
+          border: `1.5px solid ${onProfile ? T.accent : T.line}`,
           padding: 0,
           overflow: "hidden",
           cursor: "pointer",
+          transition: "background .2s, border-color .2s",
         }}
       >
-        <User size={22} color={T.faint} />
+        <User size={22} color={onProfile ? T.accent : T.faint} />
       </button>
 
       {/* gap i vogël sepse butonat vetë mbajnë 44px zonë prekjeje */}

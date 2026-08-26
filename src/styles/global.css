@@ -126,6 +126,37 @@ input::placeholder {
   color: var(--ag-faint, #9a9aa4);
 }
 
+/*
+ * AUTOFILL — Chrome e mbivendos sfondin e vet mbi fushat e plotësuara.
+ *
+ * `background-color` nuk mund t'i mbivendoset: shfletuesi e vizaton në një
+ * shtresë mbi stilin e faqes. E vetmja rrugë është `-webkit-background-clip:
+ * text`, që e kufizon atë ngjyrosje vetëm te shkronjat, ku nuk duket.
+ * Tranzicioni tejet i gjatë e mban të fikur edhe kur ndryshon gjendja.
+ *
+ * Te fushat mbi sfond të errët (ekrani i hyrjes) teksti mbetet i bardhë; kudo
+ * tjetër mbetet i errët — një rregull i vetëm i bardhë do t'i zhdukte fjalët
+ * te paneli i admin-it dhe te kërkimi.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: var(--ag-ink, #0e0e12);
+  caret-color: var(--ag-ink, #0e0e12);
+  transition: background-color 100000s ease-in-out 0s;
+}
+
+.ag-field-dark input:-webkit-autofill,
+.ag-field-dark input:-webkit-autofill:hover,
+.ag-field-dark input:-webkit-autofill:focus,
+.ag-field-dark input:-webkit-autofill:active {
+  -webkit-text-fill-color: #fff;
+  caret-color: #fff;
+}
+
 /* Teksti i përmbajtjes mbetet i zgjedhshëm (postime, përshkrime). */
 p,
 h1,

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:force": "node scripts/free-port.mjs 5173 && vite",
+    "port": "node scripts/free-port.mjs 5173 --check",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",

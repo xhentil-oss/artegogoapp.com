@@ -29,14 +29,12 @@ import {
 /**
  * ⚠️  I PARKUAR — nuk është i lidhur me asnjë tab.
  *
- * Specifikimi (seksioni 3) përcakton 5 tabe: Komunitet · Meditime · Krijo ·
- * Programe · Profili. "Sot" nuk është ndër to, ndaj u hoq nga navigimi.
+ * Pika e hyrjes së aplikacionit, e përshtatur sipas orës: përshëndetja,
+ * citati, ditët rresht, banneri dhe meditimet e rekomanduara.
  *
- * Skedari nuk u fshi me qëllim: nëse ky ekran duhet të kthehet, mjafton ta
- * shtosh te `config/navigation.js` dhe te `App.jsx` — asnjë punë nuk humbi.
- *
- * Faqja "Sot" ishte pika e hyrjes, e përshtatur sipas orës: përshëndetja,
- * citati, banneri dhe meditimet e rekomanduara.
+ * Ky ekran ishte hequr nga navigimi kur u zbatua seksioni 3 i katalogut, ku
+ * "Sot" nuk figuron mes pesë tabeve. Klientja e ktheu të parin — ndaj skedari
+ * që kishte mbetur pa u fshirë u rilidh pa asnjë punë të humbur.
  */
 export function TodayScreen() {
   const { name } = useSession();

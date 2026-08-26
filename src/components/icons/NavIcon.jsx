@@ -8,10 +8,11 @@ import { T, nav } from "../../theme/tokens.js";
  * ikona bie në një gri të vetme.
  *
  * Çdo ikonë ndjek përshkrimin e tabelës:
+ *   Sot       · diell verdhë me rreze rozë/blu mbi horizont
  *   Komunitet · trekëndësh rozë, zemër verdhë, rreth blu, katror rozë
  *   Meditime  · lotus (petal verdhë + rozë + blu)
  *   Programe  · dy shirita + diagonal
- *   Profili   · kokë verdhë + trup rozë
+ *   Profili   · kokë verdhë + trup rozë — jashtë shiritit, te avatari lart
  *   Krijo     · figurë meditative mbi gradient violet — vizatohet te `BottomNav`
  */
 export function NavIcon({ icon, active }) {
@@ -19,6 +20,26 @@ export function NavIcon({ icon, active }) {
   const c = (brandColor) => (active ? brandColor : T.faint);
 
   switch (icon) {
+    case "today":
+      /* diell mbi horizont — dita që sapo nis */
+      return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="11.4" r="4.2" fill={c(nav.yellow)} />
+          <path
+            d="M12 2.6v2.3M4.8 11.4H2.5M21.5 11.4h-2.3M6.6 6 5 4.4M17.4 6 19 4.4"
+            stroke={c(nav.pink)}
+            strokeWidth="1.9"
+            strokeLinecap="round"
+          />
+          <path
+            d="M3.2 19.4h17.6"
+            stroke={c(nav.blue)}
+            strokeWidth="2.4"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+
     case "community":
       return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">

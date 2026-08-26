@@ -6,7 +6,7 @@ import { tile } from "../../theme/gradients.js";
 import { autoGrid } from "../../theme/responsive.js";
 import { intentMeta } from "../../domain/intent.js";
 import { reorder, totalMinutes, withUid } from "../../domain/sequence.js";
-import { listBlocks, listIntentions } from "../../services/contentRepository.js";
+import { listBuilderLibrary, listIntentions } from "../../services/contentRepository.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { PillGroup } from "../../components/ui/Controls.jsx";
 import { BuilderRow } from "../../components/cards/MeditationRow.jsx";
@@ -15,6 +15,10 @@ const ALL = "all";
 
 /**
  * Ndërtuesi manual: seanca në ndërtim lart, biblioteka poshtë.
+ *
+ * Biblioteka mban të 259 zërat — 15 mini-blloqet plus 244 meditimet e
+ * katalogut. Më parë ofronte vetëm blloqet, që ishte dukshëm pak për një
+ * veçori të shitur si "krijim i pakufizuar".
  *
  * Kërkimi vepron mbi TË GJITHË katalogun, jo mbi kategorinë e zgjedhur —
  * përndryshe përdoruesi do të duhej të gjente vetë kategorinë e duhur para se
@@ -27,7 +31,7 @@ export function BlockBuilder({ sequence, setSequence }) {
   const dragIndex = useRef(null);
   const { isLocked, openUpsell } = usePlayback();
 
-  const all = listBlocks();
+  const all = listBuilderLibrary();
   const term = query.trim().toLowerCase();
   const searching = term.length > 0;
 

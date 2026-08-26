@@ -83,4 +83,6 @@ export const STORAGE_KEYS = {
   downloads: "downloads",
   /** Ndryshimet e bëra nga paneli i admin-it (klasifikim, pool-e, programe…). */
   admin: "admin",
+  /** Llogaria: vetëm email-i. Fjalëkalimi nuk ruhet — shih `services/auth.js`. */
+  account: "account",
 };
