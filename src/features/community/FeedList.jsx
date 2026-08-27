@@ -1,8 +1,9 @@
 import { Send, User } from "lucide-react";
-import { T, layout, radii, shadows } from "../../theme/tokens.js";
+import { T, radii, shadows } from "../../theme/tokens.js";
 import { circle } from "../../theme/styles.js";
 import { listFeed } from "../../services/contentRepository.js";
 import { useSession } from "../../store/SessionContext.jsx";
+import { useNavigation } from "../../store/NavigationContext.jsx";
 import { PostCard } from "./PostCard.jsx";
 import { useFeedComments } from "./useFeedComments.js";
 
@@ -19,22 +20,9 @@ export function FeedList() {
 
   return (
     <div style={{ paddingBottom: 8, background: T.bg2, minHeight: "60vh" }}>
-      <header style={{ padding: `8px ${layout.gutter}px 16px`, background: T.bg }}>
-        <h1
-          style={{
-            fontSize: "clamp(24px, 8vw, 30px)",
-            fontWeight: 800,
-            color: T.ink,
-            margin: "0 0 4px",
-            letterSpacing: -0.5,
-          }}
-        >
-          Komuniteti
-        </h1>
-        <p style={{ fontSize: 15, color: T.sub, margin: 0 }}>Frymëzim i përditshëm nga Arte Gogo</p>
-      </header>
-
-      <Composer isAdmin={isAdmin} />
+      {/* Titulli u hoq: hero-ja mbi nën-tabet e mban tashmë identitetin e
+          skedës, dhe dy tituj njëri mbi tjetrin zinin gjysmën e ekranit. */}
+      {isAdmin && <Composer />}
 
       <div className="ag-stagger" style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 14px" }}>
         {listFeed().map((post) => (
@@ -50,49 +38,69 @@ export function FeedList() {
   );
 }
 
-function Composer({ isAdmin }) {
+/**
+ * Kutia e postimit — vetëm për admin, siç e përcakton specifikimi.
+ *
+ * Më parë shfaqej për këdo, me tekstin "Çfarë ke në mendje?" dhe një buton që
+ * nuk bënte asgjë: një kontroll i vdekur që u premtonte përdoruesve diçka që
+ * nuk e kishin. Tani çon te paneli i admin-it, ku postimi shkruhet vërtet dhe
+ * mund t'i bashkëngjitet një meditim.
+ */
+function Composer() {
+  const { openAdmin } = useNavigation();
+
   return (
-    <div
+    <button
+      onClick={() => openAdmin("community")}
+      className="ag-press"
       style={{
+        width: "calc(100% - 28px)",
         margin: "12px 14px",
         background: T.bg,
+        border: "none",
         borderRadius: 14,
         padding: 14,
         boxShadow: shadows.raised,
         display: "flex",
         alignItems: "center",
         gap: 12,
+        cursor: "pointer",
+        textAlign: "left",
       }}
     >
-      <div style={{ ...circle(40, T.bg2), border: `1px solid ${T.line}` }}>
+      <div style={{ ...circle(40, T.bg2), border: `1px solid ${T.line}`, flexShrink: 0 }}>
         <User size={20} color={T.faint} />
       </div>
 
-      <div style={{ flex: 1, background: T.bg2, borderRadius: radii.pill, padding: "11px 18px", color: T.faint, fontSize: 14.5 }}>
-        {isAdmin ? "Shkruaj një postim…" : "Çfarë ke në mendje?"}
-      </div>
+      <span
+        style={{
+          flex: 1,
+          background: T.bg2,
+          borderRadius: radii.pill,
+          padding: "11px 18px",
+          color: T.faint,
+          fontSize: 14.5,
+        }}
+      >
+        Shkruaj një postim…
+      </span>
 
-      {isAdmin && (
-        <button
-          className="ag-press"
-          style={{
-            background: T.ink,
-            color: "#fff",
-            border: "none",
-            borderRadius: 20,
-            padding: "9px 16px",
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            flexShrink: 0,
-          }}
-        >
-          <Send size={14} /> Posto
-        </button>
-      )}
-    </div>
+      <span
+        style={{
+          background: T.ink,
+          color: "#fff",
+          borderRadius: 20,
+          padding: "9px 16px",
+          fontSize: 13,
+          fontWeight: 700,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          flexShrink: 0,
+        }}
+      >
+        <Send size={14} /> Posto
+      </span>
+    </button>
   );
 }

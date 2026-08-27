@@ -3,11 +3,12 @@ import { T, fonts, layout, radii } from "../../theme/tokens.js";
 import { sx, iconBox } from "../../theme/styles.js";
 import { tile, readabilityVeil } from "../../theme/gradients.js";
 import { dayPart } from "../../lib/time.js";
-import { GREETINGS } from "../../data/greetings.js";
 import { TABS } from "../../config/navigation.js";
 import { intentMeta } from "../../domain/intent.js";
 import {
   blocksForDayPart,
+  greetingFor,
+  quoteOfDay,
   listPrograms,
   listShorts,
   listSoundscapes,
@@ -27,7 +28,7 @@ import {
 } from "../../components/cards/ShowcaseCards.jsx";
 
 /**
- * ⚠️  I PARKUAR — nuk është i lidhur me asnjë tab.
+ * Skeda "Sot" — e para te shiriti i navigimit.
  *
  * Pika e hyrjes së aplikacionit, e përshtatur sipas orës: përshëndetja,
  * citati, ditët rresht, banneri dhe meditimet e rekomanduara.
@@ -41,12 +42,14 @@ export function TodayScreen() {
   const { goToTab } = useNavigation();
   const { streak } = useProgress();
   const part = dayPart();
-  const greeting = GREETINGS[part];
+  const greeting = greetingFor(part);
   const picks = blocksForDayPart(part);
 
   return (
     <div style={sx.screen}>
-      <Greeting name={name} greeting={greeting} />
+      {/* citati rrotullohet sipas datës — i njëjti gjatë të gjithë ditës,
+          dhe i njëjti me atë të Komunitetit */}
+      <Greeting name={name} greeting={greeting} quote={quoteOfDay(part)} />
       <StreakCard days={streak} onOpen={() => goToTab(TABS.COMMUNITY)} />
       <DayBanner greeting={greeting} picks={picks} />
 
@@ -91,9 +94,7 @@ export function TodayScreen() {
 }
 
 /** Përshëndetja, emri dhe citati i ditës. */
-function Greeting({ name, greeting }) {
-  /* citati rrotullohet sipas datës — i njëjti gjatë të gjithë ditës */
-  const quote = greeting.quotes[new Date().getDate() % greeting.quotes.length];
+function Greeting({ name, greeting, quote }) {
   const accent = intentMeta(greeting.intent);
 
   return (

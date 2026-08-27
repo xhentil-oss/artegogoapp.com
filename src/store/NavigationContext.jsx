@@ -50,6 +50,21 @@ export function NavigationProvider({ children }) {
 
   const goToProfile = useCallback(() => setTab(TABS.PROFILE), []);
 
+  /**
+   * Hap panelin e admin-it, opsionalisht te një tab i caktuar.
+   *
+   * Pa këtë, butoni "Posto" te feed-i do ta hapte panelin te "Media" dhe
+   * admini do të duhej ta gjente vetë tabin e duhur çdo herë.
+   */
+  const [adminTab, setAdminTab] = useState(null);
+  const openAdmin = useCallback(
+    (tabId = null) => {
+      setAdminTab(tabId);
+      setOverlayFlag("admin", true);
+    },
+    [setOverlayFlag]
+  );
+
   const value = useMemo(
     () => ({
       tab,
@@ -69,12 +84,17 @@ export function NavigationProvider({ children }) {
       closeSearch: () => setOverlayFlag("search", false),
       openUpsell: () => setOverlayFlag("upsell", true),
       closeUpsell: () => setOverlayFlag("upsell", false),
-      openAdmin: () => setOverlayFlag("admin", true),
+      openAdmin,
+      adminTab,
       closeAdmin: () => setOverlayFlag("admin", false),
       openNotifications: () => setOverlayFlag("notifications", true),
       closeNotifications: () => setOverlayFlag("notifications", false),
     }),
-    [tab, category, folder, overlay, communityView, goToCommunity, goToProfile, goToTab, openCategory, setOverlayFlag]
+    [
+      tab, category, folder, overlay, communityView,
+      goToCommunity, goToProfile, goToTab, openCategory, setOverlayFlag,
+      openAdmin, adminTab,
+    ]
   );
 
   return <NavigationContext.Provider value={value}>{children}</NavigationContext.Provider>;

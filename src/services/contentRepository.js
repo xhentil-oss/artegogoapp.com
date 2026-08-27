@@ -5,6 +5,8 @@ import { FEED, POST_TYPES } from "../data/feed.js";
 import { TECHNIQUES } from "../data/techniques.js";
 import { CATEGORIES } from "../data/categories.js";
 import { REMINDER_SLOTS } from "../data/reminders.js";
+import { GREETINGS } from "../data/greetings.js";
+import { DAY_PARTS } from "../lib/time.js";
 import { SLOT_POOLS } from "../data/slotPools.js";
 import { SERIES, PROGRAMS, SHORTS, SOUNDSCAPES, LIVE_SESSIONS } from "../data/catalog.js";
 import { LIFE_AREAS, ALL_AREAS } from "../data/lifeAreas.js";
@@ -37,6 +39,22 @@ import {
 
 /* ---------- qëllime ---------- */
 export const listIntentions = () => INTENTIONS;
+
+/* ---------- përshëndetja dhe citati ---------- */
+export const greetingFor = (part) => GREETINGS[part] ?? GREETINGS[DAY_PARTS.MORNING];
+
+/**
+ * Citati i ditës për një pjesë të ditës.
+ *
+ * Specifikimi e quan "të rastësishëm", por zgjedhja lidhet me datën, jo me
+ * `Math.random()`: përndryshe citati do të ndryshonte në çdo rivizatim të
+ * ekranit, dhe dy ekrane që e tregojnë të njëjtin çast do të shfaqnin dy
+ * citate të ndryshme njëkohësisht.
+ */
+export const quoteOfDay = (part, date = new Date()) => {
+  const { quotes } = greetingFor(part);
+  return quotes[date.getDate() % quotes.length];
+};
 
 /* ---------- mini-meditime ---------- */
 export const listBlocks = () => BLOCKS;

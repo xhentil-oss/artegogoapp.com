@@ -3,13 +3,15 @@ import { COMMUNITY_VIEWS } from "../../config/navigation.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { PillButton } from "../../components/ui/Controls.jsx";
 import { LiveDot } from "../../components/ui/Badges.jsx";
+import { CommunityHero } from "./CommunityHero.jsx";
 import { FeedList } from "./FeedList.jsx";
 import { LiveScreen } from "./LiveScreen.jsx";
 
 /**
- * Skeda "Komunitet": feed frymëzimi + nën-tab "Live".
+ * Skeda "Komunitet": hero + feed frymëzimi + nën-tab "Live".
  *
- * Profili u shkëput që këtu dhe u bë tab-i i 5-të, sipas specifikimit.
+ * Hero-ja rri MBI nën-tabet, jo brenda feed-it: përshëndetja i takon skedës,
+ * jo njërës prej dy pamjeve, ndaj mbetet e njëjtë kur kalon te "Live".
  *
  * Nën-pamja jeton në `NavigationContext`, jo në state lokal, sepse zilja te
  * shiriti i sipërm çon direkt te feed-i.
@@ -19,6 +21,8 @@ export function CommunityScreen() {
 
   return (
     <div>
+      <CommunityHero />
+
       <div
         className="ag-scroll-x"
         style={{ display: "flex", gap: 8, padding: `12px ${layout.gutter}px 4px`, overflowX: "auto" }}

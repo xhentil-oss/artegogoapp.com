@@ -44,8 +44,10 @@ const PANEL_TABS = [
  *     këto kalojnë te backend-i dhe i shohin të gjithë përdoruesit.
  */
 export function AdminPanel() {
-  const { closeAdmin } = useNavigation();
-  const [tab, setTab] = useState("media");
+  const { closeAdmin, adminTab } = useNavigation();
+  /* Tab-i fillestar vjen nga kush e hapi panelin — p.sh. butoni "Posto" te
+     feed-i e çon drejt te "Komuniteti". */
+  const [tab, setTab] = useState(adminTab ?? "media");
   useBodyScrollLock();
 
   const active = PANEL_TABS.find((t) => t.id === tab) ?? PANEL_TABS[0];
