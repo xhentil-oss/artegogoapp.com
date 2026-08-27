@@ -11,9 +11,13 @@ import { storage, STORAGE_KEYS } from "./storage.js";
  *     Ruhet vetëm email-i, që aplikacioni të dijë kush është.
  *
  * Kur të vijë backend-i, ndryshojnë vetëm trupat e `signUp`/`signIn`:
- *   · Firebase Auth / Supabase → thirrje SDK-je;
- *   · API e vetja → POST /auth/login, ruajtje e token-it, rifreskim.
+ * `POST /auth/register` dhe `POST /auth/login`, që kthejnë një token JWT.
  * Asnjë ekran nuk prek gjë.
+ *
+ * Databaza është MySQL te cPanel (shih `mysql/README.md`), pra vërtetimin e
+ * bën API-ja jonë, jo një shërbim i gatshëm. Fjalëkalimi ruhet te
+ * `users.password_hash` i hash-uar me **bcrypt** ose **argon2id** — kurrë MD5,
+ * kurrë SHA1, kurrë i pastër.
  */
 
 /** Sa i gjatë duhet të jetë fjalëkalimi. Kufiri i vërtetë vendoset te serveri. */
