@@ -85,4 +85,6 @@ export const STORAGE_KEYS = {
   admin: "admin",
   /** Llogaria: vetëm email-i. Fjalëkalimi nuk ruhet — shih `services/auth.js`. */
   account: "account",
+  /** Kërkimet e fundit të përdoruesit. */
+  recentSearches: "recent-searches",
 };

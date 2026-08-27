@@ -2,11 +2,17 @@ import { ArrowLeft } from "lucide-react";
 import { T, radii } from "../../theme/tokens.js";
 import { sx, circle, pill } from "../../theme/styles.js";
 
-/** Buton i rrumbullakët me ikonë — mbi hero-t e errët. */
-export function CircleIconButton({ onClick, children, size = 40, background = "rgba(0,0,0,0.3)", blur }) {
+/**
+ * Buton i rrumbullakët me ikonë — mbi hero-t e errët.
+ *
+ * `label` është i detyrueshëm në praktikë: brenda ka vetëm një ikonë, pa
+ * tekst, ndaj pa të lexuesit e ekranit e njoftojnë thjesht si "buton".
+ */
+export function CircleIconButton({ onClick, children, label, size = 40, background = "rgba(0,0,0,0.3)", blur }) {
   return (
     <button
       onClick={onClick}
+      aria-label={label}
       className="ag-press"
       style={{
         ...circle(size, background),
@@ -22,9 +28,14 @@ export function CircleIconButton({ onClick, children, size = 40, background = "r
 }
 
 /** Butoni "prapa" standard mbi një hero. */
-export function BackButton({ onClick, blur }) {
+export function BackButton({ onClick, blur, label = "Prapa" }) {
   return (
-    <CircleIconButton onClick={onClick} blur={blur} background={blur ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.3)"}>
+    <CircleIconButton
+      onClick={onClick}
+      label={label}
+      blur={blur}
+      background={blur ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.3)"}
+    >
       <ArrowLeft size={20} color="#fff" />
     </CircleIconButton>
   );

@@ -8,16 +8,16 @@ import { searchContent } from "../../domain/search.js";
 import { listIntentions } from "../../services/contentRepository.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
+import { useRecentSearches } from "../../hooks/useRecentSearches.js";
 import { SearchResultRow } from "../../components/cards/MeditationRow.jsx";
 
-const INITIAL_RECENT = ["Hapje Zemre", "Theta", "Gjumë"];
 const FOCUS_DELAY_MS = 120;
 
 /** Fletë kërkimi mbi të gjithë ekranin. */
 export function SearchSheet() {
   const { closeSearch, openCategory } = useNavigation();
   const [query, setQuery] = useState("");
-  const [recent, setRecent] = useState(INITIAL_RECENT);
+  const { recent, remember, clear } = useRecentSearches();
   const inputRef = useRef(null);
   useBodyScrollLock();
 
@@ -79,6 +79,11 @@ export function SearchSheet() {
             type="search"
             enterKeyHint="search"
             autoComplete="off"
+            /* Ruhet kur përdoruesi shtyp "Kërko" te tastiera, ose kur largohet
+               nga fusha — jo në çdo shkronjë, që historiku të mos mbushet me
+               fragmente si "g", "gj", "gju". */
+            onKeyDown={(e) => e.key === "Enter" && remember(query)}
+            onBlur={() => remember(query)}
             /* fontSize 16px vjen nga global.css — nën 16 iOS zoom-on faqen */
             style={{
               ...sx.flexText,
@@ -111,7 +116,7 @@ export function SearchSheet() {
         {isEmpty ? (
           <EmptyState
             recent={recent}
-            onClearRecent={() => setRecent([])}
+            onClearRecent={clear}
             onPickRecent={setQuery}
             onPickIntent={goToCategory}
           />
@@ -217,7 +222,15 @@ function Results({ query, results, onPickIntent, onPlayed }) {
         </div>
       )}
 
-      <Label>{results.blocks.length > 0 ? `${results.blocks.length} MEDITIME` : "MEDITIME"}</Label>
+      {/* Numri i vërtetë i përputhjeve, jo sa u vizatuan: kur rezultatet
+          kalojnë kufirin, përdoruesi duhet ta dijë se ka edhe të tjera. */}
+      <Label>
+        {results.total > 0
+          ? results.total > results.blocks.length
+            ? `${results.blocks.length} NGA ${results.total} MEDITIME`
+            : `${results.total} MEDITIME`
+          : "MEDITIME"}
+      </Label>
 
       {results.blocks.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 20px", color: T.sub }}>

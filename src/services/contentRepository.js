@@ -77,9 +77,19 @@ export const blocksByIds = (ids = []) => ids.map(blockById).filter(Boolean);
 
 export const blocksByIntent = (intent) => BLOCKS.filter((b) => b.intent === intent);
 
-/** Blloqet e një qëllimi, me fallback që lista të mos jetë kurrë boshe. */
+/**
+ * Gjithçka e një qëllimi — për ekranin e kategorisë.
+ *
+ * Lexon TË GJITHË bibliotekën, jo vetëm 15 mini-blloqet. Më parë filtronte
+ * `BLOCKS`, ndaj "Qetësim" jepte 3 meditime në vend të 22, dhe "Energji" 1
+ * në vend të 41 — ekrani dukej bosh ndërsa katalogu ishte plot.
+ *
+ * Ndryshe nga `blocksByIntent`, që mbetet mbi blloqet sepse ushqen ritmin
+ * ditor dhe të shkurtrat, ku duhet një njësi e shkurtër e luajtshme.
+ */
 export const blocksForCategory = (intent) => {
-  const matches = blocksByIntent(intent);
+  const matches = listBuilderLibrary().filter((item) => item.intent === intent);
+  /* Mbrojtje nga një ekran bosh nëse një qëllim mbetet pa përmbajtje. */
   return matches.length > 0 ? matches : BLOCKS.slice(0, 4);
 };
 
