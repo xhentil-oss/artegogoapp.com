@@ -3,21 +3,27 @@ import { execSync } from "node:child_process";
 /**
  * LIRON PORTËN E SERVERIT TË ZHVILLIMIT
  *
- * `vite.config.js` mban `strictPort: true` me qëllim: pa të, Vite kalon në
- * heshtje te 5174 kur 5173 është e zënë, dhe ti mbetesh duke shikuar një tab
- * të shërbyer nga një server i vjetër që nuk ndjek më skedarët.
+ * Problemi që zgjidh: një `npm run dev` i harruar — zakonisht në një terminal
+ * të VS Code-it të hapur ditë më parë — e mban portën, dhe nisja e re dështon
+ * me "Port 5173 is already in use". Dritarja nuk gjendet dot lehtë, sepse
+ * terminalet e integruara nuk shfaqen si dritare më vete.
  *
- * Pasoja është se një server i harruar — shpesh në një terminal të VS Code-it
- * të hapur ditë më parë — bllokon nisjen e një të riu. Ky skript e gjen dhe e
- * mbyll, pa u dashur të kërkosh dritaren.
+ * ⚠️  MBYLL VETËM SERVERIN E KËTIJ PROJEKTI.
+ *     Nëse portën e mban diçka tjetër — një projekt i dytë, një shërbim i
+ *     sistemit — skripti e raporton dhe NDALON. Mbyllja e verbër e asaj që
+ *     gjendet te një portë është mënyra më e shpejtë për të vrarë punën e
+ *     dikujt tjetër.
  *
  * Përdorimi:
- *   node scripts/free-port.mjs 5173           mbyll çfarë e mban portën
+ *   node scripts/free-port.mjs 5173           mbyll serverin e këtij projekti
  *   node scripts/free-port.mjs 5173 --check   vetëm trego, pa mbyllur
  */
 
 const port = Number(process.argv[2] ?? 5173);
 const checkOnly = process.argv.includes("--check");
+
+/** Rrënja e projektit — çdo shteg brenda saj njihet si i yni. */
+const projectRoot = process.cwd().toLowerCase();
 
 /** PID-et që dëgjojnë në këtë portë. */
 function listeners() {
@@ -27,8 +33,7 @@ function listeners() {
      *
      * Ai flamur i kufizon rezultatet vetëm te IPv4, ndërsa Vite lidhet te
      * `[::1]:5173` — pra porta dukej e lirë ndërsa serveri punonte. Pa flamur,
-     * `netstat -ano` i nxjerr të dyja familjet; rreshtat IPv6 kanë të njëjtin
-     * protokoll "TCP", vetëm adresën në kllapa.
+     * `netstat -ano` i nxjerr të dyja familjet e adresave.
      */
     const out = execSync("netstat -ano", { encoding: "utf8" });
     const pids = new Set();
@@ -47,6 +52,18 @@ function listeners() {
   }
 }
 
+/** Rreshti i plotë i komandës — nga aty njihet projekti. */
+function commandLine(pid) {
+  try {
+    return execSync(
+      `powershell -NoProfile -Command "(Get-CimInstance Win32_Process -Filter 'ProcessId=${pid}').CommandLine"`,
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
+    ).trim();
+  } catch {
+    return "";
+  }
+}
+
 const found = listeners();
 
 if (found.length === 0) {
@@ -54,30 +71,41 @@ if (found.length === 0) {
   process.exit(0);
 }
 
-/** Emri i procesit, sa për ta njohur para se ta mbyllim. */
-const nameOf = (pid) => {
-  try {
-    const out = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, { encoding: "utf8" });
-    return out.split(",")[0]?.replaceAll('"', "").trim() || "i panjohur";
-  } catch {
-    return "i panjohur";
-  }
-};
+const holders = found.map((pid) => {
+  const cmd = commandLine(pid);
+  return {
+    pid,
+    cmd,
+    /* I yni nëse është vite dhe nis nga kjo dosje. */
+    mine: cmd.toLowerCase().includes("vite") && cmd.toLowerCase().includes(projectRoot),
+  };
+});
 
-console.log(`Porta ${port} mbahet nga: ${found.map((p) => `${nameOf(p)} (PID ${p})`).join(", ")}`);
+for (const h of holders) {
+  const who = h.mine ? "serveri i këtij projekti" : "proces TJETËR";
+  console.log(`Porta ${port} → PID ${h.pid} · ${who}`);
+  if (!h.mine && h.cmd) console.log(`   ${h.cmd.slice(0, 100)}`);
+}
 
-if (checkOnly) {
-  console.log("Për ta liruar:  npm run dev:force");
+const foreign = holders.filter((h) => !h.mine);
+if (foreign.length > 0) {
+  console.log(`\n✗ Nuk e liroj: portën e mban diçka jashtë këtij projekti.`);
+  console.log(`  Mbylle vetë, ose ndrysho portën te vite.config.js.`);
   process.exit(1);
 }
 
-for (const pid of found) {
+if (checkOnly) {
+  console.log("\nPër ta liruar:  npm run dev");
+  process.exit(1);
+}
+
+for (const h of holders) {
   try {
     /* `/T` mbyll edhe fëmijët: `npm run dev` nis cmd, që nis vite. */
-    execSync(`taskkill /PID ${pid} /T /F`, { stdio: "ignore" });
-    console.log(`✓ U mbyll PID ${pid}`);
+    execSync(`taskkill /PID ${h.pid} /T /F`, { stdio: "ignore" });
+    console.log(`✓ U mbyll serveri i vjetër (PID ${h.pid})`);
   } catch {
-    console.log(`✗ PID ${pid} nuk u mbyll — mbylle me dorë ose nis terminalin si Administrator.`);
+    console.log(`✗ PID ${h.pid} nuk u mbyll — provo terminalin si Administrator.`);
   }
 }
 
@@ -85,5 +113,3 @@ if (listeners().length > 0) {
   console.log(`✗ Porta ${port} është ende e zënë.`);
   process.exit(1);
 }
-
-console.log(`✓ Porta ${port} u lirua.`);

@@ -1,26 +1,36 @@
 import { useState } from "react";
-import { List, Lock, Play, Search } from "lucide-react";
+import { ChevronRight, Lock, Play, Search } from "lucide-react";
 import { T, fonts, layout, radii } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { tile, rayTexture } from "../../theme/gradients.js";
 import { CARD_WIDTH } from "../../theme/responsive.js";
 import { ALL_AREAS } from "../../data/lifeAreas.js";
 import { intentMeta } from "../../domain/intent.js";
-import {
-  blocksForProgram,
-  listLifeAreas,
-  programsByLifeArea,
-} from "../../services/contentRepository.js";
+import { listLifeAreas, programsByLifeArea } from "../../services/contentRepository.js";
+import { useJourney } from "../../store/JourneyContext.jsx";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { Row, RowItem } from "../../components/ui/Row.jsx";
 import { SectionHead } from "../../components/ui/SectionHead.jsx";
 import { PillButton } from "../../components/ui/Controls.jsx";
-import { DurationTag, ASPECT } from "../../components/cards/ShowcaseCards.jsx";
+import { DurationTag } from "../../components/cards/ShowcaseCards.jsx";
+import { JourneyMap } from "./JourneyMap.jsx";
 
-/** Skeda "Programe": kërkim sipas fushës së jetës, trend, dhe në vazhdim. */
+const VIEWS = { PROGRAMS: "programs", JOURNEY: "journey" };
+
+/**
+ * Skeda "Programe" (seksioni 6.5) me dy nën-tabe.
+ *
+ * "Progresioni Ditor" shfaqet VETËM kur është nisur një program — një skedë
+ * bosh që të fton askund do të ishte zhgënjim; kur nuk ka rrugëtim, ajo nuk
+ * ekziston fare.
+ */
 export function ProgramsScreen() {
+  const [view, setView] = useState(VIEWS.PROGRAMS);
   const [area, setArea] = useState(ALL_AREAS);
+  const { activeProgram } = useJourney();
+
   const programs = programsByLifeArea(area);
+  const showJourney = Boolean(activeProgram) && view === VIEWS.JOURNEY;
 
   return (
     <div style={sx.screen}>
@@ -35,33 +45,66 @@ export function ProgramsScreen() {
       >
         Programe
       </h1>
-      <p style={{ fontSize: 15, color: T.sub, margin: `0 ${layout.gutter}px 6px` }}>
+      <p style={{ fontSize: 15, color: T.sub, margin: `0 ${layout.gutter}px 12px` }}>
         Udhëtime të strukturuara meditimi
       </p>
 
+      {activeProgram && (
+        <div
+          className="ag-scroll-x"
+          style={{ display: "flex", gap: 8, padding: `0 ${layout.gutter}px 6px`, overflowX: "auto" }}
+        >
+          <PillButton active={view === VIEWS.PROGRAMS} onClick={() => setView(VIEWS.PROGRAMS)}>
+            Programe
+          </PillButton>
+          <PillButton active={view === VIEWS.JOURNEY} onClick={() => setView(VIEWS.JOURNEY)}>
+            Progresioni Ditor
+          </PillButton>
+        </div>
+      )}
+
+      {showJourney ? (
+        <JourneyMap onChangeProgram={() => setView(VIEWS.PROGRAMS)} />
+      ) : (
+        <ProgramsList programs={programs} area={area} onArea={setArea} onStarted={() => setView(VIEWS.JOURNEY)} />
+      )}
+    </div>
+  );
+}
+
+function ProgramsList({ programs, area, onArea, onStarted }) {
+  const { hasStarted } = useJourney();
+  const started = programs.filter((p) => hasStarted(p.id));
+
+  return (
+    <>
       <SectionHead title="Kërko sipas" accent="kategorive" />
-      <AreaFilter value={area} onChange={setArea} />
+      <AreaFilter value={area} onChange={onArea} />
 
       {programs.length === 0 ? (
         <EmptyState />
       ) : (
         <>
-          <SectionHead title="Në trend" hint={`${programs.length}`} />
-          <Row>
-            {programs.map((program, i) => (
-              <TrendingCard key={program.id} program={program} rank={i + 1} />
-            ))}
-          </Row>
+          {started.length > 0 && (
+            <>
+              <SectionHead title="Vazhdo" accent="programet" hint={`${started.length}`} />
+              <Row>
+                {started.map((program) => (
+                  <ContinueCard key={program.id} program={program} onStarted={onStarted} />
+                ))}
+              </Row>
+            </>
+          )}
 
-          <SectionHead title="Vazhdo programin" />
-          <div style={{ padding: `0 ${layout.gutter}px`, display: "flex", flexDirection: "column", gap: 16 }}>
-            {programs.slice(0, 2).map((program) => (
-              <ContinueCard key={program.id} program={program} />
+          <SectionHead title="Të gjitha" accent="programet" hint={`${programs.length}`} />
+          <div style={{ padding: `0 ${layout.gutter}px`, display: "flex", flexDirection: "column", gap: 10 }}>
+            {programs.map((program) => (
+              <ProgramRow key={program.id} program={program} onStarted={onStarted} />
             ))}
           </div>
         </>
       )}
-    </div>
+    </>
   );
 }
 
@@ -97,33 +140,46 @@ function EmptyState() {
   );
 }
 
-/** Kartelë trendi — e gjitha e klikueshme, kapak dhe tekst bashkë. */
-function TrendingCard({ program, rank }) {
-  const { isPremium, playItems, openUpsell } = usePlayback();
+/**
+ * Kartelë e gjerë e programit në vazhdim — kapak, kohë, titull, play, progres.
+ *
+ * Gjerësia `hero` (92% e enës) e lë buzën e kartelës tjetër të dukshme: pa të,
+ * asgjë nuk tregon se rreshti rrëshqet.
+ */
+function ContinueCard({ program, onStarted }) {
+  const { isPremium, openUpsell } = usePlayback();
+  const { startProgram, progressFor } = useJourney();
   const meta = intentMeta(program.intent);
+  const progress = progressFor(program.id) ?? { done: 0, total: program.lessons, percent: 0 };
 
-  const start = () => (isPremium ? playItems(blocksForProgram(program)) : openUpsell());
+  const open = () => {
+    if (!isPremium) return openUpsell();
+    startProgram(program.id);
+    onStarted();
+  };
 
   return (
-    <RowItem width={CARD_WIDTH.trending}>
-      <button onClick={start} className="ag-card" style={{ ...sx.cardButton, textAlign: "left" }}>
-        <div
-          style={{
-            width: "100%",
-            aspectRatio: ASPECT.trending,
-            borderRadius: radii.lg,
-            background: tile(meta.g),
-            position: "relative",
-            ...sx.center,
-            overflow: "hidden",
-          }}
-        >
+    <RowItem width={CARD_WIDTH.hero}>
+      <button
+        onClick={open}
+        className="ag-card"
+        style={{
+          ...sx.cardButton,
+          borderRadius: 20,
+          overflow: "hidden",
+          border: `1px solid ${T.line}`,
+          textAlign: "left",
+          width: "100%",
+        }}
+      >
+        <div style={{ height: 150, background: tile(meta.g), position: "relative", ...sx.center }}>
           <div style={{ ...sx.absoluteFill, background: rayTexture }} />
+          <DurationTag minutes={program.lessons * 4} />
           <span
             style={{
               color: "#fff",
               fontFamily: fonts.display,
-              fontSize: 21,
+              fontSize: 23,
               fontWeight: 700,
               letterSpacing: 0.5,
               position: "relative",
@@ -135,74 +191,108 @@ function TrendingCard({ program, rank }) {
           </span>
         </div>
 
-        <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "baseline" }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: T.faint, flexShrink: 0 }}>{rank}</span>
-          <div style={sx.flexText}>
-            {/* emri i programit — serif */}
-            <div style={{ fontFamily: fonts.display, fontSize: 17, fontWeight: 700, color: T.ink }}>
-              {program.title}
+        <div style={{ padding: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={sx.flexText}>
+              <div style={{ fontFamily: fonts.display, fontSize: 17, fontWeight: 700, color: T.ink }}>
+                {program.title}
+              </div>
+              <div style={{ fontSize: 12.5, color: T.sub, marginTop: 2 }}>
+                {progress.done} nga {progress.total} të përfunduara
+              </div>
             </div>
-            <div style={{ fontSize: 12.5, color: T.sub }}>{program.sub}</div>
+            <div style={circle(42, T.ink)}>
+              {isPremium ? (
+                <Play size={17} color="#fff" style={{ marginLeft: 2 }} />
+              ) : (
+                <Lock size={16} color="#fff" />
+              )}
+            </div>
           </div>
+
+          <ProgressBar percent={progress.percent} color={meta.g[1]} />
         </div>
       </button>
     </RowItem>
   );
 }
 
-/** Kartelë e programit në vazhdim — e gjitha e klikueshme. */
-function ContinueCard({ program }) {
-  const { isPremium, playItems, openUpsell } = usePlayback();
+/** Rresht i listës "Të gjitha programet". */
+function ProgramRow({ program, onStarted }) {
+  const { isPremium, openUpsell } = usePlayback();
+  const { startProgram, progressFor, hasStarted } = useJourney();
   const meta = intentMeta(program.intent);
+  const progress = progressFor(program.id);
+  const started = hasStarted(program.id);
 
-  const start = () => (isPremium ? playItems(blocksForProgram(program)) : openUpsell());
+  const open = () => {
+    if (!isPremium) return openUpsell();
+    startProgram(program.id);
+    onStarted();
+  };
 
   return (
     <button
-      onClick={start}
+      onClick={open}
       className="ag-card"
       style={{
         ...sx.cardButton,
-        borderRadius: 20,
-        overflow: "hidden",
-        border: `1px solid ${T.line}`,
+        ...sx.card,
+        display: "flex",
+        alignItems: "center",
+        gap: 13,
+        padding: 12,
         textAlign: "left",
       }}
     >
-      <div style={{ height: 180, background: tile(meta.g), position: "relative", ...sx.center }}>
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: radii.md,
+          background: tile(meta.g),
+          flexShrink: 0,
+          ...sx.center,
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
         <div style={{ ...sx.absoluteFill, background: rayTexture }} />
-        <DurationTag minutes={program.lessons * 4} />
-        <span
-          style={{
-            color: "#fff",
-            fontFamily: fonts.display,
-            fontSize: 25,
-            fontWeight: 700,
-            letterSpacing: 0.5,
-            position: "relative",
-          }}
-        >
-          {program.title}
-        </span>
       </div>
 
-      <div style={{ padding: 16, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div style={sx.flexText}>
-          {/* emri i programit — serif */}
-          <div style={{ fontFamily: fonts.display, fontSize: 18, fontWeight: 700, color: T.ink }}>
-            {program.title}
-          </div>
-          <div style={{ fontSize: 12.5, color: T.sub, marginTop: 2 }}>
-            0 nga {program.lessons} të përfunduara
-          </div>
+      <div style={sx.flexText}>
+        <div style={{ fontFamily: fonts.display, fontSize: 16, fontWeight: 700, color: T.ink, ...sx.truncate }}>
+          {program.title}
         </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <div style={circle(44, T.ink)}>
-            {isPremium ? <Play size={17} color="#fff" style={{ marginLeft: 2 }} /> : <Lock size={16} color="#fff" />}
-          </div>
-          <List size={22} color={T.sub} />
-        </div>
+        <div style={{ fontSize: 12.5, color: T.sub, marginTop: 2 }}>{program.sub}</div>
+        {started && progress && <ProgressBar percent={progress.percent} color={meta.g[1]} compact />}
       </div>
+
+      <ChevronRight size={18} color={T.faint} style={{ flexShrink: 0 }} />
     </button>
+  );
+}
+
+function ProgressBar({ percent, color, compact = false }) {
+  return (
+    <div
+      style={{
+        height: compact ? 4 : 6,
+        borderRadius: 3,
+        background: T.line,
+        marginTop: compact ? 7 : 12,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          width: `${percent}%`,
+          height: "100%",
+          borderRadius: 3,
+          background: color,
+          transition: "width .5s ease",
+        }}
+      />
+    </div>
   );
 }

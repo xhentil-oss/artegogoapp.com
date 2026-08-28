@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 import { TABS } from "../config/navigation.js";
 import { useNavigation } from "./NavigationContext.jsx";
 import { useProgress } from "./ProgressContext.jsx";
+import { useJourney } from "./JourneyContext.jsx";
 
 /**
  * Cikli i luajtjes: sekuenca aktive, mini-player-i, ekrani i përmbylljes.
@@ -23,14 +24,23 @@ export function PlayerProvider({ children }) {
   const [source, setSource] = useState("catalog");
   const [completedSource, setCompletedSource] = useState("catalog");
 
+  /**
+   * Ndalesa e rrugëtimit që po luhet, nëse seanca nisi nga një program:
+   * `{ programId, day }`. Pa këtë, përfundimi nuk do ta dinte cilën ditë të
+   * shënojë, dhe rrugëtimi nuk do të përparonte kurrë.
+   */
+  const [stop, setStop] = useState(null);
+
   const { goToTab } = useNavigation();
   const { recordSession, tagLastSession } = useProgress();
+  const { completeDay } = useJourney();
 
   /** Nis një sekuencë të re (e vesh me uid `domain/sequence`). */
-  const play = useCallback((sequence, from = "catalog") => {
+  const play = useCallback((sequence, from = "catalog", journeyStop = null) => {
     if (!sequence?.length) return;
     setMinimized(null);
     setSource(from);
+    setStop(journeyStop);
     setActive(sequence);
   }, []);
 
@@ -58,11 +68,16 @@ export function PlayerProvider({ children }) {
         recordSession(current);
         setCompleted(current);
         setCompletedSource(source);
+        /* Ndalesa e rrugëtimit shënohet KËTU, jo te ekrani i përmbylljes:
+           përdoruesi mund ta mbyllë atë ekran, dhe dita duhet të mbetet e
+           kryer gjithsesi. */
+        if (stop) completeDay(stop.programId, stop.day);
       }
       setMinimized(null);
+      setStop(null);
       return null;
     });
-  }, [recordSession, source]);
+  }, [recordSession, source, stop, completeDay]);
 
   /**
    * Mbyll përmbylljen, duke ruajtur etiketën emocionale nëse u zgjodh.

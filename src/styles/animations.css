@@ -179,6 +179,11 @@
   animation: medalShine 2.6s ease-in-out infinite;
 }
 
+/** Ndalesa e tanishme e rrugëtimit — pulson, siç e kërkon specifikimi. */
+.ag-pulse {
+  animation: breathe 2.2s ease-in-out infinite;
+}
+
 /** Vend-mbajtës gjatë ngarkimit. */
 .ag-skel {
   background: linear-gradient(

@@ -40,4 +40,23 @@ export default [
       eqeqeq: ["warn", "smart"],
     },
   },
+
+  /*
+   * Mjetet e zhvillimit rrjedhin në Node, jo në shfletues.
+   *
+   * Pa këtë bllok, `npm run lint` i shënonte `process` dhe `console` si të
+   * papërcaktuara te `scripts/` — 14 gabime për kod krejtësisht të saktë.
+   * Aty `console.log` është vetë qëllimi, ndaj rregulli hiqet.
+   */
+  {
+    files: ["scripts/**/*.{js,mjs}", "*.config.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: { ...globals.node },
+    },
+    rules: {
+      "no-console": "off",
+    },
+  },
 ];

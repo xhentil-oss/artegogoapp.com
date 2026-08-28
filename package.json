@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:force": "node scripts/free-port.mjs 5173 && vite",
+    "dev": "node scripts/free-port.mjs 5173 && vite",
+    "dev:plain": "vite",
     "port": "node scripts/free-port.mjs 5173 --check",
     "build": "vite build",
     "preview": "vite preview",

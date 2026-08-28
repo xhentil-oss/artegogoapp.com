@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { storage, STORAGE_KEYS } from "../services/storage.js";
 import * as auth from "../services/auth.js";
+import * as billing from "../services/billing.js";
 import { defaultReminders } from "../data/reminders.js";
 import { describeSubscription, effectiveNow, startSubscription } from "../domain/subscription.js";
 
@@ -153,11 +154,37 @@ export function SessionProvider({ children }) {
 
   /* ---------- abonimi ---------- */
 
-  /** Nis provën falas me planin e zgjedhur. */
+  /**
+   * Nis provën falas me planin e zgjedhur.
+   *
+   * Kalon nga `services/billing`, jo drejt te ruajtja. Në prototip ajo pikë
+   * thjesht e pranon blerjen, por rendi ka rëndësi: kur të vijë StoreKit ose
+   * Play Billing, abonimi do të shkruhet VETËM pasi dyqani të ketë konfirmuar.
+   * Po të shkruante ekrani vetë, aplikacioni do ta hapte premium-in edhe kur
+   * pagesa dështon.
+   */
   const subscribe = useCallback(
-    (planId = "year") => persistSubscription(startSubscription(planId)),
+    async (planId = "year") => {
+      const result = await billing.purchase(planId);
+      if (!result.ok) return result;
+
+      persistSubscription(startSubscription(planId));
+      return result;
+    },
     [persistSubscription]
   );
+
+  /**
+   * Rikthen një abonim ekzistues.
+   *
+   * Apple e kërkon si veprim më vete në çdo paywall: një përdorues që ndërron
+   * telefon duhet ta rifitojë aksesin pa paguar dy herë.
+   */
+  const restorePurchases = useCallback(async () => {
+    const result = await billing.restore();
+    if (result.ok && result.planId) persistSubscription(startSubscription(result.planId));
+    return result;
+  }, [persistSubscription]);
 
   /**
    * Anulon rinovimin — aksesi vazhdon deri në fund të periudhës.
@@ -238,6 +265,7 @@ export function SessionProvider({ children }) {
       isPremium: status.isPremium,
 
       subscribe,
+      restorePurchases,
       cancelSubscription,
       resumeSubscription,
       shiftDemoClock,
@@ -260,6 +288,7 @@ export function SessionProvider({ children }) {
       subscription,
       status,
       subscribe,
+      restorePurchases,
       cancelSubscription,
       resumeSubscription,
       shiftDemoClock,

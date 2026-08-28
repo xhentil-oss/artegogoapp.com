@@ -87,4 +87,6 @@ export const STORAGE_KEYS = {
   account: "account",
   /** Kërkimet e fundit të përdoruesit. */
   recentSearches: "recent-searches",
+  /** Rrugëtimi aktiv dhe ditët e kryera për çdo program. */
+  journey: "journey",
 };

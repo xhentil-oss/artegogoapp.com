@@ -12,7 +12,13 @@ export default defineConfig({
      * Pa të, kur porta 5173 është e zënë Vite kalon në heshtje te 5174, 5175…
      * Ti mbetesh me tab-in e vjetër te 5173 — të shërbyer nga një server i
      * mëparshëm që nuk ndjek më skedarët — dhe ndryshimet nuk shfaqen kurrë.
-     * Me `strictPort`, serveri ndalon me gabim të qartë: "Port 5173 is in use".
+     *
+     * Bashkë me të, `npm run dev` e liron vetë portën para se të nisë
+     * (`scripts/free-port.mjs`). Të dyja së bashku japin garancinë që duhet:
+     * GJITHMONË një server i vetëm, GJITHMONË te 5173, ndaj tab-i i hapur te
+     * ajo adresë flet gjithmonë me serverin e tanishëm.
+     *
+     * `npm run dev:plain` e nis pa e liruar — kur do ta shohësh vetë gabimin.
      */
     strictPort: true,
 

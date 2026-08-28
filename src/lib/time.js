@@ -23,6 +23,24 @@ export function dayPart(date = new Date()) {
 /** Çelës i stabilizuar për një ditë: "2026-08-24". */
 export const dayKey = (date = new Date()) => date.toISOString().slice(0, 10);
 
+/**
+ * Dita sipas orës LOKALE të pajisjes: "2026-08-24".
+ *
+ * Ndryshe nga `dayKey`, që mat në UTC. Për rrugëtimin e programeve rregulli
+ * është "një ndalesë në ditë", dhe ajo ditë duhet të jetë e njëjta që sheh
+ * përdoruesi te kalendari: në Tiranë (UTC+2) një meditim në orën 01:00 bie
+ * ende në ditën e djeshme sipas UTC-së, dhe do të lejonte dy ndalesa brenda
+ * së njëjtës ditë.
+ *
+ * ⚠️  Zakonet, gjendja dhe streak-u përdorin ende `dayKey` (UTC). Kanë të
+ *     njëjtën dobësi dhe duhet të kalojnë këtu — por jo në të njëjtin
+ *     ndryshim, sepse do të zhvendoste kuptimin e të dhënave të ruajtura.
+ */
+export const localDayKey = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate()
+  ).padStart(2, "0")}`;
+
 /** Çelës i stabilizuar për një muaj: "2026-08". */
 export const monthKey = (date = new Date()) => date.toISOString().slice(0, 7);
 

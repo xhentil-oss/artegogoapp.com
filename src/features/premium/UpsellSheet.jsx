@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Crown, Unlock, Bell, CreditCard } from "lucide-react";
+import { AlertCircle, Bell, Check, CreditCard, Crown, Unlock } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
@@ -24,13 +24,40 @@ const STEP_ICONS = { start: Unlock, remind: Bell, bill: CreditCard };
  */
 export function UpsellSheet() {
   const [plan, setPlan] = useState("year");
+  const [busy, setBusy] = useState(null);
+  const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
-  const { subscribe } = useSession();
+  const { subscribe, restorePurchases } = useSession();
   useBodyScrollLock();
 
-  const confirm = () => {
-    subscribe(plan);
-    closeUpsell();
+  /*
+   * Fletja mbyllet VETËM pasi blerja konfirmohet.
+   *
+   * Më parë mbyllej menjëherë, sepse abonimi shkruhej drejt në ruajtje. Me
+   * dyqanin e vërtetë, midis shtypjes dhe konfirmimit ka pritje — dhe një
+   * pagesë e refuzuar duhet të lërë përdoruesin këtu, me arsyen përpara syve,
+   * jo ta nxjerrë jashtë sikur gjithçka shkoi mirë.
+   */
+  const confirm = async () => {
+    if (busy) return;
+    setBusy("buy");
+    setNotice(null);
+    const result = await subscribe(plan);
+    setBusy(null);
+
+    if (result?.ok) closeUpsell();
+    else setNotice(result?.error ?? "Blerja nuk përfundoi. Provo sërish.");
+  };
+
+  const restore = async () => {
+    if (busy) return;
+    setBusy("restore");
+    setNotice(null);
+    const result = await restorePurchases();
+    setBusy(null);
+
+    if (result?.ok) closeUpsell();
+    else setNotice(result?.reason ?? "Nuk u gjet asnjë abonim për këtë llogari.");
   };
 
   return (
@@ -85,8 +112,31 @@ export function UpsellSheet() {
           ))}
         </div>
 
-        <button onClick={confirm} style={{ ...goldButton, padding: 15, fontSize: 15 }}>
-          Fillo provën {TRIAL_DAYS}-ditore falas
+        {notice && (
+          <div
+            role="alert"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              background: "rgba(255,90,110,0.10)",
+              border: `1px solid ${T.live}55`,
+              borderRadius: radii.md,
+              padding: "10px 12px",
+              marginBottom: 12,
+            }}
+          >
+            <AlertCircle size={15} color={T.live} style={{ flexShrink: 0 }} />
+            <span style={{ color: T.ink, fontSize: 12.5, lineHeight: 1.45 }}>{notice}</span>
+          </div>
+        )}
+
+        <button
+          onClick={confirm}
+          disabled={Boolean(busy)}
+          style={{ ...goldButton, padding: 15, fontSize: 15, opacity: busy ? 0.6 : 1 }}
+        >
+          {busy === "buy" ? "Duke u lidhur me dyqanin…" : `Fillo provën ${TRIAL_DAYS}-ditore falas`}
         </button>
 
         {/* Kërkesë e Apple-it dhe e Google-it: kushtet duhen thënë pranë butonit,
@@ -96,9 +146,19 @@ export function UpsellSheet() {
           Pa anulim, abonimi rinovohet vetvetiu.
         </p>
 
+        {/* Apple e kërkon si veprim më vete: kush ndërron telefon duhet ta
+            rifitojë aksesin pa paguar dy herë. */}
+        <button
+          onClick={restore}
+          disabled={Boolean(busy)}
+          style={{ ...sx.bareButton, color: T.sub, width: "100%", marginTop: 14, fontSize: 13.5, fontWeight: 600 }}
+        >
+          {busy === "restore" ? "Duke kërkuar…" : "Rikthe një blerje të mëparshme"}
+        </button>
+
         <button
           onClick={closeUpsell}
-          style={{ ...sx.bareButton, color: T.sub, width: "100%", marginTop: 14, fontSize: 14 }}
+          style={{ ...sx.bareButton, color: T.faint, width: "100%", marginTop: 10, fontSize: 14 }}
         >
           Ndoshta më vonë
         </button>
