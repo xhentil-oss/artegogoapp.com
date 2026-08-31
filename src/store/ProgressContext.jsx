@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useMemo } from "react";
-import { HABITS, SEED_HISTORY } from "../data/tracking.js";
+import { HABITS } from "../data/tracking.js";
 import { STORAGE_KEYS } from "../services/storage.js";
 import { usePersistentMap } from "../hooks/usePersistentMap.js";
 import { dayKey } from "../lib/time.js";
 import { totalMinutes } from "../domain/sequence.js";
 import { bestStreak, currentStreak, medalCounts } from "../domain/medals.js";
+import { isDatabaseId } from "../lib/ids.js";
+import { countOn, dayNumber, fullDays, isRhythmKey, rhythmKey, stepsOn } from "../domain/rhythm.js";
 
 /**
  * Progresi i përdoruesit: historiku i seancave, zakonet, gjendja emocionale.
@@ -14,6 +16,8 @@ import { bestStreak, currentStreak, medalCounts } from "../domain/medals.js";
  */
 const ProgressContext = createContext(null);
 
+
+
 export function ProgressProvider({ children }) {
   const habits = usePersistentMap(STORAGE_KEYS.habits);
   const moods = usePersistentMap(STORAGE_KEYS.moods);
@@ -21,20 +25,37 @@ export function ProgressProvider({ children }) {
 
   const today = dayKey();
 
-  /** Historiku = demo-ja fillestare + seancat e ruajtura, sipas radhës. */
-  const history = useMemo(() => {
-    const stored = Object.values(sessions.data).flat();
-    return [...SEED_HISTORY, ...stored];
-  }, [sessions.data]);
+  /**
+   * Historiku — VETËM seancat e vërteta.
+   *
+   * ⚠️  `SEED_HISTORY` u hoq nga kjo rrugë. Sa kohë historiku ishte lokal, ajo
+   *     shërbente që grafiku të mos dukej bosh gjatë demonstrimeve. Tani
+   *     seancat vijnë nga databaza, dhe një llogari e sapokrijuar tregonte
+   *     "130 minuta · 6 seanca" — numra të shpikur, të padallueshëm nga ata të
+   *     vërtetët, te i njëjti ekran ku përdoruesi mat përparimin e vet.
+   *
+   *     Për demonstrim ekziston `seedStreakDemo` te paneli i admin-it, që
+   *     shkruan seanca të vërteta dhe shihet qartë se janë vendosur me dorë.
+   */
+  const history = useMemo(() => Object.values(sessions.data).flat(), [sessions.data]);
 
-  /** Regjistron një seancë të përfunduar. */
+  /**
+   * Regjistron një seancë të përfunduar.
+   *
+   * `meditationId` dërgohet vetëm kur është një id e databazës: mini-blloqet
+   * lokale (`b1`, `b2`…) nuk ekzistojnë atje, dhe çelësi i huaj do ta refuzonte
+   * gjithë seancën — pra do të humbiste edhe minutat, edhe streak-u.
+   */
   const recordSession = useCallback(
     (sequence) => {
       if (!sequence?.length) return;
+      const first = sequence[0];
       const entry = {
         date: "Sot",
         min: totalMinutes(sequence),
-        intent: sequence[0]?.intent ?? "calm",
+        intent: first?.intent ?? "calm",
+        meditationId: isDatabaseId(first?.id) ? first.id : null,
+        title: first?.title ?? null,
       };
       sessions.update((prev) => ({ ...prev, [today]: [...(prev[today] ?? []), entry] }));
     },
@@ -80,10 +101,39 @@ export function ProgressProvider({ children }) {
     [moods, today]
   );
 
-  /** Numri i zakoneve të plotësuara në një ditë të dhënë. */
+  /**
+   * Numri i zakoneve të plotësuara në një ditë të dhënë.
+   *
+   * ⚠️  Hapat e ritmit ditor përjashtohen. Ata ruhen te i njëjti çelës — shih
+   *     `domain/rhythm.js` — dhe pa këtë filtër një ditë me tre hapa ritmi do
+   *     të tregonte "3 nga 6 zakone" pa u prekur asnjë zakon.
+   */
   const habitScore = useCallback(
-    (key) => Object.values(habits.data[key] ?? {}).filter(Boolean).length,
+    (key) =>
+      Object.entries(habits.data[key] ?? {}).filter(([id, value]) => value && !isRhythmKey(id)).length,
     [habits.data]
+  );
+
+  /**
+   * RITMI DITOR (tre hapat te profili).
+   *
+   * Më parë përparimi rrinte te `useState` brenda komponentit: zhdukej sa herë
+   * ndërrohej skeda, dhe "dita 1" ishte e shkruar fiks. Tani shkruhet te
+   * `habits`, pra shkon te databaza dhe kthehet edhe te një pajisje tjetër.
+   */
+  const rhythmToday = useMemo(() => stepsOn(habits.data, today), [habits.data, today]);
+
+  const completeRhythmStep = useCallback(
+    (stepId) => {
+      const key = rhythmKey(stepId);
+      /* I kryer nuk rishkruhet: shtypja e dytë nuk duhet ta prishë ditën. */
+      if (habits.data[today]?.[key]) return;
+      habits.update((prev) => ({
+        ...prev,
+        [today]: { ...(prev[today] ?? {}), [key]: true },
+      }));
+    },
+    [habits, today]
   );
 
   /**
@@ -141,6 +191,13 @@ export function ProgressProvider({ children }) {
 
       habits: habits.data,
       habitsToday: habits.data[today] ?? {},
+
+      /* ritmi ditor */
+      rhythmToday,
+      rhythmCount: countOn(habits.data, today),
+      rhythmDay: dayNumber(habits.data, today),
+      rhythmAchievements: fullDays(habits.data).length,
+      completeRhythmStep,
       habitCount: HABITS.length,
       habitScore,
       toggleHabit,
@@ -153,6 +210,7 @@ export function ProgressProvider({ children }) {
       history, recordSession, tagLastSession,
       meditationDays, streak, record, medals, seedStreakDemo, clearHistoryDemo,
       habits.data, today, habitScore, toggleHabit, moods.data, setMood,
+      rhythmToday, completeRhythmStep,
     ]
   );
 

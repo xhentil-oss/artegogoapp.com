@@ -59,4 +59,29 @@ export default [
       "no-console": "off",
     },
   },
+
+  /*
+   * API-ja është Node dhe CommonJS.
+   *
+   * `sourceType: "commonjs"` është pjesa thelbësore: pa të, `require` dhe
+   * `module` dalin "të papërcaktuara" te çdo skedar i `api/` — 52 gabime për
+   * kod që rrjedh saktë te serveri. CommonJS-i aty është zgjedhje e
+   * qëllimshme, jo mbetje: Passenger-i i cPanel-it e mbështet pa konfigurim
+   * shtesë, ndërsa `type: module` kërkon rregullime sipas hostit.
+   *
+   * `console` mbetet i lejuar: te serveri log-u është i vetmi mjet
+   * diagnostikimi, dhe `stderr.log` ishte pikërisht ai që zbuloi hapësirat te
+   * variablat e mjedisit gjatë vendosjes.
+   */
+  {
+    files: ["api/**/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "commonjs",
+      globals: { ...globals.node },
+    },
+    rules: {
+      "no-console": "off",
+    },
+  },
 ];

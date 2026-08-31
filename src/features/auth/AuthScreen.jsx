@@ -192,8 +192,17 @@ export function AuthScreen() {
         </button>
       </div>
 
+      {/*
+        Ky shënim ndryshoi kur hyrja u lidh me serverin.
+
+        ⚠️  Më parë thoshte "fjalëkalimi nuk ruhet dhe nuk verifikohet" — e
+            vërtetë sa kohë prototipi e pranonte këdo. Tani `/auth/login` e
+            krahason me `users.password_hash` (bcrypt), ndaj ai tekst do të
+            ishte gënjeshtër pikërisht te ekrani ku përdoruesi vendos nëse t'i
+            besojë aplikacionit fjalëkalimin e vet.
+      */}
       <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, textAlign: "center", margin: 0, lineHeight: 1.55 }}>
-        Prototip: fjalëkalimi nuk ruhet dhe nuk verifikohet — kjo bëhet te serveri.
+        Fjalëkalimi verifikohet te serveri dhe ruhet i hash-uar — kurrë si tekst.
       </p>
     </div>
   );

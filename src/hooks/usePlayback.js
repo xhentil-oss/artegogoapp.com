@@ -32,16 +32,22 @@ export function usePlayback() {
     [isPremium]
   );
 
-  /** Luaj një bllok ose listë blloqesh; kyçjen e trajton vetë. */
+  /**
+   * Luaj një bllok ose listë blloqesh; kyçjen e trajton vetë.
+   *
+   * `onFinish` përcillet te player-i dhe shënohet vetëm KUR dëgjimi mbaron —
+   * p.sh. `{ ritualStep: "morning" }`. Shënimi në çastin e shtypjes do të
+   * numëronte një hap që përdoruesi nuk e bëri.
+   */
   const playItems = useCallback(
-    (blockOrList) => {
+    (blockOrList, onFinish = null) => {
       const list = Array.isArray(blockOrList) ? blockOrList : [blockOrList];
       if (list.length === 0) return;
       if (list.some(isLocked)) {
         openUpsell();
         return;
       }
-      play(toSequence(list));
+      play(toSequence(list), "catalog", onFinish);
     },
     [isLocked, openUpsell, play]
   );

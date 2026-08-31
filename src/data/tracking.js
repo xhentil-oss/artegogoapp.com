@@ -36,7 +36,13 @@ export const PERIODS = [
   { id: "year",  label: "Vjetore", months: 12 },
 ];
 
-/** Historik demo — hiqet sapo progresi të ruhet në backend. */
+/**
+ * Historik demo.
+ *
+ * ⚠️  NUK përdoret më nga aplikacioni. Progresi tani vjen nga databaza, dhe
+ *     këto gjashtë ditë të shpikura shfaqeshin te profili i çdo llogarie të
+ *     re si "130 minuta · 6 seanca". Mbahet vetëm si referencë e formës.
+ */
 export const SEED_HISTORY = [
   { date: "8 Qer",  min: 22, intent: "heart" },
   { date: "9 Qer",  min: 15, intent: "calm" },

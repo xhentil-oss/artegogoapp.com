@@ -16,11 +16,14 @@ import { tile, immersiveBackdrop } from "../../theme/gradients.js";
 import { FLUID, padTop, padBottom } from "../../theme/responsive.js";
 import { fmt } from "../../lib/format.js";
 import { shareText } from "../../lib/share.js";
+import { downloadAudio, REASON, REASON_TEXT } from "../../services/audio.js";
 import { intentMeta } from "../../domain/intent.js";
 import { usePlayer } from "../../store/PlayerContext.jsx";
+import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { Leaf } from "../../components/icons/BrandIcons.jsx";
+import { useState } from "react";
 import { usePlayerEngine } from "./usePlayerEngine.js";
 
 /**
@@ -31,6 +34,7 @@ export function PlayerSheet({ sequence }) {
   const { minimize, complete } = usePlayer();
   const engine = usePlayerEngine(sequence, complete);
   const { isFavorite, toggleFavorite, isDownloaded, toggleDownload } = useCollections();
+  const { openUpsell } = useNavigation();
   useBodyScrollLock();
 
   /* Të dyja listat i takojnë meditimit që po luhet tani, jo gjithë seancës. */
@@ -46,12 +50,78 @@ export function PlayerSheet({ sequence }) {
     minimize();
   };
 
-  /** Shpërndan meditimin aktual me fletën native, ose e kopjon. */
-  const share = () =>
-    shareText({
+  /**
+   * Konfirmim i shkurtër.
+   *
+   * ⚠️  Të tre butonat më parë vepronin NË HESHTJE — shpërndarja e hidhte
+   *     rezultatin e vet poshtë, dhe shkarkimi vetëm ndizte një flamur. Një
+   *     veprim që nuk thotë asgjë duket i prishur edhe kur ka punuar.
+   */
+  const [flash, setFlash] = useState(null);
+  const say = (message) => {
+    setFlash(message);
+    setTimeout(() => setFlash(null), 2200);
+  };
+
+  const [downloading, setDownloading] = useState(false);
+
+  /**
+   * Shkarkim i vërtetë: lidhje e nënshkruar nga serveri, pastaj skedari.
+   *
+   * ⚠️  Regjistrimi te `/me/downloads` bëhet VETËM pas suksesit. Më parë
+   *     flamuri ndizej menjëherë, ndaj profili tregonte një meditim "të
+   *     shkarkuar" që nuk ekzistonte askund në pajisje.
+   */
+  const download = async () => {
+    if (!engine.current || downloading) return;
+
+    if (downloaded) {
+      toggleDownload(currentId);
+      say("Hequr nga të shkarkuarat");
+      return;
+    }
+
+    setDownloading(true);
+    const result = await downloadAudio(engine.current);
+    setDownloading(false);
+
+    if (result.ok) {
+      toggleDownload(currentId);
+      say(`U shkarkua: ${result.name}`);
+      return;
+    }
+    /* 402 nga serveri nuk është gabim për t'u treguar — është ftesë. */
+    if (result.reason === REASON.PREMIUM) {
+      openUpsell();
+      return;
+    }
+    say(REASON_TEXT[result.reason] ?? "Shkarkimi nuk u krye.");
+  };
+
+  /** Ruaj te të preferuarat — shfaqet te Profili, dhe shkon te databaza. */
+  const favoriteToggle = () => {
+    if (!currentId) return;
+    toggleFavorite(currentId);
+    say(favorite ? "Hequr nga të preferuarat" : "Ruajtur te të preferuarat");
+  };
+
+  /**
+   * Shpërndan meditimin aktual me fletën native, ose e kopjon.
+   *
+   * Lidhja është faqja e aplikacionit, jo një lidhje e drejtpërdrejtë drejt
+   * meditimit: nuk ka ende rrugë që ta hapë një meditim nga URL-ja, dhe një
+   * lidhje që nuk çon askund është më keq se asnjë.
+   */
+  const share = async () => {
+    const result = await shareText({
       title: "Arte Gogo",
       text: `${engine.current?.title} — ${meta.label}\n${engine.current?.desc ?? ""}`,
+      url: window.location.origin,
     });
+    if (result === "shared") say("U shpërnda");
+    else if (result === "copied") say("Teksti u kopjua");
+    else if (result === "failed") say("Shpërndarja nuk u krye");
+  };
 
   return (
     <div
@@ -68,6 +138,35 @@ export function PlayerSheet({ sequence }) {
         WebkitOverflowScrolling: "touch",
       }}
     >
+      {/*
+        Konfirmimi. Brenda fletës dhe me `position: fixed`, që të mos zhvendoset
+        kur përmbajtja poshtë rrëshqet.
+      */}
+      {flash && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            left: "50%",
+            transform: "translateX(-50%)",
+            bottom: `calc(${padBottom(36)} + 78px)`,
+            zIndex: 80,
+            maxWidth: "88%",
+            padding: "10px 18px",
+            borderRadius: radii.pill,
+            background: "rgba(12,10,24,0.92)",
+            color: "#fff",
+            fontSize: 13.5,
+            fontWeight: 600,
+            textAlign: "center",
+            boxShadow: shadows.immersive,
+            pointerEvents: "none",
+          }}
+        >
+          {flash}
+        </div>
+      )}
+
       {/* ---------- shiriti i sipërm ---------- */}
       <div
         style={{
@@ -89,8 +188,8 @@ export function PlayerSheet({ sequence }) {
 
         <div style={{ display: "flex", gap: 14 }}>
           <OutlineCircle
-            onClick={() => currentId && toggleDownload(currentId)}
-            label={downloaded ? "Hiq nga të shkarkuarat" : "Shkarko"}
+            onClick={download}
+            label={downloading ? "Po shkarkohet…" : downloaded ? "Hiq nga të shkarkuarat" : "Shkarko"}
             active={downloaded}
           >
             <Download size={17} color={downloaded ? T.gold : "#fff"} />
@@ -101,7 +200,7 @@ export function PlayerSheet({ sequence }) {
           </OutlineCircle>
 
           <OutlineCircle
-            onClick={() => currentId && toggleFavorite(currentId)}
+            onClick={favoriteToggle}
             label={favorite ? "Hiq nga të preferuarat" : "Ruaj te të preferuarat"}
             active={favorite}
           >

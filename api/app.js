@@ -62,12 +62,40 @@ function reason(err) {
   return inner?.code || err?.name || "UNKNOWN";
 }
 
+/**
+ * Përshkrimi i konfigurimit — pa asnjë vlerë.
+ *
+ * ⚠️  Kthen VETËM emra dhe pohime: cila mënyrë lidhjeje është aktive, cilat
+ *     variabla mungojnë, dhe cilat kanë hapësira në skaje. Asnjë vlerë, asnjë
+ *     gjatësi — `/health` është publik.
+ *
+ *     `whitespace` ekziston sepse një fjalëkalim i ngjitur te fusha e cPanel-it
+ *     merr shpesh një hapësirë ose rresht të ri pas vetes. MySQL-ja e refuzon
+ *     njësoj si fjalëkalim krejt të gabuar, dhe në ekran duket identik me atë
+ *     të saktin.
+ */
+const EXPECTED = [
+  "DB_HOST", "DB_NAME", "DB_USER", "DB_PASSWORD",
+  "JWT_SECRET", "AUDIO_SECRET", "APP_ORIGIN", "AUDIO_BASE_URL",
+];
+
+function config() {
+  const present = (k) => (process.env[k] ?? "") !== "";
+  return {
+    mode: process.env.DB_SOCKET ? "socket" : "tcp",
+    missing: EXPECTED.filter((k) => !present(k)),
+    whitespace: [...EXPECTED, "DB_SOCKET"]
+      .filter(present)
+      .filter((k) => process.env[k] !== process.env[k].trim()),
+  };
+}
+
 api.get("/health", async (_req, res) => {
   try {
-    res.json({ ok: await ping(), time: new Date().toISOString() });
+    res.json({ ok: await ping(), time: new Date().toISOString(), ...config() });
   } catch (err) {
     console.error("[artegogo] health", err);
-    res.status(503).json({ ok: false, error: reason(err) });
+    res.status(503).json({ ok: false, error: reason(err), ...config() });
   }
 });
 

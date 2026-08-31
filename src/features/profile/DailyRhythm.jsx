@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Check, Lock, Moon, Play, Sun } from "lucide-react";
 import { T, radii, shadows } from "../../theme/tokens.js";
 import { circle } from "../../theme/styles.js";
@@ -7,6 +6,7 @@ import { DAILY_RHYTHM_STEPS } from "../../data/greetings.js";
 import { intentMeta } from "../../domain/intent.js";
 import { blocksByIntent } from "../../services/contentRepository.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
+import { useProgress } from "../../store/ProgressContext.jsx";
 import { SunriseMark } from "../../components/icons/BrandIcons.jsx";
 import { ProgressRing } from "../../components/ui/Charts.jsx";
 
@@ -15,19 +15,29 @@ const STARS = [[20, 30], [80, 20], [60, 60], [88, 70], [14, 80]];
 
 /**
  * Ritmi ditor: tre hapa që shkyçen sipas orës.
- * Përparimi mbetet brenda sesionit; kalon në backend bashkë me progresin.
+ *
+ * ⚠️  Përparimi ruhet te databaza (`domain/rhythm.js` → `habits`), jo te
+ *     `useState`. Më parë zhdukej sa herë ndërrohej skeda, dhe numri i ditës
+ *     ishte i shkruar fiks te "1" — pra ekrani premtonte një ritëm që nuk
+ *     mbahej mend askund.
  */
 export function DailyRhythm() {
   const { playItems } = usePlayback();
-  const [done, setDone] = useState({});
+  const { rhythmToday, rhythmCount, rhythmDay, rhythmAchievements } = useProgress();
 
   const hour = new Date().getHours();
-  const doneCount = Object.values(done).filter(Boolean).length;
-  const percent = (doneCount / DAILY_RHYTHM_STEPS.length) * 100;
+  const percent = (rhythmCount / DAILY_RHYTHM_STEPS.length) * 100;
 
+  /**
+   * Hapi shënohet i kryer VETËM kur dëgjimi mbaron.
+   *
+   * ⚠️  Më parë shënohej në çastin e shtypjes: mjaftonte të hapje player-in
+   *     dhe ta mbyllje menjëherë që dita të dukej e plotësuar. Tani markuesi i
+   *     kalohet player-it, dhe `complete()` e shënon — pra numëron praktika e
+   *     bërë, jo butoni i shtypur.
+   */
   const runStep = (step) => {
-    playItems(blocksByIntent(step.intent).slice(0, 1));
-    setDone((prev) => ({ ...prev, [step.id]: true }));
+    playItems(blocksByIntent(step.intent).slice(0, 1), { ritualStep: step.id });
   };
 
   return (
@@ -65,16 +75,17 @@ export function DailyRhythm() {
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 18, position: "relative" }}>
         <ProgressRing percent={percent} color={T.gold}>
           <div style={{ fontSize: 13, color: T.sub }}>dita</div>
-          <div style={{ fontSize: 44, fontWeight: 800, color: T.ink, lineHeight: 1 }}>1</div>
+          <div style={{ fontSize: 44, fontWeight: 800, color: T.ink, lineHeight: 1 }}>{rhythmDay}</div>
           <div style={{ fontSize: 13, color: T.sub, marginTop: 2 }}>
-            hapi {doneCount} nga {DAILY_RHYTHM_STEPS.length}
+            hapi {rhythmCount} nga {DAILY_RHYTHM_STEPS.length}
           </div>
         </ProgressRing>
       </div>
 
       <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20, position: "relative" }}>
-        <Chip emoji="🔥" label={`${doneCount} hapa sot`} />
-        <Chip emoji="⭐" label={`${doneCount >= DAILY_RHYTHM_STEPS.length ? 1 : 0} arritje`} />
+        <Chip emoji="🔥" label={`${rhythmCount} hapa sot`} />
+        {/* Arritjet janë ditët e plota të mbledhura, jo një flamur i sotëm. */}
+        <Chip emoji="⭐" label={`${rhythmAchievements} arritje`} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
@@ -83,7 +94,7 @@ export function DailyRhythm() {
             key={step.id}
             step={step}
             unlocked={hour >= step.fromHour}
-            done={Boolean(done[step.id])}
+            done={Boolean(rhythmToday[step.id])}
             onRun={() => runStep(step)}
           />
         ))}

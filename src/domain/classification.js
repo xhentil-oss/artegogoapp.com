@@ -66,16 +66,53 @@ let categoryCounts = new Map();
  *
  * @param {Record<string, {techniqueId?: string, categoryId?: string}>} overrides
  */
+/**
+ * Burimi i tanishëm i katalogut.
+ *
+ * Nis si `BASE` — 244 meditimet e shkruara te `data/collections.js`, që janë
+ * fallback-u offline. Kur serveri përgjigjet, `replaceCatalog` e zëvendëson.
+ * Dallimi ka rëndësi: te fallback-u klasifikimi vjen nga hartat lokale
+ * (`SUB2TECH`), ndërsa te serveri e ka bërë tashmë databaza.
+ */
+let source = BASE;
+let fromServer = false;
+
+/* Mbahen që `replaceCatalog` të mos i humbasë kur rindërton listën. */
+let currentOverrides = {};
+
+/**
+ * Zëvendëson katalogun me atë të serverit.
+ *
+ * ⚠️  `MEDITATIONS` mbetet I NJËJTI varg — zbrazet dhe rimbushet, nuk
+ *     ricaktohet. Kjo është arsyeja pse asnjë ekran nuk ka nevojë të bëhet
+ *     asinkron: ata e importojnë vargun një herë, dhe përmbajtja e re shfaqet
+ *     te rivizatimi i radhës.
+ */
+export function replaceCatalog(items) {
+  source = items;
+  fromServer = true;
+  applyClassificationOverrides(currentOverrides);
+}
+
+/** A po lexohet përmbajtja nga serveri, apo nga fallback-u lokal? */
+export const isFromServer = () => fromServer;
+
 export function applyClassificationOverrides(overrides = {}) {
-  BASE.forEach((item, i) => {
+  currentOverrides = overrides;
+
+  MEDITATIONS.length = 0;
+  for (const item of source) {
     const key = subKey(item.collectionId, item.subTheme);
     const override = overrides[key];
-    MEDITATIONS[i] = {
+
+    MEDITATIONS.push({
       ...item,
-      techniqueId: override?.techniqueId ?? SUB2TECH[key],
-      categoryId: override?.categoryId ?? SUB2CAT[key],
-    };
-  });
+      /* Te përmbajtja e serverit, etiketa e vet meditimit është ajo e vërteta;
+         hartat lokale përdoren vetëm kur lexojmë nga fallback-u. */
+      techniqueId: override?.techniqueId ?? (fromServer ? item.techniqueId : SUB2TECH[key]),
+      categoryId: override?.categoryId ?? (fromServer ? item.categoryId : SUB2CAT[key]),
+    });
+  }
 
   techniqueCounts = countBy("techniqueId");
   categoryCounts = countBy("categoryId");

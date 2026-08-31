@@ -1,23 +1,21 @@
 import { storage, STORAGE_KEYS } from "./storage.js";
+import { api, setToken, clearToken } from "./api.js";
 
 /**
  * LLOGARIA E PËRDORUESIT — kufiri me shërbimin e vërtetetimit.
  *
- * ⚠️  KUFIZIM I DEKLARUAR
- *     Ky prototip NUK e verifikon fjalëkalimin. Nuk mundet: verifikimi ndodh
- *     te serveri, dhe një kontroll brenda shfletuesit do të mund t'i
- *     anashkalohej nga kushdo që hap DevTools. Ndaj fjalëkalimi kërkohet,
- *     kalon nga këtu, dhe **nuk ruhet askund** — as i hash-uar, as i kriptuar.
- *     Ruhet vetëm email-i, që aplikacioni të dijë kush është.
+ * Fjalëkalimi verifikohet te serveri, siç duhet: `POST /auth/login` e krahason
+ * me `users.password_hash` (bcrypt) dhe kthen një token JWT. Këtu ai vetëm
+ * kalon — **nuk ruhet askund**, as i hash-uar, as i kriptuar.
  *
- * Kur të vijë backend-i, ndryshojnë vetëm trupat e `signUp`/`signIn`:
- * `POST /auth/register` dhe `POST /auth/login`, që kthejnë një token JWT.
- * Asnjë ekran nuk prek gjë.
+ * ⚠️  Kontrollet më poshtë (`validate`) janë vetëm mirësjellje ndaj
+ *     përdoruesit: kursejnë një kërkesë rrjeti kur email-i është dukshëm i
+ *     gabuar. Ato NUK janë siguri — kushdo që hap DevTools i anashkalon. I
+ *     vetmi kontroll që vlen është ai i serverit, dhe ai bëhet gjithsesi.
  *
- * Databaza është MySQL te cPanel (shih `mysql/README.md`), pra vërtetimin e
- * bën API-ja jonë, jo një shërbim i gatshëm. Fjalëkalimi ruhet te
- * `users.password_hash` i hash-uar me **bcrypt** ose **argon2id** — kurrë MD5,
- * kurrë SHA1, kurrë i pastër.
+ * Serveri kthen `{ token, user }`. Token-i shkon te `services/api.js`, që e
+ * vendos te çdo kërkesë e mëpasme; nga `user` mbahet vetëm sa i duhet
+ * aplikacionit për të ditur kush është.
  */
 
 /** Sa i gjatë duhet të jetë fjalëkalimi. Kufiri i vërtetë vendoset te serveri. */
@@ -46,45 +44,67 @@ export const currentAccount = () => storage.get(STORAGE_KEYS.account, null);
  * Krijon llogari të re.
  * @returns {Promise<{ ok: true, account: object } | { ok: false, error: string }>}
  */
+/**
+ * Ruan token-in dhe llogarinë pas një përgjigjeje të suksesshme.
+ *
+ * Nga `user` mbahen vetëm fushat që i duhen aplikacionit. Kopjimi i gjithë
+ * objektit do të linte te `localStorage` gjendjen e abonimit — dhe ajo lexohet
+ * gjithmonë nga serveri, sepse aty nuk redaktohet dot.
+ */
+async function establish({ token, user }, fallbackEmail) {
+  const account = {
+    id: user?.id ?? null,
+    email: user?.email ?? fallbackEmail,
+    name: user?.name ?? null,
+    createdAt: user?.created_at ?? new Date().toISOString(),
+  };
+  await setToken(token);
+  await storage.set(STORAGE_KEYS.account, account);
+  return { ok: true, account };
+}
+
 export async function signUp({ email, password }) {
   const problem = validate({ email, password });
   if (problem) return { ok: false, error: problem };
 
-  const existing = await currentAccount();
-  if (existing && existing.email === email.trim().toLowerCase()) {
-    return { ok: false, error: "Kjo llogari ekziston. Hyr me fjalëkalimin tënd." };
+  const clean = email.trim().toLowerCase();
+  try {
+    const data = await api.post("/auth/register", { email: clean, password }, { auth: false });
+    return await establish(data, clean);
+  } catch (err) {
+    /* Serveri e formulon vetë mesazhin — përfshirë "Kjo llogari ekziston". */
+    return { ok: false, error: err.message };
   }
-
-  /* PROD: krijim te serveri, pastaj email verifikimi. */
-  const account = {
-    email: email.trim().toLowerCase(),
-    createdAt: new Date().toISOString(),
-  };
-  await storage.set(STORAGE_KEYS.account, account);
-  return { ok: true, account };
 }
 
 /**
  * Hyrje në një llogari.
  *
- * Fjalëkalimi kontrollohet vetëm për gjatësi — shih shënimin lart. Nëse në
- * pajisje ruhet një email tjetër, ai zëvendësohet: një pajisje demo mban një
- * llogari të vetme.
+ * ⚠️  Kur kredencialet janë të gabuara, serveri kthen të njëjtin mesazh për
+ *     një email që nuk ekziston dhe për një fjalëkalim të gabuar. Kjo është e
+ *     qëllimshme dhe nuk duhet "përmirësuar": mesazhe të ndryshme do t'i
+ *     tregonin kujtdo se cilat email-e janë të regjistruara.
  */
 export async function signIn({ email, password }) {
   const problem = validate({ email, password });
   if (problem) return { ok: false, error: problem };
 
-  /* PROD: POST /auth/login → token; gabimi "kredenciale të pasakta" vjen aty. */
-  const account = {
-    email: email.trim().toLowerCase(),
-    createdAt: (await currentAccount())?.createdAt ?? new Date().toISOString(),
-  };
-  await storage.set(STORAGE_KEYS.account, account);
-  return { ok: true, account };
+  const clean = email.trim().toLowerCase();
+  try {
+    const data = await api.post("/auth/login", { email: clean, password }, { auth: false });
+    return await establish(data, clean);
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
 }
 
-/** Shkëputje — heq llogarinë, por RUAN progresin në pajisje. */
+/**
+ * Shkëputje — heq token-in dhe llogarinë, por RUAN progresin në pajisje.
+ *
+ * Token-i hiqet i pari: nëse diçka dështon në mes, më mirë të mbetet një
+ * llogari pa token (që thjesht kërkon hyrje) sesa një token pa llogari.
+ */
 export async function signOut() {
+  await clearToken();
   await storage.remove(STORAGE_KEYS.account);
 }

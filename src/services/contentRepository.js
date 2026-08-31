@@ -11,6 +11,7 @@ import { SLOT_POOLS } from "../data/slotPools.js";
 import { SERIES, PROGRAMS, SHORTS, SOUNDSCAPES, LIVE_SESSIONS } from "../data/catalog.js";
 import { LIFE_AREAS, ALL_AREAS } from "../data/lifeAreas.js";
 import { adminState } from "./adminStore.js";
+import { programsFromServer } from "./catalog.js";
 import {
   MEDITATIONS,
   listTechniques,
@@ -205,7 +206,19 @@ export const listSoundscapes = () => SOUNDSCAPES;
  * bazë: ajo që sapo u shtua duhet të duket menjëherë, pa u kërkuar.
  * Ekranet nuk e dinë ndryshimin — lexojnë të njëjtin funksion si më parë.
  */
-export const listPrograms = () => [...adminState().programs, ...PROGRAMS];
+/**
+ * Programet.
+ *
+ * ⚠️  Rendi: admin-i i pari, pastaj serveri, dhe `PROGRAMS` lokale VETËM kur
+ *     serveri nuk u lexua. Nëse do të bashkoheshin të gjitha, çdo program do
+ *     të shfaqej dy herë — një herë me id të databazës dhe një herë me `p1`.
+ *     Dublikatat do të ishin të padallueshme në ekran, por rrugëtimi do të
+ *     ruante progres në dy vende.
+ */
+export const listPrograms = () => [
+  ...adminState().programs,
+  ...(programsFromServer() ?? PROGRAMS),
+];
 export const listLiveSessions = () => [...adminState().live, ...LIVE_SESSIONS];
 
 /* ---------- komunitet ---------- */

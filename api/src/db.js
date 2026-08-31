@@ -24,13 +24,27 @@ const mysql = require("mysql2/promise");
  *     Preferohet `127.0.0.1` ndaj `localhost`: i dyti mund të përkthehet së
  *     pari në `::1` (IPv6), ku MySQL-ja shpesh nuk dëgjon.
  */
-const socketPath = process.env.DB_SOCKET || undefined;
+/*
+ * Hapësirat në skaje hiqen nga emrat, jo nga fjalëkalimi.
+ *
+ * ⚠️  Një vlerë e ngjitur te fusha e cPanel-it merr lehtë një hapësirë para ose
+ *     pas. Te `DB_USER` kjo ndodhi vërtet: MySQL-ja kërkonte
+ *     `' appdrartegogo_apiuser'` dhe kthente `ER_ACCESS_DENIED_ERROR` — i
+ *     padallueshëm nga një fjalëkalim i gabuar, dhe i padukshëm në ekran.
+ *
+ *     Fjalëkalimi NUK pastrohet: një hapësirë aty mund të jetë e vërtetë, dhe
+ *     heqja e saj në heshtje do të bënte të pamundur përdorimin e saj. Ai
+ *     raportohet te `/health` si `whitespace`, që të shihet e të ndreqet.
+ */
+const clean = (v) => (typeof v === "string" ? v.trim() : v) || undefined;
+
+const socketPath = clean(process.env.DB_SOCKET);
 
 const pool = mysql.createPool({
-  ...(socketPath ? { socketPath } : { host: process.env.DB_HOST || "127.0.0.1" }),
-  user: process.env.DB_USER,
+  ...(socketPath ? { socketPath } : { host: clean(process.env.DB_HOST) || "127.0.0.1" }),
+  user: clean(process.env.DB_USER),
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  database: clean(process.env.DB_NAME),
   waitForConnections: true,
   connectionLimit: Number(process.env.DB_POOL || 5),
   queueLimit: 0,

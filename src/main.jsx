@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { injectCssVariables } from "./theme/cssVariables.js";
 import { loadAdminState } from "./services/adminStore.js";
+import { loadToken } from "./services/api.js";
+import { hydrateCatalog } from "./services/catalog.js";
 
 import "./styles/global.css";
 import "./styles/animations.css";
@@ -10,13 +12,36 @@ import "./styles/animations.css";
 /* token-et JS → CSS variables, që fletët CSS të ndajnë të njëjtat ngjyra */
 injectCssVariables();
 
-/* Ndryshimet e admin-it lexohen para render-it të parë; nëse vonohen, pamja
-   do të pulsonte nga klasifikimi bazë te ai i redaktuar. Dështimi nuk e ndal
-   nisjen — pa mbishkrime, aplikacioni thjesht tregon përmbajtjen bazë. */
-loadAdminState().catch(() => {});
+/**
+ * NISJA
+ *
+ * Të tria hapat kryhen PARA render-it të parë, dhe rendi mes tyre nuk ka
+ * rëndësi — prandaj shkojnë bashkë.
+ *
+ * ⚠️  Pse pritet katalogu në vend që të vizatohet menjëherë: përndryshe ekrani
+ *     do të shfaqte 244 meditimet lokale dhe pastaj do t'i zëvendësonte me ato
+ *     të serverit — një pulsim i dukshëm, dhe numra që ndryshojnë nën sy.
+ *     Katalogu është nën 150 KB; pritja është e shkurtër dhe ndodh një herë.
+ *
+ *     Asnjëri hap nuk e rrëzon nisjen. Nëse serveri nuk arrihet, mbetet
+ *     `data/collections.js` — fallback-u offline për të cilin u shkrua.
+ */
+async function boot() {
+  const [, catalog] = await Promise.all([
+    loadToken().catch(() => null),
+    hydrateCatalog(),
+    loadAdminState().catch(() => {}),
+  ]);
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+  if (!catalog.ok) {
+    console.warn(`[artegogo] katalogu lokal (${catalog.error}) — serveri nuk u lexua.`);
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}
+
+boot();

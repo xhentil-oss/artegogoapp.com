@@ -7,6 +7,23 @@
  */
 export const PHASES = { OPENING: "Hapje", CORE: "Korpi", CLOSING: "Mbyllje" };
 
+/** `phase` te databaza → emri që përdor aplikacioni. */
+export const PHASE_BY_DB = { opening: PHASES.OPENING, core: PHASES.CORE, closing: PHASES.CLOSING };
+
+/**
+ * Zëvendëson blloqet me ato të serverit.
+ *
+ * ⚠️  Vargu `BLOCKS` NUK ricaktohet — zbrazet dhe rimbushet. Ai importohet
+ *     drejtpërdrejt nga `domain/sequence.js` dhe `contentRepository`; një varg
+ *     i ri do të linte të dy me referencën e vjetër dhe me id-të lokale
+ *     (`b1`…), të cilat nuk ekzistojnë te databaza — pra asnjë seancë e
+ *     ndërtuar nuk do të ruhej dot.
+ */
+export function replaceBlocks(items) {
+  BLOCKS.length = 0;
+  BLOCKS.push(...items);
+}
+
 export const BLOCKS = [
   { id: "b1",  title: "Hyrje në Trup",         intent: "calm",      phase: PHASES.OPENING, dur: 3,  desc: "Vendosje e vëmendjes në frymëmarrje dhe trup." },
   { id: "b2",  title: "Frymëmarrje Koherente", intent: "calm",      phase: PHASES.OPENING, dur: 5,  desc: "Ritëm 5.5 frymë/min për koherencë zemër-tru." },

@@ -85,6 +85,14 @@ export const STORAGE_KEYS = {
   admin: "admin",
   /** Llogaria: vetëm email-i. Fjalëkalimi nuk ruhet — shih `services/auth.js`. */
   account: "account",
+  /**
+   * Token-i JWT i hyrjes, i lëshuar nga `/auth/login`.
+   *
+   * ⚠️  Ruhet i ndarë nga llogaria me qëllim: shkëputja e fshin token-in
+   *     patjetër, edhe nëse diçka tjetër dështon. Një token që mbijeton
+   *     shkëputjen do të lejonte hyrje pa fjalëkalim te e njëjta pajisje.
+   */
+  token: "token",
   /** Kërkimet e fundit të përdoruesit. */
   recentSearches: "recent-searches",
   /** Rrugëtimi aktiv dhe ditët e kryera për çdo program. */

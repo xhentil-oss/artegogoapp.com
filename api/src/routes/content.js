@@ -21,11 +21,21 @@ const MEDITATION_FIELDS = `
   t.slug AS technique_slug, t.name AS technique_name,
   c.slug AS category_slug, c.name AS category_name`;
 
+/*
+ * ⚠️  `is_block = 0` përjashton mini-blloqet e ndërtuesit.
+ *
+ *     Ato rrinë te e njëjta tabelë sepse `creation_steps` u referohet me çelës
+ *     të huaj — pa këtë, asnjë seancë e ndërtuar me një hapje ose mbyllje nuk
+ *     do të ruhej dot. Por nuk janë meditime më vete: biblioteka duhet të
+ *     tregojë 244, jo 259, dhe numrat e teknikave duhet të mbeten të njëjtë.
+ *
+ *     Jepen veçmas nga `/content/blocks`.
+ */
 const FROM_MEDITATIONS = `
   FROM meditations m
   LEFT JOIN techniques t ON t.id = m.technique_id
   LEFT JOIN categories c ON c.id = m.category_id
-  WHERE m.published_at IS NOT NULL`;
+  WHERE m.published_at IS NOT NULL AND m.is_block = 0`;
 
 router.get("/techniques", async (_req, res, next) => {
   try {
@@ -34,7 +44,7 @@ router.get("/techniques", async (_req, res, next) => {
         SELECT t.id, t.slug, t.name, t.description, t.icon_name, t.display_order,
                COUNT(m.id) AS meditation_count
           FROM techniques t
-          LEFT JOIN meditations m ON m.technique_id = t.id AND m.published_at IS NOT NULL
+          LEFT JOIN meditations m ON m.technique_id = t.id AND m.published_at IS NOT NULL AND m.is_block = 0
          GROUP BY t.id
          ORDER BY t.display_order`)
     );
@@ -51,7 +61,7 @@ router.get("/categories", async (_req, res, next) => {
         SELECT c.id, c.slug, c.name, c.description, c.cover_url,
                c.display_order, c.is_featured, COUNT(m.id) AS meditation_count
           FROM categories c
-          LEFT JOIN meditations m ON m.category_id = c.id AND m.published_at IS NOT NULL
+          LEFT JOIN meditations m ON m.category_id = c.id AND m.published_at IS NOT NULL AND m.is_block = 0
          GROUP BY c.id
         HAVING meditation_count > 0
          ORDER BY c.display_order`)
@@ -220,13 +230,47 @@ router.get("/quotes/today", async (_req, res, next) => {
      * çdo kërkesë, dhe dy ekrane që e tregojnë të njëjtin çast do të shfaqnin
      * citate të ndryshme njëkohësisht.
      */
+    /*
+     * ⚠️  Zgjedhja bëhet me funksione dritareje, JO me nën-query te `OFFSET`.
+     *     MySQL dhe MariaDB e pranojnë vetëm një numër aty; versioni i parë
+     *     ishte përkthim i drejtpërdrejtë nga Postgres-i dhe jepte 500.
+     *
+     *     `COUNT(*) OVER ()` jep totalin te çdo rresht, ndaj mbetet një query
+     *     e vetme. Nëse nuk ka asnjë citat aktiv, tabela e brendshme del bosh
+     *     dhe kthehet `{text: null}` — pa pjesëtim me zero.
+     */
     const row = await one(`
-      SELECT text, author, category FROM daily_quotes
-       WHERE is_active = 1
-       ORDER BY id
-       LIMIT 1 OFFSET (SELECT DAYOFYEAR(CURDATE()) MOD GREATEST(COUNT(*), 1)
-                         FROM daily_quotes WHERE is_active = 1)`);
+      SELECT text, author, category FROM (
+        SELECT text, author, category,
+               ROW_NUMBER() OVER (ORDER BY id) - 1 AS rn,
+               COUNT(*)     OVER ()             AS total
+          FROM daily_quotes
+         WHERE is_active = 1
+      ) q
+      WHERE rn = DAYOFYEAR(CURDATE()) MOD total`);
     res.json(row ?? { text: null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Mini-blloqet e ndërtuesit.
+ *
+ * Jepen me `phase` (Hapje/Korpi/Mbyllje), sepse `domain/sequence.js` i monton
+ * seancat sipas saj: pa fazën, një mbyllje mund të vinte e para.
+ */
+router.get("/blocks", async (_req, res, next) => {
+  try {
+    res.json(
+      await query(`
+        SELECT m.id, m.title, m.description, m.duration_sec, m.phase, m.is_premium,
+               c.slug AS category_slug
+          FROM meditations m
+          LEFT JOIN categories c ON c.id = m.category_id
+         WHERE m.is_block = 1 AND m.published_at IS NOT NULL
+         ORDER BY FIELD(m.phase, 'opening', 'core', 'closing'), m.duration_sec`)
+    );
   } catch (err) {
     next(err);
   }

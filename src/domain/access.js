@@ -45,5 +45,23 @@ const FREE_IDS = new Set(FREE_MEDITATIONS.map((item) => item.id));
 /** Sa meditime lejon modeli të jenë falas. */
 export const FREE_LIMIT = 3;
 
-/** A është ky meditim një nga të tre falasit? */
-export const isFreeMeditation = (item) => Boolean(item) && FREE_IDS.has(item.id);
+/**
+ * A është ky meditim një nga të tre falasit?
+ *
+ * ⚠️  Kur përmbajtja vjen nga serveri, vendos SERVERI.
+ *
+ *     Meditimet e mbushura nga API-ja mbajnë `premium`, të lexuar nga kolona
+ *     `meditations.is_premium`. Lista `FREE_IDS` më poshtë ndërtohet mbi
+ *     katalogun lokal dhe i njeh meditimet me id si `c1001`; te serveri id-të
+ *     janë UUID, ndaj asnjëra nuk do të përputhej dhe të tre falasit do të
+ *     dilnin të kyçur.
+ *
+ *     Kjo nuk është thjesht ndreqje: aksesi është vendim që i takon serverit.
+ *     `GET /audio/:id` e zbaton të njëjtin rregull para se të japë skedarin,
+ *     ndaj një klient i ndryshuar nuk fiton asgjë duke gënjyer këtu.
+ */
+export const isFreeMeditation = (item) => {
+  if (!item) return false;
+  if (typeof item.premium === "boolean") return !item.premium;
+  return FREE_IDS.has(item.id);
+};

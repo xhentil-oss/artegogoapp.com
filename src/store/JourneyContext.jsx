@@ -8,6 +8,7 @@ import {
 } from "../domain/journey.js";
 import { localDayKey } from "../lib/time.js";
 import { listPrograms } from "../services/contentRepository.js";
+import { api, hasToken } from "../services/api.js";
 
 /**
  * RRUGËTIMI AKTIV DHE PROGRESI I PROGRAMEVE (seksioni 6.5)
@@ -24,17 +25,67 @@ const JourneyContext = createContext(null);
 
 const EMPTY = { activeId: null, progress: {} };
 
+/**
+ * Lexon rrugëtimet nga serveri dhe i kthen në formën lokale.
+ *
+ * Serveri jep dy lista të sheshta — `progress` (cilat programe janë nisur) dhe
+ * `completions` (cilat ditë janë kryer). Aplikacioni pret
+ * `{ programId: { day: "2026-08-31" } }`, sepse rregulli "një ndalesë në ditë"
+ * krahason data.
+ */
+async function fetchJourney() {
+  const data = await api.get("/me/journey");
+  const progress = {};
+
+  /* Një program i nisur pa asnjë ditë të kryer duhet të mbetet i nisur. */
+  for (const row of data?.progress ?? []) progress[row.program_id] ??= {};
+
+  for (const row of data?.completions ?? []) {
+    /* `completed_at` vjen si "2026-08-31 10:22:33"; mban rëndësi vetëm data. */
+    (progress[row.program_id] ??= {})[row.day_number] = String(row.completed_at).slice(0, 10);
+  }
+
+  /* Kur pajisja s'ka zgjedhur ende, hapet ai që u nis i pari. */
+  const firstStarted = (data?.progress ?? [])[0]?.program_id ?? null;
+  return { progress, firstStarted };
+}
+
 export function JourneyProvider({ children }) {
   const [state, setState] = useState(EMPTY);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    storage.get(STORAGE_KEYS.journey, EMPTY).then((saved) => {
+
+    (async () => {
+      /* Gjendja lokale shfaqet e para — ekrani nuk pret rrjetin. */
+      const saved = await storage.get(STORAGE_KEYS.journey, EMPTY);
       if (cancelled) return;
       setState({ ...EMPTY, ...(saved ?? {}) });
       setReady(true);
-    });
+
+      if (!hasToken()) return;
+
+      /*
+       * Ditët e kryera vijnë nga serveri; `activeId` mbetet lokal.
+       *
+       * ⚠️  Serveri nuk e ruan cili rrugëtim është "aktiv" — dhe nuk duhet ta
+       *     ruajë: ajo është zgjedhje pamore e pajisjes, jo fakt i progresit.
+       *     Progresi është ai që duhet të ndiqet mes pajisjeve.
+       */
+      try {
+        const remote = await fetchJourney();
+        if (cancelled) return;
+        setState((prev) => {
+          const next = { activeId: prev.activeId ?? remote.firstStarted, progress: remote.progress };
+          storage.set(STORAGE_KEYS.journey, next);
+          return next;
+        });
+      } catch {
+        /* Pa rrjet mbetet gjendja lokale — shih shënimin te `services/userData.js`. */
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
@@ -47,14 +98,18 @@ export function JourneyProvider({ children }) {
 
   /** Nis një program ose e bën atë rrugëtimin aktiv. Progresi i vjetër mbetet. */
   const startProgram = useCallback(
-    (programId) =>
+    (programId) => {
       commit({
         activeId: programId,
         progress: {
           ...state.progress,
           [programId]: normalizeCompletions(state.progress[programId]),
         },
-      }),
+      });
+      if (hasToken()) {
+        api.post(`/me/journey/${encodeURIComponent(programId)}/start`).catch(() => {});
+      }
+    },
     [commit, state.progress]
   );
 
@@ -81,6 +136,18 @@ export function JourneyProvider({ children }) {
           [programId]: { ...current, [day]: localDayKey() },
         },
       });
+
+      /*
+       * Serveri e zbaton po ashtu rregullin "një ndalesë në ditë" dhe kthen
+       * `409`. Kjo nuk është dyfishim i kotë: kontrolli te aplikacioni ruan
+       * përvojën, ai te serveri ruan të dhënat — një kërkesë e ndërtuar me dorë
+       * do ta mbaronte programin 7-ditor brenda një minute.
+       */
+      if (hasToken()) {
+        api
+          .post(`/me/journey/${encodeURIComponent(programId)}/complete/${day}`)
+          .catch((err) => console.warn("[artegogo] ndalesa nuk u ruajt:", err?.message));
+      }
     },
     [commit, state.activeId, state.progress]
   );

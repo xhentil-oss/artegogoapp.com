@@ -1,5 +1,5 @@
 const express = require("express");
-const { query, one } = require("../db");
+const { pool, query, one } = require("../db");
 const { requireAuth } = require("../auth");
 
 const router = express.Router();
@@ -144,10 +144,27 @@ router.get("/favorites", async (req, res, next) => {
   }
 });
 
-/* `INSERT IGNORE` mbështetet te çelësi unik (user_id, meditation_id):
-   shtimi dy herë nuk krijon dublikatë dhe nuk jep gabim. */
+/*
+ * `INSERT IGNORE` mbështetet te çelësi unik (user_id, meditation_id): shtimi
+ * dy herë nuk krijon dublikatë dhe nuk jep gabim.
+ *
+ * ⚠️  POR `IGNORE` e zbret edhe shkeljen e çelësit të huaj në paralajmërim.
+ *     Pra një `meditation_id` që nuk ekziston kthente `204` — sukses i rremë,
+ *     pa asnjë rresht të shkruar. Aplikacioni e tregonte zemrën të kuqe,
+ *     ndërsa te pajisja tjetër ajo zhdukej, dhe asgjë nuk e shënonte gabimin.
+ *
+ *     Prandaj ekzistenca kontrollohet e para. Kjo është një query më shumë,
+ *     dhe ia vlen: një shkrim që dështon duhet të thotë se dështoi.
+ */
+async function requireMeditation(id) {
+  const row = await one("SELECT id FROM meditations WHERE id = ?", [id]);
+  return Boolean(row);
+}
 router.put("/favorites/:meditationId", async (req, res, next) => {
   try {
+    if (!(await requireMeditation(req.params.meditationId))) {
+      return res.status(404).json({ error: "Meditimi nuk u gjet." });
+    }
     const id = (await one("SELECT UUID() AS id")).id;
     await query("INSERT IGNORE INTO favorites (id, user_id, meditation_id) VALUES (?, ?, ?)", [
       id,
@@ -191,6 +208,9 @@ router.get("/downloads", async (req, res, next) => {
 
 router.put("/downloads/:meditationId", async (req, res, next) => {
   try {
+    if (!(await requireMeditation(req.params.meditationId))) {
+      return res.status(404).json({ error: "Meditimi nuk u gjet." });
+    }
     const id = (await one("SELECT UUID() AS id")).id;
     await query("INSERT IGNORE INTO downloads (id, user_id, meditation_id) VALUES (?, ?, ?)", [
       id,
@@ -398,6 +418,131 @@ router.post("/journey/:programId/complete/:day", async (req, res, next) => {
       [req.userId, req.params.programId, day]
     );
     res.status(201).json({ day, completed_on: today });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ═══════════════ SEANCAT E NDËRTUARA (Krijo) ═══════════════ */
+
+/*
+ * Një seancë e ndërtuar është `creations` + hapat e saj te `creation_steps`.
+ *
+ * ⚠️  Të dyja shkruhen brenda NJË transaksioni. Pa të, një dështim te hapi i
+ *     tretë do të linte një seancë me dy hapa — e ruajtur, e dukshme, dhe e
+ *     gabuar. Më mirë të mos ruhet fare sesa të ruhet gjysma.
+ */
+router.get("/creations", async (req, res, next) => {
+  try {
+    const rows = await query(
+      `SELECT c.id, c.name, c.goal, c.generation_type, c.total_duration_sec, c.created_at,
+              s.step_order, s.meditation_id, m.title AS step_title, m.duration_sec AS step_sec
+         FROM creations c
+         LEFT JOIN creation_steps s ON s.creation_id = c.id
+         LEFT JOIN meditations m ON m.id = s.meditation_id
+        WHERE c.user_id = ?
+        ORDER BY c.created_at DESC, s.step_order`,
+      [req.userId]
+    );
+
+    /* Grupimi bëhet këtu, jo te klienti: JOIN-i kthen një rresht për hap. */
+    const byId = new Map();
+    for (const row of rows) {
+      if (!byId.has(row.id)) {
+        byId.set(row.id, {
+          id: row.id,
+          name: row.name,
+          goal: row.goal,
+          generation_type: row.generation_type,
+          total_duration_sec: row.total_duration_sec,
+          created_at: row.created_at,
+          steps: [],
+        });
+      }
+      if (row.meditation_id) {
+        byId.get(row.id).steps.push({
+          order: row.step_order,
+          meditation_id: row.meditation_id,
+          title: row.step_title,
+          duration_sec: row.step_sec,
+        });
+      }
+    }
+    res.json([...byId.values()]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/creations", async (req, res, next) => {
+  const { name, goal = null, generation_type = "manual", steps } = req.body ?? {};
+
+  if (!name || typeof name !== "string" || name.trim().length === 0) {
+    return res.status(400).json({ error: "Seanca duhet të ketë një emër." });
+  }
+  if (!Array.isArray(steps) || steps.length === 0) {
+    return res.status(400).json({ error: "Seanca duhet të ketë të paktën një hap." });
+  }
+  if (steps.length > 40) {
+    return res.status(400).json({ error: "Shumë hapa për një seancë." });
+  }
+  if (!["manual", "ai_generated"].includes(generation_type)) {
+    return res.status(400).json({ error: "`generation_type` i panjohur." });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    /*
+     * Hapat verifikohen PARA se të nisë transaksioni.
+     *
+     * Pa këtë, një id e panjohur do të rrëzohej te çelësi i huaj dhe klienti do
+     * të merrte "Gabim i brendshëm" — pa e ditur kurrë cili hap ishte problemi.
+     */
+    const ids = steps.map((s) => s?.meditation_id).filter(Boolean);
+    if (ids.length !== steps.length) {
+      return res.status(400).json({ error: "Çdo hap duhet të ketë një meditim." });
+    }
+    const [found] = await connection.query(
+      `SELECT id FROM meditations WHERE id IN (${ids.map(() => "?").join(",")})`,
+      ids
+    );
+    const known = new Set(found.map((r) => r.id));
+    const missing = [...new Set(ids)].filter((id) => !known.has(id));
+    if (missing.length > 0) {
+      return res.status(400).json({ error: `Hapa të panjohur: ${missing.length}` });
+    }
+
+    const [[{ id }]] = await connection.query("SELECT UUID() AS id");
+    const total = steps.reduce((sum, s) => sum + (Number(s.duration_sec) || 0), 0);
+
+    await connection.beginTransaction();
+    await connection.query(
+      `INSERT INTO creations (id, user_id, name, goal, generation_type, total_duration_sec, is_saved)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
+      [id, req.userId, name.trim().slice(0, 160), goal, generation_type, total]
+    );
+    for (const [i, step] of steps.entries()) {
+      await connection.query(
+        `INSERT INTO creation_steps (creation_id, meditation_id, step_order) VALUES (?, ?, ?)`,
+        [id, step.meditation_id, i + 1]
+      );
+    }
+    await connection.commit();
+
+    res.status(201).json({ id, total_duration_sec: total, steps: steps.length });
+  } catch (err) {
+    await connection.rollback().catch(() => {});
+    next(err);
+  } finally {
+    connection.release();
+  }
+});
+
+router.delete("/creations/:id", async (req, res, next) => {
+  try {
+    /* `user_id` te kushti: pa të, kushdo do të fshinte seancat e kujtdo. */
+    await query("DELETE FROM creations WHERE id = ? AND user_id = ?", [req.params.id, req.userId]);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }
