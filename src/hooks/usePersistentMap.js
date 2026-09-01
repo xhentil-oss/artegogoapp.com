@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { storage } from "../services/storage.js";
 import { remoteFor } from "../services/userData.js";
+import { onTokenChange } from "../services/api.js";
 
 /**
  * Objekt që ngarkohet në montim dhe shkruhet në çdo ndryshim.
@@ -35,7 +36,7 @@ export function usePersistentMap(storageKey) {
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
+    const load = async () => {
       /* Kujtesa lokale shfaqet e para — ekrani nuk pret rrjetin. */
       const cached = (await storage.get(storageKey, {})) ?? {};
       if (!cancelled) {
@@ -58,10 +59,24 @@ export function usePersistentMap(storageKey) {
       } catch (err) {
         if (!cancelled) setError(err?.message ?? "Nuk u lexuan të dhënat.");
       }
-    })();
+    };
+
+    load();
+
+    /*
+     * Rilexohet kur hyn ose shkëputet një përdorues.
+     *
+     * ⚠️  Pa këtë, efekti rrjedh vetëm në montim — pra përpara hyrjes — dhe
+     *     të dhënat e llogarisë nuk mbërrijnë kurrë derisa faqja rifreskohet.
+     */
+    const stop = onTokenChange(() => {
+      cancelled = false;
+      load();
+    });
 
     return () => {
       cancelled = true;
+      stop();
     };
   }, [storageKey]);
 

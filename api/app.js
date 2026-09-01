@@ -6,6 +6,9 @@ const authRoutes = require("./src/routes/auth");
 const contentRoutes = require("./src/routes/content");
 const meRoutes = require("./src/routes/me");
 const audioRoutes = require("./src/routes/audio");
+const subscriptionRoutes = require("./src/routes/subscription");
+const notify = require("./src/routes/notifications");
+const pushRoutes = require("./src/routes/push");
 
 /**
  * API-JA E ARTE GOGO-S
@@ -101,7 +104,14 @@ api.get("/health", async (_req, res) => {
 
 api.use("/auth", authRoutes);
 api.use("/content", contentRoutes);
+/* Para `/me`, që `/me/subscription` të mos kapet nga rrugët e tij. */
+api.use("/me/subscription", subscriptionRoutes);
+api.use("/me", notify.meRoutes);
+api.use("/me", pushRoutes.meRoutes);
 api.use("/me", meRoutes);
+api.use("/admin", notify.adminRoutes);
+api.use(notify.publicRoutes);
+api.use(pushRoutes.publicRoutes);
 api.use("/audio", audioRoutes);
 
 /*

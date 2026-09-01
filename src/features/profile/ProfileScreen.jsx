@@ -23,7 +23,7 @@ const AVATAR_GRADIENT = brandPair;
 export function ProfileScreen() {
   const { name, email, isPremium, isAdmin, setIsAdmin, subscriptionStatus, signOut } = useSession();
   const { openAdmin } = useNavigation();
-  const { history, streak } = useProgress();
+  const { history, streak, dailyHistory } = useProgress();
 
   const totalMinutes = history.reduce((sum, entry) => sum + entry.min, 0);
 
@@ -68,7 +68,7 @@ export function ProfileScreen() {
       <DailyRhythm />
       <MoodTracker />
       <HabitTracker />
-      <PracticeHistory history={history} />
+      <PracticeHistory series={dailyHistory} />
 
       <div
         style={{

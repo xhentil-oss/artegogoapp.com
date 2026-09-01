@@ -97,4 +97,12 @@ export const STORAGE_KEYS = {
   recentSearches: "recent-searches",
   /** Rrugëtimi aktiv dhe ditët e kryera për çdo program. */
   journey: "journey",
+  /**
+   * Streak-u dhe medaljet, siç i kthen serveri.
+   *
+   * Kujtesë e ndërmjetme, jo burim: pa të, profili shfaqte "Ende pa medalje"
+   * për një çast para se përgjigjja të mbërrinte — dhe njëmbëdhjetë medalje
+   * dukeshin si zero.
+   */
+  rewards: "rewards",
 };

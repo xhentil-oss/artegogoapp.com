@@ -2,6 +2,9 @@ import { api, hasToken } from "./api.js";
 import { STORAGE_KEYS } from "./storage.js";
 import { findMeditation } from "./contentRepository.js";
 import { isDatabaseId } from "../lib/ids.js";
+/* Etiketa e ditës mbahet te një vend i vetëm: dy kopje devijojnë, dhe grafiku
+   do të tregonte "31 Gsh" ndërsa historiku "Sot" për të njëjtën ditë. */
+import { dayLabel } from "../domain/history.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -36,15 +39,6 @@ function diffKeys(prev = {}, next = {}) {
   const added = Object.keys(next).filter((k) => !(k in prev));
   const removed = Object.keys(prev).filter((k) => !(k in next));
   return { added, removed };
-}
-
-const MONTHS = ["Jan", "Shk", "Mar", "Pri", "Maj", "Qer", "Kor", "Gsh", "Sht", "Tet", "Nën", "Dhj"];
-
-/** `2026-08-31` → `Sot` ose `31 Gsh`. */
-function dayLabel(isoDate, today) {
-  if (isoDate === today) return "Sot";
-  const [, m, d] = isoDate.split("-");
-  return `${Number(d)} ${MONTHS[Number(m) - 1] ?? ""}`.trim();
 }
 
 /** Data e sotme sipas orës së pajisjes — vetëm për etiketa, kurrë për shkrim. */
@@ -98,6 +92,31 @@ const moods = {
   },
 };
 
+/* ─────────────── njoftim kur një seancë shkon te serveri ─────────────── */
+
+/*
+ * Streak-u dhe medaljet i llogarit një trigger brenda MySQL-së, sapo seanca
+ * shkruhet. Pa këtë sinjal, aplikacioni nuk do ta dinte se diçka ndryshoi —
+ * dhe medalja e fituar do të shfaqej vetëm pas rifreskimit të faqes.
+ */
+const sessionListeners = new Set();
+
+/** @returns {() => void} funksioni që e heq dëgjuesin */
+export function onSessionSaved(listener) {
+  sessionListeners.add(listener);
+  return () => sessionListeners.delete(listener);
+}
+
+const announceSession = () => {
+  for (const listener of sessionListeners) {
+    try {
+      listener();
+    } catch {
+      /* Një dëgjues i prishur nuk duhet ta ndalë ruajtjen. */
+    }
+  }
+};
+
 /* ─────────────── historiku i seancave ─────────────── */
 
 const history = {
@@ -148,6 +167,10 @@ const history = {
       });
       entry.id = saved?.id ?? null;
     }
+
+    /* Vetëm kur diçka u dërgua vërtet — përndryshe çdo etiketë gjendjeje do
+       të shkaktonte një rileximi të panevojshëm të shpërblimeve. */
+    if (fresh.length > 0) announceSession();
   },
 };
 

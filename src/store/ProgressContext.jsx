@@ -1,12 +1,16 @@
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { HABITS } from "../data/tracking.js";
-import { STORAGE_KEYS } from "../services/storage.js";
+import { storage, STORAGE_KEYS } from "../services/storage.js";
 import { usePersistentMap } from "../hooks/usePersistentMap.js";
 import { dayKey } from "../lib/time.js";
 import { totalMinutes } from "../domain/sequence.js";
 import { bestStreak, currentStreak, medalCounts } from "../domain/medals.js";
 import { isDatabaseId } from "../lib/ids.js";
 import { countOn, dayNumber, fullDays, isRhythmKey, rhythmKey, stepsOn } from "../domain/rhythm.js";
+import { dailySeries } from "../domain/history.js";
+import { api, onTokenChange } from "../services/api.js";
+import { fetchRewards } from "../services/rewards.js";
+import { onSessionSaved } from "../services/userData.js";
 
 /**
  * Progresi i përdoruesit: historiku i seancave, zakonet, gjendja emocionale.
@@ -38,6 +42,15 @@ export function ProgressProvider({ children }) {
    *     shkruan seanca të vërteta dhe shihet qartë se janë vendosur me dorë.
    */
   const history = useMemo(() => Object.values(sessions.data).flat(), [sessions.data]);
+
+  /**
+   * Historiku si seri DITORE — shtatë ditët e fundit.
+   *
+   * ⚠️  Grafiku më parë merrte gjashtë SEANCAT e fundit. Gjashtë seanca të së
+   *     njëjtës ditë jepnin gjashtë shtylla me etiketën "Sot", dhe ditët pa
+   *     meditim zhdukeshin — pra një javë me një ditë praktike dukej plot.
+   */
+  const dailyHistory = useMemo(() => dailySeries(sessions.data, 7, today), [sessions.data, today]);
 
   /**
    * Regjistron një seancë të përfunduar.
@@ -148,9 +161,65 @@ export function ProgressProvider({ children }) {
     [sessions.data]
   );
 
-  const streak = useMemo(() => currentStreak(meditationDays, today), [meditationDays, today]);
-  const record = useMemo(() => bestStreak(meditationDays), [meditationDays]);
-  const medals = useMemo(() => medalCounts(meditationDays), [meditationDays]);
+  /* Llogaritja lokale — fallback-u kur serveri nuk arrihet. */
+  const localStreak = useMemo(() => currentStreak(meditationDays, today), [meditationDays, today]);
+  const localRecord = useMemo(() => bestStreak(meditationDays), [meditationDays]);
+  const localMedals = useMemo(() => medalCounts(meditationDays), [meditationDays]);
+
+  /**
+   * SHPËRBLIMET NGA DATABAZA.
+   *
+   * ⚠️  Medaljet i jep një trigger brenda MySQL-së, dhe ato MBETEN kur streak-u
+   *     prishet — janë rreshta te tabela `medals`, jo një numër i rillogaritur.
+   *     Llogaritja nga ditët e meditimit do t'i rindërtonte sa herë, dhe një
+   *     ditë e humbur nga sinkronizimi do të hiqte një medalje të fituar me
+   *     punë tri javësh. Shih `services/rewards.js`.
+   */
+  const [rewards, setRewards] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = () => {
+      fetchRewards().then((fresh) => {
+        if (cancelled || !fresh) return;
+        setRewards(fresh);
+        /* Kujtesa e ndërmjetme — që hapja e radhës të mos tregojë zero. */
+        storage.set(STORAGE_KEYS.rewards, fresh);
+      });
+    };
+
+    /* Vlera e ruajtur shfaqet e para; serveri e mbishkruan sapo përgjigjet. */
+    storage.get(STORAGE_KEYS.rewards, null).then((cached) => {
+      if (!cancelled && cached) setRewards((prev) => prev ?? cached);
+    });
+
+    load();
+    /* Trigger-i i databazës e përditëson streak-un sapo seanca shkruhet; pa
+       këtë dëgjues, medalja e fituar do të shfaqej vetëm pas rifreskimit. */
+    const stopSession = onSessionSaved(load);
+    /* Dhe pas hyrjes — efekti rrjedh në montim, kur ende nuk ka token. */
+    const stopToken = onTokenChange(() => {
+      cancelled = false;
+      load();
+    });
+
+    return () => {
+      cancelled = true;
+      stopSession();
+      stopToken();
+    };
+  }, []);
+
+  /** Rileximi me kërkesë — p.sh. pasi admini pastron historikun. */
+  const refreshRewards = useCallback(
+    () => fetchRewards().then((fresh) => fresh && setRewards(fresh)),
+    []
+  );
+
+  const streak = rewards?.streak ?? localStreak;
+  const record = rewards?.record ?? localRecord;
+  const medals = rewards?.medals ?? localMedals;
 
   /**
    * DEMO — mbush historikun me `days` ditë rresht që mbyllen sot.
@@ -160,7 +229,29 @@ export function ProgressProvider({ children }) {
    * do të mund të shpërputhej me atë që tregon historiku.
    */
   const seedStreakDemo = useCallback(
-    (days) => {
+    async (days) => {
+      /*
+       * ⚠️  Streak-u NUK mund të falsifikohet më nga klienti, dhe kjo është
+       *     ndryshimi thelbësor: `local_date` e llogarit serveri, ndaj njëzet e
+       *     një seanca "të ditëve të kaluara" do të binin të gjitha te sotmja
+       *     dhe streak-u do të mbetej 1.
+       *
+       *     Prandaj demonstrimi kalon te një rrugë admin-i, që e rrit streak-un
+       *     hap pas hapi dhe lë trigger-in e databazës t'i jepë medaljet me
+       *     numërimin e saktë (21 ditë → 7 bronz, 3 argjend, 1 ar).
+       */
+      const result = await api
+        .post("/admin/demo/streak", { days })
+        .then((r) => ({ ok: true, r }))
+        .catch((err) => ({ ok: false, err }));
+
+      if (result.ok) {
+        await refreshRewards();
+        return { ok: true, medals: result.r?.medals };
+      }
+
+      /* Pa të drejta admin-i, mbetet demonstrimi lokal — i dukshëm vetëm te
+         kjo pajisje, dhe pa medalje, sepse ato i jep serveri. */
       const seeded = {};
       for (let i = days - 1; i >= 0; i -= 1) {
         const date = new Date();
@@ -168,8 +259,9 @@ export function ProgressProvider({ children }) {
         seeded[dayKey(date)] = [{ date: "Demo", min: 10, intent: "calm" }];
       }
       sessions.update(() => seeded);
+      return { ok: false, error: result.err?.message ?? "Duhen të drejta admin-i." };
     },
-    [sessions]
+    [sessions, refreshRewards]
   );
 
   /** DEMO — pastron historikun e seancave (bashkë me streak-un dhe medaljet). */
@@ -178,6 +270,7 @@ export function ProgressProvider({ children }) {
   const value = useMemo(
     () => ({
       history,
+      dailyHistory,
       recordSession,
       tagLastSession,
 
@@ -186,6 +279,11 @@ export function ProgressProvider({ children }) {
       streak,
       record,
       medals,
+      /** Medaljet një nga një, me datën e fitimit — për historikun. */
+      medalList: rewards?.list ?? [],
+      /** Totalet e llogaritura nga serveri; `null` kur lexohet lokalisht. */
+      totals: rewards ? { sessions: rewards.totalSessions, minutes: rewards.totalMinutes } : null,
+      refreshRewards,
       seedStreakDemo,
       clearHistoryDemo,
 
@@ -207,8 +305,9 @@ export function ProgressProvider({ children }) {
       setMood,
     }),
     [
-      history, recordSession, tagLastSession,
-      meditationDays, streak, record, medals, seedStreakDemo, clearHistoryDemo,
+      history, dailyHistory, recordSession, tagLastSession,
+      meditationDays, streak, record, medals, rewards, refreshRewards,
+      seedStreakDemo, clearHistoryDemo,
       habits.data, today, habitScore, toggleHabit, moods.data, setMood,
       rhythmToday, completeRhythmStep,
     ]

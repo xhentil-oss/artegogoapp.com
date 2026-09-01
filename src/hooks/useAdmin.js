@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { adminState, adminVersion, subscribeAdmin } from "../services/adminStore.js";
+import { adminState, adminVersion, subscribeAdmin, adminSync } from "../services/adminStore.js";
 
 /**
  * Abonim te ndryshimet e admin-it.
@@ -17,4 +17,17 @@ export function useAdminVersion() {
 export function useAdminState() {
   useAdminVersion();
   return adminState();
+}
+
+/**
+ * Gjendja e ruajtjes te databaza.
+ *
+ * ⚠️  Ndahet nga `useAdminState` sepse ndryshon me ritëm tjetër: gjendja e
+ *     panelit ndryshon me çdo klikim, ndërsa kjo vetëm kur mbërrin përgjigjja e
+ *     serverit. Pa të, një shkrim i dështuar mbetet i padukshëm — dhe klientja
+ *     do të mendonte se biblioteka u riorganizua kur asgjë nuk u ruajt.
+ */
+export function useAdminSync() {
+  useAdminVersion();
+  return adminSync();
 }

@@ -10,6 +10,7 @@ import {
   Upload,
 } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
+import { useAdminSync } from "../../hooks/useAdmin.js";
 import { sx } from "../../theme/styles.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
 import { resetAdmin } from "../../services/adminStore.js";
@@ -100,6 +101,8 @@ export function AdminPanel() {
           </button>
         </header>
 
+        <SyncBar />
+
         <nav
           className="ag-scroll-x"
           style={{ display: "flex", gap: 8, marginBottom: 18, overflowX: "auto" }}
@@ -135,6 +138,42 @@ export function AdminPanel() {
 
         <Active />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Shiriti i gjendjes së ruajtjes.
+ *
+ * ⚠️  Ekziston sepse tani ndryshimet shkojnë te databaza, dhe një dështim
+ *     rrjeti ose mungesë të drejtash duhet të shihet. Pa të, paneli do të
+ *     dukej sikur ruajti — ndërsa mesazhi "Vetëm administratorët" do të
+ *     kishte mbetur i pahapur te konsola.
+ */
+function SyncBar() {
+  const sync = useAdminSync();
+  if (!sync.busy && !sync.error && !sync.saved) return null;
+
+  const tone = sync.error
+    ? { bg: "#FDECEC", ink: "#B3261E", border: "#F5C6C4" }
+    : { bg: T.bg2, ink: T.sub, border: T.line };
+
+  return (
+    <div
+      role="status"
+      style={{
+        background: tone.bg,
+        border: `1px solid ${tone.border}`,
+        color: tone.ink,
+        borderRadius: radii.lg,
+        padding: "9px 12px",
+        fontSize: 12,
+        fontWeight: 600,
+        marginBottom: 12,
+        lineHeight: 1.5,
+      }}
+    >
+      {sync.busy ? "Po ruhet te databaza…" : sync.error ? `Nuk u ruajt — ${sync.error}` : sync.saved}
     </div>
   );
 }

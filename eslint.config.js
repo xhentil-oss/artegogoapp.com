@@ -61,6 +61,23 @@ export default [
   },
 
   /*
+   * Service Worker-i rrjedh te një kontekst i vetin.
+   *
+   * `self`, `clients` dhe `registration` nuk ekzistojnë te faqja — pa këtë
+   * bllok, `npm run lint` i shënon si të papërcaktuara te kod krejtësisht i
+   * saktë, dhe ai skedar është pikërisht ai që nuk duhet të ketë gabime: ai
+   * rrjedh kur aplikacioni është i mbyllur, ku askush nuk i sheh.
+   */
+  {
+    files: ["public/sw.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "script",
+      globals: { ...globals.serviceworker },
+    },
+  },
+
+  /*
    * API-ja është Node dhe CommonJS.
    *
    * `sourceType: "commonjs"` është pjesa thelbësore: pa të, `require` dhe

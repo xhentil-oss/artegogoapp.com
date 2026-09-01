@@ -78,6 +78,19 @@ function verify(label, map, list) {
 verify("teknikave", TECHNIQUE_BY_SLUG, TECHNIQUES);
 verify("kategorive", CATEGORY_BY_SLUG, CATEGORIES);
 
+
+/**
+ * Hartat e kundërta — id lokale → slug i serverit.
+ *
+ * ⚠️  Ndërtohen nga të njëjtat harta, jo të shkruara veç. Dy lista të pavarura
+ *     do të devijonin sapo shtohej një teknikë, dhe paneli i admin-it do të
+ *     dërgonte një slug që serveri nuk e njeh — pa asnjë shenjë te ekrani.
+ */
+const invert = (map) => Object.fromEntries(Object.entries(map).map(([slug, id]) => [id, slug]));
+
+export const TECHNIQUE_SLUG_BY_ID = invert(TECHNIQUE_BY_SLUG);
+export const CATEGORY_SLUG_BY_ID = invert(CATEGORY_BY_SLUG);
+
 /** `intent` përcakton vetëm gradientin; merret nga kategoria e meditimit. */
 const INTENT_BY_CATEGORY_ID = new Map(CATEGORIES.map((c) => [c.id, c.intent]));
 

@@ -3,7 +3,8 @@ import { storage, STORAGE_KEYS } from "../services/storage.js";
 import * as auth from "../services/auth.js";
 import * as billing from "../services/billing.js";
 import { defaultReminders } from "../data/reminders.js";
-import { describeSubscription, effectiveNow, startSubscription } from "../domain/subscription.js";
+import { describeSubscription, fromServer } from "../domain/subscription.js";
+import { hasToken } from "../services/api.js";
 
 /**
  * Sesioni i përdoruesit: identiteti, kujtesat, abonimi, të drejtat.
@@ -21,6 +22,7 @@ export function SessionProvider({ children }) {
   const [subscription, setSubscription] = useState(null);
   const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +129,29 @@ export function SessionProvider({ children }) {
     else storage.remove(STORAGE_KEYS.subscription);
   }, []);
 
+  /**
+   * Abonimi lexohet nga serveri.
+   *
+   * ⚠️  Gjendja lokale shfaqet e para që ekrani të mos presë rrjetin, por
+   *     SERVERI ËSHTË I VËRTETI dhe e mbishkruan. Pa këtë, abonimi mbetej te
+   *     `localStorage`: kushdo që hapte DevTools bëhej premium, dhe një
+   *     abonent që ndërronte telefon e humbte aksesin që kishte paguar.
+   *
+   *     `null` do të thotë "kjo llogari s'ka pasur kurrë abonim", ndaj çdo
+   *     gjendje e mbetur te pajisja hiqet.
+   */
+  useEffect(() => {
+    if (!ready || !hasToken()) return undefined;
+
+    let cancelled = false;
+    billing.current().then((state) => {
+      if (!cancelled) persistSubscription(fromServer(state));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, account, persistSubscription]);
+
   const completeOnboarding = useCallback(
     ({ name, reminders }) => {
       const record = {
@@ -165,10 +190,31 @@ export function SessionProvider({ children }) {
    */
   const subscribe = useCallback(
     async (planId = "year") => {
-      const result = await billing.purchase(planId);
-      if (!result.ok) return result;
+      /*
+       * Butoni i paywall-it është "Fillo provën 3-ditore falas" — pra veprimi
+       * është nisja e provës, jo një blerje. Datat i llogarit serveri, dhe ai
+       * refuzon rinisjen sepse mban `trial_used_at`.
+       */
+      const result = await billing.startTrial(planId);
+      if (result.ok) persistSubscription(fromServer(result.state));
+      /* Nëse prova është konsumuar, rruga e vetme mbetet dyqani. */
+      else if (result.used) persistSubscription(fromServer(await billing.current()));
+      return result;
+    },
+    [persistSubscription]
+  );
 
-      persistSubscription(startSubscription(planId));
+  /**
+   * Blerje e vërtetë përmes App Store / Google Play.
+   *
+   * E ndarë nga `subscribe` me qëllim: e para jep një provë që e vendos vetë
+   * serveri, e dyta kërkon një faturë të verifikuar. Ngatërrimi i tyre do të
+   * thoshte që një dështim pagese të hapte gjithsesi aksesin.
+   */
+  const purchasePlan = useCallback(
+    async (planId = "year") => {
+      const result = await billing.purchase(planId);
+      if (result.ok) persistSubscription(fromServer(result.state));
       return result;
     },
     [persistSubscription]
@@ -181,8 +227,10 @@ export function SessionProvider({ children }) {
    * telefon duhet ta rifitojë aksesin pa paguar dy herë.
    */
   const restorePurchases = useCallback(async () => {
+    /* Tani funksionon vërtet: abonimi rri te llogaria në databazë, ndaj pyetja
+       i drejtohet serverit dhe përgjigjja vlen te çdo pajisje. */
     const result = await billing.restore();
-    if (result.ok && result.planId) persistSubscription(startSubscription(result.planId));
+    if (result.ok) persistSubscription(fromServer(result.state));
     return result;
   }, [persistSubscription]);
 
@@ -190,17 +238,19 @@ export function SessionProvider({ children }) {
    * Anulon rinovimin — aksesi vazhdon deri në fund të periudhës.
    * `cancelledAt` ruhet sepse pa të nuk dihet deri kur vlen aksesi.
    */
-  const cancelSubscription = useCallback(() => {
-    if (!subscription) return;
-    const at = effectiveNow(subscription);
-    persistSubscription({ ...subscription, cancelled: true, cancelledAt: at.toISOString() });
+  const cancelSubscription = useCallback(async () => {
+    if (!subscription) return { ok: false };
+    const result = await billing.cancel();
+    if (result.ok) persistSubscription(fromServer(result.state));
+    return result;
   }, [persistSubscription, subscription]);
 
   /** Rikthen rinovimin para se periudha të mbarojë. */
-  const resumeSubscription = useCallback(() => {
-    if (!subscription) return;
-    const { cancelledAt: _removed, ...rest } = subscription;
-    persistSubscription({ ...rest, cancelled: false });
+  const resumeSubscription = useCallback(async () => {
+    if (!subscription) return { ok: false };
+    const result = await billing.resume();
+    if (result.ok) persistSubscription(fromServer(result.state));
+    return result;
   }, [persistSubscription, subscription]);
 
   /**
@@ -240,8 +290,25 @@ export function SessionProvider({ children }) {
     storage.remove(STORAGE_KEYS.onboarding);
   }, [persistSubscription]);
 
-  /* Gjendja rillogaritet nga regjistrimi — asnjë kopje e dyfishtë. */
-  const status = useMemo(() => describeSubscription(subscription), [subscription]);
+  /**
+   * Gjendja rillogaritet nga regjistrimi — asnjë kopje e dyfishtë.
+   *
+   * ⚠️  Kur regjistrimi vjen nga serveri, VENDIMI I TIJ për aksesin fiton mbi
+   *     llogaritjen lokale. Të dyja duhet të japin të njëjtën gjë; nëse jo,
+   *     e vërteta është ajo e serverit — ai e ka orën e vet dhe të dhënat e
+   *     vërteta, ndërsa ora e pajisjes mund të jetë zhvendosur me dorë.
+   *
+   *     Ora demo (`offsetDays`) mbetet përjashtim i qëllimshëm: ajo ekziston
+   *     pikërisht për të parë kalimet provë → aktiv → skaduar pa pritur ditë,
+   *     ndaj kur është ndezur, llogaritja lokale mbetet ajo që shfaqet.
+   */
+  const status = useMemo(() => {
+    const local = describeSubscription(subscription);
+    const demoClock = (subscription?.offsetDays ?? 0) !== 0;
+
+    if (demoClock || typeof subscription?.serverIsPremium !== "boolean") return local;
+    return { ...local, isPremium: subscription.serverIsPremium };
+  }, [subscription]);
 
   const value = useMemo(
     () => ({
@@ -265,6 +332,7 @@ export function SessionProvider({ children }) {
       isPremium: status.isPremium,
 
       subscribe,
+      purchasePlan,
       restorePurchases,
       cancelSubscription,
       resumeSubscription,
@@ -288,6 +356,7 @@ export function SessionProvider({ children }) {
       subscription,
       status,
       subscribe,
+      purchasePlan,
       restorePurchases,
       cancelSubscription,
       resumeSubscription,

@@ -14,10 +14,13 @@
  * të paketohet (Capacitor ose React Native), ndryshon vetëm brendia e
  * `purchase()` dhe `restore()` — asnjë ekran.
  *
- * ⚠️  Statusi premium që kthehet këtu është i besueshëm vetëm sa vetë pajisja.
- *     Në prodhim, e vërteta është te backend-i pas verifikimit të faturës;
- *     kjo shtresë vetëm e nis blerjen dhe i dorëzon faturën atij.
+ * ⚠️  E VËRTETA ËSHTË TE DATABAZA, JO TE PAJISJA.
+ *     Çdo funksion këtu pyet ose shkruan te serveri. Më parë abonimi ruhej te
+ *     `localStorage`, ndaj kushdo që hapte DevTools bëhej premium — dhe aksesi
+ *     humbte sapo ndërrohej pajisja.
  */
+
+import { api, ApiError } from "./api.js";
 
 export const STORES = {
   APPLE: "appstore",
@@ -53,22 +56,64 @@ export function cancelPath(store = detectStore()) {
 }
 
 /**
- * Nis blerjen te dyqani.
+ * Nis provën 3-ditore falas.
  *
- * @param {string} planId
- * @returns {Promise<{ ok: boolean, planId: string, store: string, receipt: string }>}
+ * ⚠️  Datat i llogarit SERVERI (`POST /me/subscription/trial`), jo aplikacioni.
+ *     Një `endsAt` i dërguar nga klienti do të thoshte provë e përjetshme me
+ *     një kërkesë të vetme — dhe serveri e refuzon rinisjen, sepse mban
+ *     `trial_used_at`.
+ *
+ * @returns {Promise<{ ok: boolean, state?: object, error?: string, used?: boolean }>}
+ */
+export async function startTrial(planId = "year") {
+  try {
+    const state = await api.post("/me/subscription/trial", { planId });
+    return { ok: true, state, planId, store: detectStore() };
+  } catch (err) {
+    /* 409 = prova është përdorur më parë. Nuk është gabim, është fakt. */
+    if (err instanceof ApiError && err.status === 409) {
+      return { ok: false, used: true, error: err.message };
+    }
+    return { ok: false, error: err?.message ?? "Nuk u nis dot prova." };
+  }
+}
+
+/**
+ * Blerje e vërtetë përmes dyqanit.
+ *
+ * Rendi është ai që kërkon seksioni 8: dyqani jep faturën, serveri e verifikon,
+ * dhe VETËM pastaj hapet aksesi. Aplikacioni nuk e shkruan kurrë vetë.
+ *
+ * ⚠️  Sot serveri kthen `501 not_configured`, sepse kredencialet e Apple/Google
+ *     nuk janë vendosur ende — dhe `src/storeVerify.js` dështon i mbyllur me
+ *     qëllim. Prova falas mbetet rruga e vetme drejt aksesit deri atëherë.
+ *
+ * @returns {Promise<{ ok: boolean, state?: object, error?: string, notConfigured?: boolean }>}
  */
 export async function purchase(planId) {
   const store = detectStore();
 
-  /* PROD: këtu thirret StoreKit / Play Billing, pastaj fatura i dërgohet
-     backend-it për verifikim përpara se aksesi të hapet. */
-  return {
-    ok: true,
-    planId,
-    store,
-    receipt: `demo-${planId}`,
-  };
+  /* PROD: këtu thirret StoreKit / Play Billing dhe merret fatura e vërtetë. */
+  const receipt = null;
+
+  if (!receipt) {
+    return {
+      ok: false,
+      notConfigured: true,
+      store,
+      error: "Pagesat kalojnë përmes App Store / Google Play — jo te versioni web.",
+    };
+  }
+
+  try {
+    const state = await api.post("/me/subscription/verify", { store, receipt, planId });
+    return { ok: true, state, planId, store };
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 501) {
+      return { ok: false, notConfigured: true, store, error: err.message };
+    }
+    return { ok: false, store, error: err?.message ?? "Blerja nuk u verifikua." };
+  }
 }
 
 /**
@@ -76,8 +121,44 @@ export async function purchase(planId) {
  *
  * Apple e kërkon si buton më vete në çdo paywall: një përdorues që ndërron
  * telefon duhet ta rifitojë aksesin pa paguar dy herë.
+ *
+ * Këtu kjo funksionon vërtet — abonimi rri te llogaria në databazë, jo te
+ * pajisja. Pyetja "a ka kjo llogari abonim?" i drejtohet serverit, dhe
+ * përgjigjja vlen te çdo telefon ku hyn i njëjti email.
  */
 export async function restore() {
-  /* PROD: StoreKit `restorePurchases` / Play Billing `queryPurchases`. */
-  return { ok: false, reason: "Nuk u gjet asnjë abonim aktiv për këtë llogari." };
+  try {
+    const state = await api.get("/me/subscription");
+    if (state?.isPremium) return { ok: true, state, planId: state.planId };
+    return { ok: false, reason: "Nuk u gjet asnjë abonim aktiv për këtë llogari." };
+  } catch (err) {
+    return { ok: false, reason: err?.message ?? "Nuk u lidhëm me serverin." };
+  }
+}
+
+/** Anulon rinovimin. Aksesi vazhdon deri në fund të periudhës së paguar. */
+export async function cancel() {
+  try {
+    return { ok: true, state: await api.post("/me/subscription/cancel") };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Anulimi nuk u ruajt." };
+  }
+}
+
+/** Rikthen rinovimin para se periudha të mbarojë. */
+export async function resume() {
+  try {
+    return { ok: true, state: await api.post("/me/subscription/resume") };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Rikthimi nuk u ruajt." };
+  }
+}
+
+/** Gjendja e tanishme, sipas databazës. */
+export async function current() {
+  try {
+    return await api.get("/me/subscription");
+  } catch {
+    return null;
+  }
 }

@@ -107,4 +107,7 @@ export async function signIn({ email, password }) {
 export async function signOut() {
   await clearToken();
   await storage.remove(STORAGE_KEYS.account);
+  /* Shpërblimet e llogarisë së mëparshme hiqen: përndryshe hyrja e radhës do
+     të shihte për një çast medaljet e dikujt tjetër. */
+  await storage.remove(STORAGE_KEYS.rewards);
 }

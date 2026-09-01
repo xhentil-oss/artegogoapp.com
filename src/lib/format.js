@@ -16,4 +16,16 @@ export const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 export const percent = (value, total) => (total > 0 ? clamp((value / total) * 100, 0, 100) : 0);
 
 /** Ora 19 → "7 PM", ora 5 → "5 AM". */
-export const hourLabel = (hour) => (hour > 12 ? `${hour - 12} PM` : `${hour} AM`);
+/**
+ * Ora në formatin 12-orësh.
+ *
+ * ⚠️  Ora 12 është PM, jo AM — mesditë, jo mesnatë. Versioni i mëparshëm
+ *     (`hour > 12 ? PM : AM`) e nxirrte hapin e mesditës si "Nga ora 12 AM",
+ *     pra tetë orë para se të hapej vërtet. Ora 0 është 12 AM.
+ */
+export const hourLabel = (hour) => {
+  const h = ((hour % 24) + 24) % 24;
+  if (h === 0) return "12 AM";
+  if (h === 12) return "12 PM";
+  return h > 12 ? `${h - 12} PM` : `${h} AM`;
+};

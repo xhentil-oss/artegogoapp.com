@@ -67,6 +67,41 @@ export function trialTimeline() {
   ];
 }
 
+/**
+ * Përkthen gjendjen e serverit në regjistrimin që njeh aplikacioni.
+ *
+ * ⚠️  Serveri mban `status`, `startedAt`, `endsAt`; aplikacioni mendon me
+ *     `trialEndsAt` dhe llogarit vetë periudhat. Përkthimi bëhet vetëm këtu.
+ *
+ *     Për një provë, `endsAt` ËSHTË fundi i provës. Për një abonim të paguar,
+ *     prova ka kaluar, ndaj `trialEndsAt` nxirret nga data e nisjes — kështu
+ *     `describeSubscription` e klasifikon saktë si "aktiv" dhe jo si "provë".
+ */
+export function fromServer(state) {
+  if (!state?.startedAt) return null;
+
+  const startedAt = new Date(state.startedAt);
+  const trialEndsAt =
+    state.status === "trial" && state.endsAt
+      ? new Date(state.endsAt)
+      : new Date(startedAt.getTime() + TRIAL_DAYS * DAY_MS);
+
+  return {
+    planId: state.planId ?? "year",
+    startedAt: startedAt.toISOString(),
+    trialEndsAt: trialEndsAt.toISOString(),
+    cancelled: Boolean(state.cancelled),
+    cancelledAt: state.cancelledAt ? new Date(state.cancelledAt).toISOString() : null,
+    /* Ora demo nuk vjen nga serveri — ajo është mjet i pajisjes. */
+    offsetDays: 0,
+    /* E vërteta e aksesit, ashtu siç e tha serveri. */
+    serverIsPremium: Boolean(state.isPremium),
+    serverStatus: state.status ?? null,
+    trialUsed: Boolean(state.trialUsed),
+    endsAt: state.endsAt ?? null,
+  };
+}
+
 /** Krijon një abonim të ri, që nis me provën falas. */
 export function startSubscription(planId, now = new Date()) {
   const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * DAY_MS);

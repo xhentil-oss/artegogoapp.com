@@ -38,6 +38,32 @@ const TIMEOUT_MS = 15000;
  */
 let token = null;
 
+/*
+ * Dëgjuesit e ndryshimit të identitetit.
+ *
+ * ⚠️  Pa këtë, çdo efekt që lexon nga serveri rrjedh VETËM në montim — pra
+ *     përpara hyrjes — dhe nuk rilexon kurrë pas saj. Medaljet, streak-u,
+ *     zakonet dhe të preferuarat dilnin zero derisa faqja rifreskohej, edhe
+ *     kur databaza i kishte të gjitha.
+ */
+const tokenListeners = new Set();
+
+/** @returns {() => void} funksioni që e heq dëgjuesin */
+export function onTokenChange(listener) {
+  tokenListeners.add(listener);
+  return () => tokenListeners.delete(listener);
+}
+
+function announceToken() {
+  for (const listener of tokenListeners) {
+    try {
+      listener(token);
+    } catch {
+      /* Një dëgjues i prishur nuk duhet ta ndalë hyrjen. */
+    }
+  }
+}
+
 /** Lexon token-in e ruajtur — thirret një herë, në nisje. */
 export async function loadToken() {
   token = await storage.get(STORAGE_KEYS.token, null);
@@ -47,11 +73,13 @@ export async function loadToken() {
 export async function setToken(value) {
   token = value;
   await storage.set(STORAGE_KEYS.token, value);
+  announceToken();
 }
 
 export async function clearToken() {
   token = null;
   await storage.remove(STORAGE_KEYS.token);
+  announceToken();
 }
 
 export const hasToken = () => Boolean(token);

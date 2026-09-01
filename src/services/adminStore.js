@@ -1,5 +1,6 @@
 import { storage, STORAGE_KEYS } from "./storage.js";
 import { applyClassificationOverrides } from "../domain/classification.js";
+import { saveClassification, savePool } from "./adminApi.js";
 import { applyPoolOverrides } from "../domain/dailyPick.js";
 
 /**
@@ -37,6 +38,22 @@ let state = EMPTY;
 let version = 0;
 const listeners = new Set();
 
+/**
+ * Gjendja e sinkronizimit me databazën.
+ *
+ * ⚠️  E ndarë nga `state`, që të mos përfundojë te `localStorage`: një gabim
+ *     rrjeti i ruajtur do të rishfaqej si i freskët javën tjetër.
+ */
+let sync = { busy: false, error: null, saved: null };
+
+export const adminSync = () => sync;
+
+function setSync(next) {
+  sync = { ...sync, ...next };
+  version += 1;
+  listeners.forEach((listener) => listener());
+}
+
 export const adminState = () => state;
 
 /** Numër që rritet me çdo ndryshim — çelësi i `useSyncExternalStore`. */
@@ -72,20 +89,57 @@ export const resetAdmin = () => commit(EMPTY);
 
 /* ---------- veprime të emërtuara ---------- */
 
-/** Cakton teknikën dhe/ose kategorinë e një nën-grupi. */
-export const setClassification = (key, patch) =>
+/**
+ * Cakton teknikën dhe/ose kategorinë e një nën-grupi.
+ *
+ * ⚠️  Shkruan TE DATABAZA, jo vetëm te pajisja.
+ *
+ *     Ndryshimi shfaqet menjëherë lokalisht që ekrani të mos ngrijë, por e
+ *     vërteta është ajo e serverit: pas suksesit katalogu rilexohet dhe
+ *     mbivendosja lokale HIQET. Nëse do të mbetej, do të ekzistonin dy të
+ *     vërteta mbi të njëjtin grup, dhe ato do të devijonin pa u vënë re.
+ *
+ *     Dështimi NUK e zhbën ndryshimin lokal — përdoruesi sapo e bëri zgjedhjen,
+ *     dhe zhdukja e saj nën gisht do të ishte më keq. Gabimi shfaqet te paneli.
+ */
+export async function setClassification(key, patch) {
   updateAdmin((prev) => ({
     classification: { ...prev.classification, [key]: { ...prev.classification[key], ...patch } },
   }));
 
+  setSync({ busy: true, error: null });
+  const result = await saveClassification(key, patch);
+
+  if (result.ok) {
+    /* Databaza e mban tani — mbivendosja lokale nuk duhet më. */
+    updateAdmin((prev) => {
+      const { [key]: _done, ...rest } = prev.classification;
+      return { classification: rest };
+    });
+    setSync({ busy: false, error: null, saved: `${result.updated} meditime u ruajtën` });
+  } else {
+    setSync({ busy: false, error: result.error, saved: null });
+  }
+  return result;
+}
+
 /** Shton ose heq një nën-grup nga pool-i i një çasti të ditës. */
-export const togglePoolEntry = (slotId, key, defaults) =>
-  updateAdmin((prev) => {
-    const pools = prev.pools ?? defaults;
-    const current = pools[slotId] ?? [];
-    const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
-    return { pools: { ...pools, [slotId]: next } };
+export async function togglePoolEntry(slotId, key, defaults) {
+  const pools = state.pools ?? defaults;
+  const current = pools[slotId] ?? [];
+  const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+
+  updateAdmin({ pools: { ...pools, [slotId]: next } });
+
+  setSync({ busy: true, error: null });
+  const result = await savePool(slotId, next);
+  setSync({
+    busy: false,
+    error: result.ok ? null : result.error,
+    saved: result.ok ? `${result.count} meditime në pool` : null,
   });
+  return result;
+}
 
 /** Shton një element në një listë (programe, postime, live, media). */
 export const addTo = (listName, item) =>

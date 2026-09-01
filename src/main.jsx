@@ -5,6 +5,7 @@ import { injectCssVariables } from "./theme/cssVariables.js";
 import { loadAdminState } from "./services/adminStore.js";
 import { loadToken } from "./services/api.js";
 import { hydrateCatalog } from "./services/catalog.js";
+import { registerWorker } from "./services/push.js";
 
 import "./styles/global.css";
 import "./styles/animations.css";
@@ -36,6 +37,16 @@ async function boot() {
   if (!catalog.ok) {
     console.warn(`[artegogo] katalogu lokal (${catalog.error}) — serveri nuk u lexua.`);
   }
+
+  /*
+   * Service Worker-i regjistrohet pa u pritur.
+   *
+   * ⚠️  Ai është hallka që merr njoftimin kur aplikacioni është i mbyllur, ndaj
+   *     duhet të ekzistojë para se përdoruesi të shtypë "Ndizi njoftimet".
+   *     Por regjistrimi nuk duhet ta vonojë nisjen: dështimi i tij nuk e prek
+   *     asgjë tjetër, dhe një shfletues pa mbështetje thjesht kthen `null`.
+   */
+  registerWorker().catch(() => {});
 
   ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
