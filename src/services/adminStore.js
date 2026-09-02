@@ -1,6 +1,6 @@
 import { storage, STORAGE_KEYS } from "./storage.js";
 import { applyClassificationOverrides } from "../domain/classification.js";
-import { saveClassification, savePool } from "./adminApi.js";
+import { hidePost, publishPost, saveClassification, savePool } from "./adminApi.js";
 import { applyPoolOverrides } from "../domain/dailyPick.js";
 
 /**
@@ -137,6 +137,41 @@ export async function togglePoolEntry(slotId, key, defaults) {
     busy: false,
     error: result.ok ? null : result.error,
     saved: result.ok ? `${result.count} meditime në pool` : null,
+  });
+  return result;
+}
+
+/**
+ * Boton një postim te komuniteti — te databaza.
+ *
+ * ⚠️  Postimi shtohet lokalisht me `pending: true` që të shfaqet menjëherë, dhe
+ *     HIQET sapo serveri e kthen te feed-i. Pa atë flamur do të shfaqej dy
+ *     herë: një herë si postim lokal, një herë si i ardhur nga serveri.
+ */
+export async function createPost(draft) {
+  const local = { ...draft, pending: true };
+  updateAdmin((prev) => ({ posts: [local, ...prev.posts] }));
+
+  setSync({ busy: true, error: null });
+  const result = await publishPost(draft);
+
+  updateAdmin((prev) => ({ posts: prev.posts.filter((p) => p !== local) }));
+  setSync({
+    busy: false,
+    error: result.ok ? null : result.error,
+    saved: result.ok ? "Postimi u botua" : null,
+  });
+  return result;
+}
+
+/** Fsheh një postim te databaza. */
+export async function deletePost(id) {
+  setSync({ busy: true, error: null });
+  const result = await hidePost(id);
+  setSync({
+    busy: false,
+    error: result.ok ? null : result.error,
+    saved: result.ok ? "Postimi u hoq" : null,
   });
   return result;
 }

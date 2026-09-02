@@ -2,6 +2,7 @@ import { REMINDER_SLOTS } from "../data/reminders.js";
 import { picksForDay } from "../domain/dailyPick.js";
 import { dayKey } from "../lib/time.js";
 import { TRIAL_DAYS, effectiveNow } from "../domain/subscription.js";
+import { api, hasToken } from "./api.js";
 
 /**
  * NJOFTIMET DITORE (seksioni 9).
@@ -90,4 +91,46 @@ export function trialEndingNotification(subscription) {
 export function permissionState() {
   if (typeof Notification === "undefined") return "unsupported";
   return Notification.permission;
+}
+
+/* ─────────────── njoftimet e dërguara vërtet ─────────────── */
+
+/**
+ * Njoftimet që serveri KA DËRGUAR.
+ *
+ * ⚠️  Ndryshe nga `dailyNotifications`, që tregon çfarë do të dërgohet, kjo
+ *     tregon çfarë U DËRGUA. Dallimi ka rëndësi: pa të, cron-i krijonte
+ *     rreshta te databaza dhe asnjë ekran nuk i lexonte — njoftimi "prova po
+ *     mbaron" ekzistonte dhe nuk e shihte kush.
+ *
+ * @returns {Promise<Array>} listë bosh kur nuk ka hyrje ose serveri nuk arrihet
+ */
+export async function sentNotifications(limit = 20) {
+  if (!hasToken()) return [];
+  try {
+    const rows = await api.get(`/me/notifications?limit=${limit}`);
+    return Array.isArray(rows) ? rows : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Shënon një njoftim si të lexuar. */
+export async function markRead(id) {
+  try {
+    await api.put(`/me/notifications/${encodeURIComponent(id)}/read`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Shënon të gjitha si të lexuara. */
+export async function markAllRead() {
+  try {
+    await api.put("/me/notifications/read-all");
+    return true;
+  } catch {
+    return false;
+  }
 }

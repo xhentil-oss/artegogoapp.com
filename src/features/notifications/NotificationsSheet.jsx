@@ -5,7 +5,8 @@ import { sx, circle } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
 import { padBottom } from "../../theme/responsive.js";
 import { intentMeta } from "../../domain/intent.js";
-import { dailyNotifications, trialEndingNotification } from "../../services/notifications.js";
+import { dailyNotifications, markAllRead, sentNotifications, trialEndingNotification } from "../../services/notifications.js";
+import { relativeTime } from "../../lib/format.js";
 import { formatDate } from "../../domain/subscription.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
@@ -105,7 +106,9 @@ export function NotificationsSheet() {
 
         {trial && <TrialCard trial={trial} />}
 
-        <PushControl />
+        <SentList />
+
+      <PushControl />
       </div>
     </div>
   );
@@ -398,6 +401,85 @@ function PushControl() {
           pikërisht atë që sheh këtu.
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * NJOFTIMET E DËRGUARA VËRTET.
+ *
+ * ⚠️  Pa këtë listë, cron-i krijonte rreshta te `notifications` dhe asnjë ekran
+ *     nuk i lexonte: njoftimi "prova po mbaron" ekzistonte te databaza dhe nuk
+ *     e shihte kush. Kjo është ana tjetër e zinxhirit — çfarë U DËRGUA, ndryshe
+ *     nga kartat lart, që tregojnë çfarë DO të dërgohet.
+ */
+function SentList() {
+  const [items, setItems] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    sentNotifications().then((rows) => {
+      if (!cancelled) setItems(rows);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /* Derisa mbërrijnë, nuk shfaqet asgjë — një kokë seksioni bosh do të dukej
+     si defekt te një llogari e re, që normalisht nuk ka njoftime. */
+  if (!items || items.length === 0) return null;
+
+  const unread = items.filter((n) => !n.is_read).length;
+
+  const readAll = async () => {
+    await markAllRead();
+    setItems((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
+  };
+
+  return (
+    <div style={{ marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ color: T.ink, fontSize: 14, fontWeight: 800 }}>
+          Të dërguara
+          {unread > 0 && (
+            <span style={{ color: T.gold, fontSize: 12, fontWeight: 700, marginLeft: 7 }}>
+              {unread} të palexuara
+            </span>
+          )}
+        </div>
+        {unread > 0 && (
+          <button
+            onClick={readAll}
+            style={{ ...sx.bareButton, color: T.sub, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+          >
+            Shëno të lexuara
+          </button>
+        )}
+      </div>
+
+      {items.map((n) => (
+        <div
+          key={n.id}
+          style={{
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start",
+            background: n.is_read ? T.bg2 : "rgba(224,169,60,0.10)",
+            border: `1px solid ${n.is_read ? T.line : "rgba(224,169,60,0.45)"}`,
+            borderRadius: radii.lg,
+            padding: "11px 12px",
+            marginBottom: 8,
+          }}
+        >
+          <Bell size={15} color={n.is_read ? T.faint : T.gold} style={{ flexShrink: 0, marginTop: 2 }} />
+          <div style={sx.flexText}>
+            <div style={{ color: T.ink, fontSize: 13.5, fontWeight: 700 }}>{n.title}</div>
+            <div style={{ color: T.sub, fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>{n.body}</div>
+            <div style={{ color: T.faint, fontSize: 11, marginTop: 4 }}>{relativeTime(n.sent_at)}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

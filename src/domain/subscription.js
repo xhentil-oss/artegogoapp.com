@@ -44,25 +44,60 @@ export const planById = (id) => PLANS.find((p) => p.id === id) ?? PLANS[0];
  * provës ndryshon: një timeline i shkruar me dorë do të vazhdonte të thoshte
  * "Dita 3" edhe pasi prova të bëhej 7-ditore.
  */
-export function trialTimeline() {
+export function trialTimeline(subscription = null) {
+  /*
+   * Datat e vërteta, kur abonimi ekziston.
+   *
+   * ⚠️  Pa këtë, timeline-i ishte dekor: "Dita 2" mbetej "Dita 2" edhe pasi
+   *     prova kishte nisur, dhe përdoruesi nuk mësonte kurrë KUR do të
+   *     tarifohej. Tani, sapo prova nis, hapat tregojnë data konkrete dhe ai
+   *     që ka kaluar shënohet i kryer.
+   */
+  const start = subscription?.startedAt ? new Date(subscription.startedAt) : null;
+  const now = start ? effectiveNow(subscription) : null;
+
+  const dateFor = (dayOffset) => {
+    if (!start) return null;
+    const at = new Date(start.getTime() + dayOffset * DAY_MS);
+    return at;
+  };
+
+  /** `Sot`, ose `3 shtator` kur dita ka kaluar apo është e ardhme. */
+  const label = (fallback, dayOffset) => {
+    const at = dateFor(dayOffset);
+    if (!at) return fallback;
+    if (at.toDateString() === now.toDateString()) return "Sot";
+    return formatDate(at);
+  };
+
+  const done = (dayOffset) => {
+    const at = dateFor(dayOffset);
+    return Boolean(at) && now > at;
+  };
+
   return [
     {
       id: "start",
-      day: "Sot",
+      day: label("Sot", 0),
       title: "Fillon prova falas",
       detail: "Zhbllokon gjithçka.",
+      done: done(0),
     },
     {
       id: "remind",
-      day: `Dita ${TRIAL_DAYS - 1}`,
+      day: label(`Dita ${TRIAL_DAYS - 1}`, TRIAL_DAYS - 1),
       title: "Të kujtojmë",
-      detail: "Njoftim që prova po mbaron.",
+      detail: start
+        ? "Njoftim në pajisje që prova po mbaron."
+        : "Njoftim që prova po mbaron.",
+      done: done(TRIAL_DAYS - 1),
     },
     {
       id: "bill",
-      day: `Dita ${TRIAL_DAYS}`,
+      day: label(`Dita ${TRIAL_DAYS}`, TRIAL_DAYS),
       title: "Fillon abonimi",
       detail: "Tarifohesh vetëm nëse s'ke anuluar.",
+      done: done(TRIAL_DAYS),
     },
   ];
 }

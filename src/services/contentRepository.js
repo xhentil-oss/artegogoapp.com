@@ -11,7 +11,7 @@ import { SLOT_POOLS } from "../data/slotPools.js";
 import { SERIES, PROGRAMS, SHORTS, SOUNDSCAPES, LIVE_SESSIONS } from "../data/catalog.js";
 import { LIFE_AREAS, ALL_AREAS } from "../data/lifeAreas.js";
 import { adminState } from "./adminStore.js";
-import { programsFromServer } from "./catalog.js";
+import { feedFromServer, programsFromServer } from "./catalog.js";
 import {
   MEDITATIONS,
   listTechniques,
@@ -222,4 +222,16 @@ export const listPrograms = () => [
 export const listLiveSessions = () => [...adminState().live, ...LIVE_SESSIONS];
 
 /* ---------- komunitet ---------- */
-export const listFeed = () => [...adminState().posts, ...FEED];
+/**
+ * Feed-i i komunitetit.
+ *
+ * ⚠️  Postimet lokale të panelit vijnë të parat vetëm sa nuk kanë mbërritur ende
+ *     te serveri; sapo serveri përgjigjet, ai është lista. `FEED` mbetet
+ *     fallback offline. Bashkimi i të treve do të tregonte të njëjtin postim dy
+ *     herë — një herë me id lokale, një herë me atë të databazës.
+ */
+export const listFeed = () => {
+  const server = feedFromServer();
+  if (server) return [...adminState().posts.filter((p) => p.pending), ...server];
+  return [...adminState().posts, ...FEED];
+};

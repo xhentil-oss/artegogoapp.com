@@ -6,7 +6,6 @@ import { brandSplash } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
 import { MIN_PASSWORD } from "../../services/auth.js";
 import { useSession } from "../../store/SessionContext.jsx";
-import { LotusMark } from "../../components/icons/BrandIcons.jsx";
 
 const MODES = {
   in: { title: "Mirë se u ktheve", cta: "Hyr", swap: "Nuk ke llogari? Krijo një", other: "up" },
@@ -63,7 +62,36 @@ export function AuthScreen() {
     >
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ textAlign: "center", marginBottom: 30 }}>
-          <LotusMark size={54} />
+          {/*
+            Logoja e markës.
+
+            ⚠️  Nga `public/`, pra me rrugë absolute `/transparent-logo-2.png`.
+                Një import i zakonshëm do ta kalonte nëpër bundler dhe do t'i
+                ndryshonte emrin; kjo mbetet e njëjta adresë edhe pas ndërtimit.
+
+                `height` e caktuar dhe `width: auto` ruajnë përpjesëtimin
+                pavarësisht se sa i gjerë është skedari.
+          */}
+          <img
+            src="/transparent-logo-2.png"
+            alt="Arte Gogo"
+            style={{
+              height: 72,
+              width: "auto",
+              display: "block",
+              margin: "0 auto",
+              /*
+               * Skedari është vizatim i errët; sfondi këtu është gradient
+               * vjollcë, ndaj mbi të mezi dallohej.
+               *
+               * `brightness(0)` i bën të gjitha pikselat e dukshëm të zinj,
+               * `invert(1)` i kthen në të bardhë — transparenca mbetet e
+               * paprekur. Kështu forma ruhet pa u dashur një skedar i dytë.
+               * Nëse vjen një version i bardhë i logos, ky rresht hiqet.
+               */
+              filter: "brightness(0) invert(1)",
+            }}
+          />
           <h1
             style={{
               color: "#fff",

@@ -8,7 +8,34 @@ const meRoutes = require("./src/routes/me");
 const audioRoutes = require("./src/routes/audio");
 const subscriptionRoutes = require("./src/routes/subscription");
 const notify = require("./src/routes/notifications");
-const pushRoutes = require("./src/routes/push");
+
+/**
+ * Ngarkim tolerant për veçoritë opsionale.
+ *
+ * ⚠️  Një `require` i drejtpërdrejtë e vret GJITHË serverin kur një skedar i
+ *     vetëm mungon. Ndodhi vërtet: `app.js` u ngarkua para skedarëve të Web
+ *     Push-it, dhe API-ja kthente 503 — pra hyrja, katalogu dhe abonimi
+ *     pushuan për shkak të një veçorie që nuk ishte vendosur ende.
+ *
+ *     Kufiri është i ngushtë me qëllim: kapet VETËM `MODULE_NOT_FOUND` i vetë
+ *     modulit të kërkuar. Një gabim sintakse brenda tij, ose një varësi që
+ *     mungon, kalon më tej dhe rrëzon nisjen — sepse ai është defekt, jo
+ *     vendosje e paplotë.
+ */
+function optional(path) {
+  try {
+    return require(path);
+  } catch (err) {
+    if (err?.code === "MODULE_NOT_FOUND" && String(err.message).includes(path)) {
+      console.warn(`[artegogo] veçori e paongarkuar: ${path} — vazhdohet pa të.`);
+      return null;
+    }
+    throw err;
+  }
+}
+
+const pushRoutes = optional("./src/routes/push");
+const community = optional("./src/routes/community");
 
 /**
  * API-JA E ARTE GOGO-S
@@ -107,11 +134,12 @@ api.use("/content", contentRoutes);
 /* Para `/me`, që `/me/subscription` të mos kapet nga rrugët e tij. */
 api.use("/me/subscription", subscriptionRoutes);
 api.use("/me", notify.meRoutes);
-api.use("/me", pushRoutes.meRoutes);
+if (pushRoutes) api.use("/me", pushRoutes.meRoutes);
 api.use("/me", meRoutes);
 api.use("/admin", notify.adminRoutes);
+if (community) api.use("/admin", community.adminRoutes);
 api.use(notify.publicRoutes);
-api.use(pushRoutes.publicRoutes);
+if (pushRoutes) api.use(pushRoutes.publicRoutes);
 api.use("/audio", audioRoutes);
 
 /*

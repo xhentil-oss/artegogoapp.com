@@ -21,7 +21,7 @@ const AVATAR_GRADIENT = brandPair;
 
 /** Profili: identiteti, statistikat, trackerat, historiku, opsioni admin. */
 export function ProfileScreen() {
-  const { name, email, isPremium, isAdmin, setIsAdmin, subscriptionStatus, signOut } = useSession();
+  const { name, email, isPremium, isAdmin, setIsAdmin, subscriptionStatus, signOut, canAdmin } = useSession();
   const { openAdmin } = useNavigation();
   const { history, streak, dailyHistory } = useProgress();
 
@@ -70,23 +70,35 @@ export function ProfileScreen() {
       <HabitTracker />
       <PracticeHistory series={dailyHistory} />
 
-      <div
-        style={{
-          ...sx.panel,
-          borderRadius: radii.lg,
-          padding: 16,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Settings size={18} color={T.sub} />
-          <span style={{ color: T.ink, fontSize: 14, fontWeight: 600 }}>Modaliteti Admin (demo)</span>
+      {/*
+        Ndërprerësi shfaqet VETËM për llogari me të drejtë admin-i.
+
+        ⚠️  Më parë ishte i dukshëm për këdo dhe e vendoste flamurin
+            drejtpërdrejt — pra çdo përdorues mund ta ndezte dhe të shihte
+            kutinë "Shkruaj një postim" te komuniteti. Shkrimi dështonte me 403,
+            por ftesa ishte aty, ndërsa seksioni 6.6 kërkon "VETËM admini
+            poston". Tani është vetëm çelës PAMJEJE për atë që e ka të drejtën,
+            jo dhënës i saj.
+      */}
+      {canAdmin && (
+        <div
+          style={{
+            ...sx.panel,
+            borderRadius: radii.lg,
+            padding: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Settings size={18} color={T.sub} />
+            <span style={{ color: T.ink, fontSize: 14, fontWeight: 600 }}>Modaliteti Admin</span>
+          </div>
+          <ToggleSwitch checked={isAdmin} onChange={setIsAdmin} label="Modaliteti Admin" />
         </div>
-        <ToggleSwitch checked={isAdmin} onChange={setIsAdmin} label="Modaliteti Admin" />
-      </div>
+      )}
 
       {isAdmin && <SubscriptionDemoControls />}
       {isAdmin && <MedalDemoControls />}

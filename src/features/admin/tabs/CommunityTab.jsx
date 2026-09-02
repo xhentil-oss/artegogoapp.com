@@ -3,8 +3,7 @@ import { Send, Trash2 } from "lucide-react";
 import { T, radii } from "../../../theme/tokens.js";
 import { sx } from "../../../theme/styles.js";
 import { listFeed, listMeditations, listPostTypes } from "../../../services/contentRepository.js";
-import { addTo, removeFrom } from "../../../services/adminStore.js";
-import { useAdminState } from "../../../hooks/useAdmin.js";
+import { createPost, deletePost } from "../../../services/adminStore.js";
 import { nextId } from "../../../lib/id.js";
 import { Empty, Field, Panel, PrimaryButton, Select, TextArea, TextInput } from "../AdminUI.jsx";
 
@@ -15,7 +14,6 @@ import { Empty, Field, Panel, PrimaryButton, Select, TextArea, TextInput } from 
  * Postimet e reja shfaqen në krye, para atyre bazë.
  */
 export function CommunityTab() {
-  const admin = useAdminState();
   const meditations = listMeditations();
 
   const [author, setAuthor] = useState("Artemisa");
@@ -24,13 +22,29 @@ export function CommunityTab() {
   const [meditationId, setMeditationId] = useState("");
 
   const ready = text.trim().length > 0;
-  const baseCount = listFeed().length - admin.posts.length;
+  /*
+   * Lista vjen nga FEED-I I VËRTETË, jo nga `admin.posts`.
+   *
+   * ⚠️  `admin.posts` mban vetëm postimet në pritje — ato që sapo u dërguan dhe
+   *     për të cilat serveri nuk ka përgjigjur ende. Pas botimit ai zbrazet,
+   *     ndaj lista do të dukej bosh ndërsa feed-i i publikut ishte plot.
+   */
+  const posts = listFeed();
 
-  const publish = () => {
+  /**
+   * Boton postimin TE DATABAZA.
+   *
+   * ⚠️  Fusha `time` nuk ruhet më si "Tani": ajo llogaritet në lexim nga
+   *     `published_at`. Një etiketë e ruajtur do të mbetej "Tani" edhe pas një
+   *     jave — dhe pikërisht ashtu ishte më parë.
+   */
+  const publish = async () => {
     if (!ready) return;
     const attached = meditations.find((m) => m.id === meditationId);
-    addTo("posts", {
-      /* e njëjta formë si te `data/feed.js`, plus meditimi i bashkangjitur */
+
+    const result = await createPost({
+      /* e njëjta formë si te `data/feed.js`, që lista lokale e pritjes të
+         vizatohet me të njëjtin komponent */
       id: nextId("post"),
       author: author.trim() || "Arte Gogo",
       handle: "Arte Gogo",
@@ -43,15 +57,20 @@ export function CommunityTab() {
       text: text.trim(),
       meditationId: attached?.id ?? null,
     });
-    setText("");
-    setMeditationId("");
+
+    /* Fushat pastrohen vetëm pas suksesit: nëse botimi dështon, teksti i
+       shkruar nuk duhet të humbet. */
+    if (result.ok) {
+      setText("");
+      setMeditationId("");
+    }
   };
 
   return (
     <>
       <Panel
         title="Postim i ri"
-        note={`${admin.posts.length} të tuat · ${baseCount} bazë. Shfaqet menjëherë te skeda "Komunitet".`}
+        note={`${posts.length} postime. Shfaqen menjëherë te skeda "Komunitet", për të gjithë.`}
       >
         <div style={{ display: "flex", gap: 10 }}>
           <div style={{ flex: 1 }}>
@@ -99,10 +118,10 @@ export function CommunityTab() {
         </PrimaryButton>
       </Panel>
 
-      <Panel title="Postimet e tua">
-        {admin.posts.length === 0 && <Empty>Ende asnjë postim.</Empty>}
+      <Panel title="Postimet">
+        {posts.length === 0 && <Empty>Ende asnjë postim.</Empty>}
 
-        {admin.posts.map((post) => {
+        {posts.map((post) => {
           const attached = meditations.find((m) => m.id === post.meditationId);
           return (
             <div
@@ -142,7 +161,7 @@ export function CommunityTab() {
               </div>
 
               <button
-                onClick={() => removeFrom("posts", post.id)}
+                onClick={() => deletePost(post.id)}
                 aria-label={`Fshi postimin e ${post.author}`}
                 className="ag-press"
                 style={{ background: "none", border: "none", padding: 6, cursor: "pointer" }}

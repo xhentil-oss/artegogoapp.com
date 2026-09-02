@@ -27,7 +27,7 @@ export function UpsellSheet() {
   const [busy, setBusy] = useState(null);
   const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
-  const { subscribe, restorePurchases } = useSession();
+  const { subscribe, restorePurchases, subscription } = useSession();
   useBodyScrollLock();
 
   /*
@@ -99,7 +99,7 @@ export function UpsellSheet() {
           </p>
         </div>
 
-        <Timeline />
+        <Timeline subscription={subscription} />
 
         <div style={{ display: "flex", gap: 10, margin: "24px 0 16px" }}>
           {PLANS.map((option) => (
@@ -168,24 +168,19 @@ export function UpsellSheet() {
 }
 
 /** Tre hapat e provës, të lidhur me një vijë vertikale. */
-function Timeline() {
-  const steps = trialTimeline();
+function Timeline({ subscription }) {
+  const steps = trialTimeline(subscription);
 
   return (
-    <div style={{ position: "relative" }}>
-      {/* Vija ndalon te hapi i fundit, jo poshtë tij — përndryshe do të dukej
-          sikur pas faturimit vjen edhe diçka tjetër. */}
-      <div
-        style={{
-          position: "absolute",
-          left: 17,
-          top: 18,
-          bottom: 34,
-          width: 2,
-          background: `linear-gradient(180deg, ${T.gold}, ${T.line})`,
-        }}
-      />
-
+    <div>
+      {/*
+        ⚠️  Vija lidhëse u hoq.
+            Sfondi i rrathëve është gjysmë-tejdukshëm (`rgba(...,0.16)`), ndaj
+            ajo shihej NËPËR ta — dukej si një vijë e prerë mbi ikonat, jo si
+            lidhje mes tyre. Zgjidhja "ta bënim sfondin të plotë" do ta hiqte
+            butësinë e ngjyrës; radha e hapave lexohet gjithsesi nga etiketat
+            "Sot / Dita 2 / Dita 3".
+      */}
       {steps.map((step, i) => {
         const Icon = STEP_ICONS[step.id];
         const isLast = i === steps.length - 1;
@@ -201,11 +196,16 @@ function Timeline() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: isLast ? T.bg2 : "rgba(224,169,60,0.16)",
-                border: `1.5px solid ${isLast ? T.line : T.gold}`,
+                /* Hapi i kryer mbushet plot — dallohet pa lexuar datën. */
+                background: step.done ? T.gold : isLast ? T.bg2 : "rgba(224,169,60,0.16)",
+                border: `1.5px solid ${step.done ? T.gold : isLast ? T.line : T.gold}`,
               }}
             >
-              <Icon size={16} color={isLast ? T.sub : T.gold} />
+              {step.done ? (
+                <Check size={16} color="#fff" strokeWidth={3} />
+              ) : (
+                <Icon size={16} color={isLast ? T.sub : T.gold} />
+              )}
             </div>
 
             <div style={{ paddingTop: 1 }}>

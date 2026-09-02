@@ -56,6 +56,13 @@ async function establish({ token, user }, fallbackEmail) {
     id: user?.id ?? null,
     email: user?.email ?? fallbackEmail,
     name: user?.name ?? null,
+    /*
+     * ⚠️  E drejta e admin-it vjen NGA SERVERI (`users.is_admin`), jo nga një
+     *     ndërprerës te pajisja. Ruhet vetëm që ekrani të dijë çfarë të
+     *     tregojë; vendimin e vërtetë e merr `requireAdmin` te çdo shkrim,
+     *     ndaj një vlerë e ndryshuar me dorë nuk jep asnjë të drejtë.
+     */
+    isAdmin: Boolean(user?.is_admin),
     createdAt: user?.created_at ?? new Date().toISOString(),
   };
   await setToken(token);

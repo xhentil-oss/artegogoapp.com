@@ -21,7 +21,20 @@ export function SessionProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [ready, setReady] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  /**
+   * Dy gjëra të ndryshme, dhe ngatërrimi i tyre ishte defekt i vërtetë.
+   *
+   * `canAdmin`  — E DREJTA, nga serveri (`users.is_admin`). Nuk ndryshohet dot
+   *               nga aplikacioni.
+   * `adminView` — PAMJA: a shfaqen mjetet e admin-it tani. Ka kuptim vetëm për
+   *               atë që e ka të drejtën.
+   *
+   * ⚠️  Më parë ekzistonte vetëm një flamur, dhe një ndërprerës te profili e
+   *     vendoste drejtpërdrejt. Pra çdo përdorues mund ta ndezte dhe të shihte
+   *     kutinë "Shkruaj një postim" — shkrimi dështonte me 403, por ftesa
+   *     ishte aty, dhe kërkesa e seksionit 6.6 është "VETËM admini poston".
+   */
+  const [adminView, setAdminView] = useState(false);
 
 
   useEffect(() => {
@@ -35,6 +48,8 @@ export function SessionProvider({ children }) {
 
       if (savedAccount) {
         setAccount(savedAccount);
+        /* E drejta e admin-it vjen bashkë me llogarinë, nga serveri. */
+        setAdminView(Boolean(savedAccount.isAdmin));
       } else if (savedProfile?.name) {
         /*
          * Pajisje që e kishte aplikacionin PARA se të shtohej llogaria.
@@ -78,6 +93,9 @@ export function SessionProvider({ children }) {
    */
   const adoptAccount = useCallback(async (next) => {
     setAccount(next);
+    /* Pamja hapet vetëm për atë që e ka të drejtën. Çdo shkrim kalon gjithsesi
+       nga `requireAdmin` te serveri. */
+    setAdminView(Boolean(next?.isAdmin));
 
     const saved = await storage.get(STORAGE_KEYS.onboarding, null);
     if (!saved?.name) return;
@@ -119,7 +137,7 @@ export function SessionProvider({ children }) {
   const signOut = useCallback(async () => {
     await auth.signOut();
     setAccount(null);
-    setIsAdmin(false);
+    setAdminView(false);
   }, []);
 
   /** Shkruan abonimin njëherësh në gjendje dhe në ruajtje. */
@@ -286,9 +304,24 @@ export function SessionProvider({ children }) {
     setAccount(null);
     setProfile(null);
     persistSubscription(null);
-    setIsAdmin(false);
+    setAdminView(false);
     storage.remove(STORAGE_KEYS.onboarding);
   }, [persistSubscription]);
+
+  /** E drejta vjen nga llogaria, pra nga serveri. */
+  const canAdmin = Boolean(account?.isAdmin);
+
+  /**
+   * Ndërprerësi i pamjes.
+   *
+   * ⚠️  Kapet te `canAdmin`: një kërkesë për ta ndezur pa të drejtë shpërfillet
+   *     në heshtje. Kjo është pika që mungonte — më parë ai e vendoste flamurin
+   *     drejtpërdrejt, dhe kushdo shihte kutinë e shkrimit te komuniteti.
+   */
+  const setAdminSafely = useCallback(
+    (next) => setAdminView(canAdmin ? Boolean(next) : false),
+    [canAdmin]
+  );
 
   /**
    * Gjendja rillogaritet nga regjistrimi — asnjë kopje e dyfishtë.
@@ -340,13 +373,24 @@ export function SessionProvider({ children }) {
       resetDemoClock,
       resetToFreeDemo,
 
-      isAdmin,
-      setIsAdmin,
+      /** A e ka llogaria të drejtën e admin-it (nga serveri). */
+      canAdmin,
+      /**
+       * A shfaqen mjetet e admin-it.
+       *
+       * ⚠️  Gjithmonë `false` për një llogari pa të drejtë, sado herë të
+       *     shtypet ndërprerësi.
+       */
+      isAdmin: canAdmin && adminView,
+      setIsAdmin: setAdminSafely,
       completeOnboarding,
       updateReminders,
       logout,
     }),
     [
+      canAdmin,
+      adminView,
+      setAdminSafely,
       account,
       profile,
       ready,
@@ -363,7 +407,6 @@ export function SessionProvider({ children }) {
       shiftDemoClock,
       resetDemoClock,
       resetToFreeDemo,
-      isAdmin,
       completeOnboarding,
       updateReminders,
       logout,

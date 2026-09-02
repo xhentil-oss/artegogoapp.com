@@ -1,5 +1,5 @@
 import { api } from "./api.js";
-import { hydrateCatalog } from "./catalog.js";
+import { hydrateCatalog, refreshFeed } from "./catalog.js";
 import { listMeditations, listSubGroups } from "./contentRepository.js";
 import { isDatabaseId } from "../lib/ids.js";
 import { subKey } from "../data/classification.js";
@@ -105,3 +105,47 @@ export async function fetchPools() {
  */
 export const savableGroups = () =>
   new Set(listSubGroups().map((g) => g.key).filter((key) => idsForGroup(key).length > 0));
+
+/* ─────────────── komuniteti ─────────────── */
+
+/**
+ * Boton një postim te feed-i.
+ *
+ * ⚠️  Vetëm admini e ka këtë të drejtë, dhe kufizimi zbatohet TE SERVERI
+ *     (`requireAdmin`). Fshehja e kutisë së shkrimit nga përdoruesit e
+ *     zakonshëm është vetëm pamje — kushdo mund të dërgojë një kërkesë me dorë.
+ *
+ * @returns {Promise<{ok:boolean, post?:object, error?:string}>}
+ */
+export async function publishPost({ text, type, author, meditationId = null }) {
+  try {
+    const post = await api.post("/admin/posts", {
+      text,
+      type,
+      author,
+      meditationId: meditationId && isDatabaseId(meditationId) ? meditationId : null,
+    });
+    /* Feed-i rilexohet, që postimi i ri të shfaqet ashtu siç e shohin të
+       tjerët — me kohën dhe id-në e vërtetë, jo me atë të pritjes. */
+    await refreshFeed();
+    return { ok: true, post };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Botimi dështoi." };
+  }
+}
+
+/**
+ * Fsheh një postim.
+ *
+ * Serveri e shënon `is_published = 0` dhe NUK e fshin: postimet mbajnë reagime
+ * e komente njerëzish, dhe një postim i hequr gabimisht duhet të rikthehet.
+ */
+export async function hidePost(id) {
+  try {
+    await api.del(`/admin/posts/${encodeURIComponent(id)}`);
+    await refreshFeed();
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Fshehja dështoi." };
+  }
+}

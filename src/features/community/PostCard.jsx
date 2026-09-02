@@ -8,6 +8,7 @@ import {
   Heart,
   MessageCircle,
   MoreHorizontal,
+  Play,
   Send,
   Share2,
   ThumbsUp,
@@ -19,6 +20,8 @@ import { compactCount } from "../../lib/format.js";
 import { copyText, shareText } from "../../lib/share.js";
 import { intentMeta } from "../../domain/intent.js";
 import { Leaf } from "../../components/icons/BrandIcons.jsx";
+import { findMeditation } from "../../services/contentRepository.js";
+import { usePlayback } from "../../hooks/usePlayback.js";
 
 const EXCERPT_LENGTH = 150;
 
@@ -38,6 +41,26 @@ export function PostCard({ post, comments = [], onComment }) {
   const body = expanded || !isLong ? post.text : post.text.slice(0, EXCERPT_LENGTH).trimEnd();
   const likes = post.likes + (liked ? 1 : 0);
   const commentCount = post.comments + comments.length;
+
+  const { playItems } = usePlayback();
+
+  /**
+   * Hap meditimin e bashkangjitur.
+   *
+   * ⚠️  Kalon nga `playItems`, jo drejt te player-i: ai kontrollon abonimin dhe
+   *     hap paywall-in kur duhet. Pa këtë, një postim i komunitetit do të ishte
+   *     rrugë e hapur drejt përmbajtjes premium — dhe rregulli i tre meditimeve
+   *     falas do të anashkalohej me një klikim.
+   */
+  const openAttached = () => {
+    const meditation = findMeditation(post.meditationId);
+    if (meditation) {
+      playItems(meditation);
+      return;
+    }
+    /* Nuk gjendet te katalogu — p.sh. u shpublikua pas botimit të postimit. */
+    confirm("Ky meditim nuk është më i disponueshëm.");
+  };
 
   /** Konfirmim i shkurtër, që veprimi të mos ndodhë "në heshtje". */
   const confirm = (message) => {
@@ -151,6 +174,50 @@ export function PostCard({ post, comments = [], onComment }) {
           {post.type}
         </span>
       </div>
+
+      {/* ---------- meditimi i bashkangjitur ---------- */}
+      {/*
+        Seksioni 6.6: "Postimet mund të kenë një meditim të bashkangjitur që
+        hapet kur prekesh."
+
+        ⚠️  Titulli merret nga POSTIMI, jo nga katalogu. Serveri e kthen me
+            `JOIN`; kërkimi te katalogu do të dështonte për një meditim të
+            papublikuar, dhe bashkëngjitja do të dukej bosh pa asnjë shenjë pse.
+      */}
+      {post.meditationId && (
+        <button
+          onClick={openAttached}
+          className="ag-press"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 11,
+            width: "100%",
+            margin: "12px 14px 0",
+            maxWidth: "calc(100% - 28px)",
+            padding: "10px 12px",
+            background: T.bg2,
+            border: `1px solid ${T.line}`,
+            borderRadius: radii.lg,
+            cursor: "pointer",
+            textAlign: "left",
+          }}
+        >
+          <div style={{ ...circle(38), background: tile(meta.g), ...sx.center, flexShrink: 0 }}>
+            <Play size={16} color="#fff" fill="#fff" />
+          </div>
+          <div style={sx.flexText}>
+            <div style={{ color: T.ink, fontSize: 13.5, fontWeight: 700 }}>
+              {post.meditationTitle ?? "Meditim i bashkangjitur"}
+            </div>
+            <div style={{ color: T.sub, fontSize: 11.5, marginTop: 1 }}>
+              {post.meditationDuration
+                ? `${Math.round(post.meditationDuration / 60)} min · prek për ta hapur`
+                : "prek për ta hapur"}
+            </div>
+          </div>
+        </button>
+      )}
 
       {/* ---------- numëratorët ---------- */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "11px 14px 9px" }}>

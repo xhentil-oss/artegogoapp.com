@@ -2,6 +2,7 @@ import { api } from "./api.js";
 import { PHASES, PHASE_BY_DB, replaceBlocks } from "../data/blocks.js";
 import { replaceCatalog } from "../domain/classification.js";
 import { TECHNIQUE_BY_SLUG, CATEGORY_BY_SLUG, intentForCategory } from "./taxonomy.js";
+import { relativeTime } from "../lib/format.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -135,6 +136,68 @@ async function fetchPrograms() {
   return Array.isArray(rows) && rows.length > 0 ? rows.map(toProgram) : null;
 }
 
+/**
+ * KOMUNITETI
+ *
+ * Feed-i lexohet nga serveri, ndaj një postim i botuar nga paneli shihet nga
+ * TË GJITHË — jo vetëm nga shfletuesi që e shkroi.
+ */
+let serverFeed = null;
+
+export const feedFromServer = () => serverFeed;
+
+/** Enum-i i databazës → etiketa që lexon njeriu. */
+const POST_LABEL = {
+  frymezim: "Frymëzim",
+  njoftim: "Njoftim",
+  informacion: "Perceptim",
+  meditim: "Meditim",
+};
+
+function toPost(row) {
+  return {
+    id: row.id,
+    author: row.author_name,
+    handle: row.author_role,
+    /* Koha llogaritet në lexim, jo ruhet: një "Tani" i ruajtur do të mbetej
+       "Tani" edhe pas një jave. */
+    time: relativeTime(row.published_at),
+    type: POST_LABEL[row.post_type] ?? "Frymëzim",
+    verified: Boolean(row.is_verified),
+    likes: Number(row.reaction_count) || 0,
+    comments: Number(row.comment_count) || 0,
+    text: row.text_content,
+    /*
+     * Meditimi i bashkangjitur.
+     *
+     * ⚠️  Titulli dhe kohëzgjatja vijnë NGA FEED-I, jo nga katalogu lokal.
+     *     Serveri i kthen tashmë me `JOIN`, dhe kërkimi te katalogu do të
+     *     dështonte për një meditim të papublikuar — postimi do të tregonte
+     *     një bashkëngjitje bosh, pa asnjë shenjë pse.
+     */
+    meditationId: row.meditation_id ?? null,
+    meditationTitle: row.meditation_title ?? null,
+    meditationDuration: Number(row.duration_sec) || 0,
+    /* Feed-i nuk kthen qëllimin e meditimit të bashkangjitur, ndaj karta
+       ngjyroset njësoj për të gjitha — më mirë një ngjyrë e vetme sesa një
+       kusht që pretendon të zgjedhë dhe kthen të njëjtën gjë. */
+    intent: "heart",
+    publishedAt: row.published_at,
+  };
+}
+
+async function fetchFeed() {
+  const rows = await api.get("/content/feed?limit=50", { auth: false });
+  return Array.isArray(rows) ? rows.map(toPost) : null;
+}
+
+/** Rilexon vetëm feed-in — pas botimit ose fshirjes nga paneli. */
+export async function refreshFeed() {
+  const fresh = await fetchFeed().catch(() => null);
+  if (fresh) serverFeed = fresh;
+  return fresh;
+}
+
 /** Merr të gjitha faqet e meditimeve. */
 async function fetchAllMeditations() {
   const items = [];
@@ -166,12 +229,14 @@ export async function hydrateCatalog() {
      * Programet merren paralelisht, dhe dështimi i tyre NUK e prish katalogun:
      * pa meditime aplikacioni s'ka çfarë të tregojë, pa programe ka.
      */
-    const [rows, programs, blocks] = await Promise.all([
+    const [rows, programs, blocks, feed] = await Promise.all([
       fetchAllMeditations(),
       fetchPrograms().catch(() => null),
       fetchBlocks().catch(() => null),
+      fetchFeed().catch(() => null),
     ]);
     serverPrograms = programs;
+    serverFeed = feed;
     if (blocks) replaceBlocks(blocks);
 
     /*
