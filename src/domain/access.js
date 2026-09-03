@@ -1,67 +1,41 @@
-import { MEDITATIONS } from "./classification.js";
-
 /**
- * ÇFARË ËSHTË FALAS — seksioni 8 i katalogut.
+ * ÇFARË ËSHTË FALAS — asgjë.
  *
- * "Vetëm 3 meditime falas në gjithë aplikacionin (një për ankthin, një për
- * zemrën, një për trurin). Gjithçka tjetër është premium."
+ * ⚠️  MODELI NDRYSHOI (3 shtator 2026, vendim i klientes).
  *
- * Rregulli jeton këtu, si listë e vetme dhe e shkurtër. Më parë ishte një
- * flamur `premium` i shpërndarë nëpër të dhëna, dhe kishte rrëshqitur pa u
- * vënë re: nga 244 meditime, 92 ishin falas — tridhjetë herë më shumë se
- *ç'lejon modeli. Me një listë të vetme, numri është i dukshëm me sy dhe
- * përmbajtja e re lind premium, jo falas.
+ *     Seksioni 8 i katalogut thoshte: "Vetëm 3 meditime falas në gjithë
+ *     aplikacionin (një për ankthin, një për zemrën, një për trurin)."
+ *     Ai rregull U HOQ. Tani i gjithë katalogu është i kyçur, dhe e vetmja
+ *     rrugë drejt tij është prova 3-ditore falas, që hapet nga abonimi dhe
+ *     zhbllokon gjithçka.
  *
- * Zgjedhja bëhet me (koleksion, nën-grup, titull), jo me `id`: id-të gjenerohen
- * me radhë (`c1001`, `c1002`…), ndaj do të zhvendoseshin te një meditim tjetër
- * sapo të shtohej përmbajtje mbi to.
+ *     Skedari mbetet — nuk u fshi — sepse `usePlayback` dhe kartat e pyetin
+ *     këtu se çfarë është e hapur. Duke e mbajtur, rregulli qëndron në një
+ *     vend të vetëm: nëse ndonjëherë kthehen meditime falas, ndryshon vetëm
+ *     `isFreeMeditation` dhe asnjë ekran.
+ *
+ *     Lista e vjetër e tre meditimeve u hoq bashkë me `FREE_PICKS`. Mbajtja e
+ *     saj "për referencë" do të krijonte dyshim se rregulli ende vlen — dhe
+ *     historiku i git-it e mban gjithsesi.
+ *
+ * ⚠️  E vërteta e aksesit është TE SERVERI, jo këtu.
+ *     `GET /audio/:id` kontrollon abonimin para se të dorëzojë skedarin, dhe
+ *     `meditations.is_premium = 1` për të gjitha. Kjo shtresë vendos vetëm
+ *     çfarë SHFAQET; një klient i ndryshuar nuk fiton asgjë.
  */
 
-const FREE_PICKS = [
-  { theme: "Ankthi", collectionId: "col_med", subTheme: "Emocione", title: "Liro ankthin në 10 minuta" },
-  { theme: "Zemra", collectionId: "col_med", subTheme: "Zemra", title: "Hap zemrën" },
-  { theme: "Truri", collectionId: "col_med", subTheme: "Truri", title: "Fokus ekstrem" },
-];
+/** Sa meditime lejon modeli të jenë falas. Zero. */
+export const FREE_LIMIT = 0;
 
-/** Të tria meditimet falas, të zgjidhura nga katalogu. */
-export const FREE_MEDITATIONS = FREE_PICKS.map((pick) => {
-  const found = MEDITATIONS.find(
-    (item) =>
-      item.collectionId === pick.collectionId &&
-      item.subTheme === pick.subTheme &&
-      item.title === pick.title
-  );
-
-  /* Dështo herët dhe me zë: një meditim falas që zhduket nga katalogu do ta
-     linte modelin me dy — dhe askush nuk do ta vinte re në heshtje. */
-  if (!found) {
-    throw new Error(`Meditimi falas nuk u gjet në katalog: ${pick.collectionId}/${pick.title}`);
-  }
-  return { ...found, freeTheme: pick.theme };
-});
-
-const FREE_IDS = new Set(FREE_MEDITATIONS.map((item) => item.id));
-
-/** Sa meditime lejon modeli të jenë falas. */
-export const FREE_LIMIT = 3;
+/** Lista e meditimeve falas — bosh, dhe mbetet bosh. */
+export const FREE_MEDITATIONS = [];
 
 /**
- * A është ky meditim një nga të tre falasit?
+ * A është ky meditim falas?
  *
- * ⚠️  Kur përmbajtja vjen nga serveri, vendos SERVERI.
- *
- *     Meditimet e mbushura nga API-ja mbajnë `premium`, të lexuar nga kolona
- *     `meditations.is_premium`. Lista `FREE_IDS` më poshtë ndërtohet mbi
- *     katalogun lokal dhe i njeh meditimet me id si `c1001`; te serveri id-të
- *     janë UUID, ndaj asnjëra nuk do të përputhej dhe të tre falasit do të
- *     dilnin të kyçur.
- *
- *     Kjo nuk është thjesht ndreqje: aksesi është vendim që i takon serverit.
- *     `GET /audio/:id` e zbaton të njëjtin rregull para se të japë skedarin,
- *     ndaj një klient i ndryshuar nuk fiton asgjë duke gënjyer këtu.
+ * Gjithmonë `false`. Fusha `premium` e serverit nderohet po ashtu: nëse një
+ * meditim vjen me `is_premium = 0` (p.sh. një rresht i vjetër te databaza),
+ * ai NUK hapet — modeli i tanishëm nuk njeh përjashtime, dhe një rresht i
+ * harruar te databaza nuk duhet të bëhet vrimë.
  */
-export const isFreeMeditation = (item) => {
-  if (!item) return false;
-  if (typeof item.premium === "boolean") return !item.premium;
-  return FREE_IDS.has(item.id);
-};
+export const isFreeMeditation = () => false;

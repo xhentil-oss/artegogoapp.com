@@ -92,12 +92,14 @@ const BY_TITLE = [
   [/^Adoleshent/i, "adoleshentet"],
 ];
 
-/* ─── Tre meditimet falas — e njëjta listë si te `src/domain/access.js` ─── */
-const FREE = new Set([
-  "col_med/Emocione/Liro ankthin në 10 minuta",
-  "col_med/Zemra/Hap zemrën",
-  "col_med/Truri/Fokus ekstrem",
-]);
+/*
+ * ⚠️  ASNJË MEDITIM FALAS (vendim i klientes, 3 shtator 2026).
+ *
+ *     Më parë tre meditime hynin me `is_premium = 0`. Modeli ndryshoi: i
+ *     gjithë katalogu është i kyçur, dhe e vetmja rrugë është prova 3-ditore.
+ *     Lista u hoq — mbajtja e saj bosh do të linte dyshim se rregulli vlen.
+ */
+const FREE = new Set();
 
 const SLUG_MAP = { "ë": "e", "Ë": "E", "ç": "c", "Ç": "C" };
 const slug = (s) =>

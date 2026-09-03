@@ -54,15 +54,11 @@ export function usePlayback() {
 
   /**
    * Çfarë duhet të tregojë distinktivi mbi kapak.
-   * Për një abonent të dyja janë false — asgjë nuk shënohet, gjithçka e hapur.
+   *
+   * ⚠️  `free` u hoq: modeli nuk njeh më meditime falas (shih `domain/access`).
+   *     Për një abonent nuk shfaqet asgjë; për të tjerët, dryn mbi çdo kartelë.
    */
-  const accessBadge = useCallback(
-    (item) => ({
-      locked: !isPremium && !isFreeMeditation(item),
-      free: !isPremium && isFreeMeditation(item),
-    }),
-    [isPremium]
-  );
+  const accessBadge = useCallback((item) => ({ locked: isLocked(item) }), [isLocked]);
 
   return { isLocked, accessBadge, playItems, isPremium, openUpsell };
 }

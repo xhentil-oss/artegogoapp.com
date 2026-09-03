@@ -4,12 +4,29 @@ import { T, fonts, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { brandSplash } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
-import { MIN_PASSWORD } from "../../services/auth.js";
+import {
+  MIN_PASSWORD,
+  clearResetFromUrl,
+  requestReset,
+  resetTokenFromUrl,
+} from "../../services/auth.js";
 import { useSession } from "../../store/SessionContext.jsx";
 
 const MODES = {
   in: { title: "Mirë se u ktheve", cta: "Hyr", swap: "Nuk ke llogari? Krijo një", other: "up" },
   up: { title: "Krijo llogarinë", cta: "Vazhdo", swap: "Ke llogari? Hyr", other: "in" },
+  forgot: {
+    title: "Rivendos fjalëkalimin",
+    cta: "Dërgo link-un",
+    swap: "Kthehu te hyrja",
+    other: "in",
+  },
+  reset: {
+    title: "Fjalëkalim i re",
+    cta: "Ruaj dhe hyr",
+    swap: "Kthehu te hyrja",
+    other: "in",
+  },
 };
 
 /**
@@ -23,8 +40,18 @@ const MODES = {
  *     anashkalohej nga kushdo që hap DevTools, ndaj do të ishte mashtrim.
  */
 export function AuthScreen() {
-  const { signIn, signUp } = useSession();
-  const [mode, setMode] = useState("in");
+  const { signIn, signUp, completeReset } = useSession();
+
+  /*
+   * Token-i lexohet një herë, në montim.
+   *
+   * ⚠️  Nëse është, ekrani hapet drejt te forma e fjalëkalimit të re — pa këtë
+   *     përdoruesi që klikon link-un e email-it do të gjendej te hyrja, pa e
+   *     ditur se çfarë duhet të bëjë.
+   */
+  const [resetToken] = useState(() => resetTokenFromUrl());
+  const [mode, setMode] = useState(() => (resetTokenFromUrl() ? "reset" : "in"));
+  const [notice, setNotice] = useState(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
@@ -39,6 +66,30 @@ export function AuthScreen() {
 
     setBusy(true);
     setError(null);
+    setNotice(null);
+
+    /* Katër modalitete, një formë. Fushat që nuk duhen fshihen më poshtë. */
+    if (mode === "forgot") {
+      const result = await requestReset(email);
+      if (result.ok) setNotice(result.message);
+      else setError(result.error);
+      setBusy(false);
+      return;
+    }
+
+    if (mode === "reset") {
+      const result = await completeReset({ token: resetToken, password });
+      if (result.ok) {
+        /* Token-i hiqet nga adresa PATJETËR — përndryshe mbetet te historiku
+           i shfletuesit dhe kopjohet bashkë me link-un. */
+        clearResetFromUrl();
+      } else {
+        setError(result.error);
+      }
+      setBusy(false);
+      return;
+    }
+
     const action = mode === "in" ? signIn : signUp;
     const result = await action({ email, password });
     if (!result.ok) setError(result.error);
@@ -46,8 +97,12 @@ export function AuthScreen() {
   };
 
   const swap = () => {
+    /* Kthimi te hyrja nga rivendosja heq edhe token-in nga adresa: përndryshe
+       rifreskimi i radhës do ta hapte sërish formën e fjalëkalimit të re. */
+    if (mode === "reset") clearResetFromUrl();
     setMode(meta.other);
     setError(null);
+    setNotice(null);
   };
 
   return (
@@ -114,6 +169,8 @@ export function AuthScreen() {
             dërgimin me një flluskë në gjuhën e VET, dhe mesazhet tona shqip nuk
             do të shiheshin kurrë — dy stile gabimi për të njëjtën fushë. */}
         <form onSubmit={submit} noValidate>
+          {/* Te "reset" email-i nuk kërkohet — token-i e mban identitetin. */}
+          {mode !== "reset" && (
           <FieldRow icon={Mail}>
             <input
               type="email"
@@ -127,7 +184,10 @@ export function AuthScreen() {
               style={inputStyle}
             />
           </FieldRow>
+          )}
 
+          {/* Te "forgot" nuk ka fjalëkalim — dërgohet vetëm link-u. */}
+          {mode !== "forgot" && (
           <FieldRow icon={Lock}>
             <input
               type={visible ? "text" : "password"}
@@ -154,11 +214,33 @@ export function AuthScreen() {
               )}
             </button>
           </FieldRow>
+          )}
 
-          {mode === "up" && !error && (
+          {(mode === "up" || mode === "reset") && !error && !notice && (
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, margin: "0 0 14px 4px" }}>
               Së paku {MIN_PASSWORD} shenja.
             </p>
+          )}
+
+          {/* Mesazhi i serverit pas kërkesës — i njëjti edhe kur email-i nuk
+              ekziston, sepse ndryshe do të zbulohej cilat llogari ka. */}
+          {notice && (
+            <div
+              role="status"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+                background: "rgba(255,255,255,0.16)",
+                border: "1px solid rgba(255,255,255,0.35)",
+                borderRadius: radii.md,
+                padding: "11px 12px",
+                marginBottom: 14,
+              }}
+            >
+              <Mail size={15} color="#fff" style={{ flexShrink: 0, marginTop: 1 }} />
+              <span style={{ color: "#fff", fontSize: 12.5, lineHeight: 1.5 }}>{notice}</span>
+            </div>
           )}
 
           {error && (
@@ -204,6 +286,28 @@ export function AuthScreen() {
           </button>
         </form>
 
+        {/* Lidhja e harresës — vetëm te hyrja; te modalitetet e tjera s'ka kuptim. */}
+        {mode === "in" && (
+          <button
+            onClick={() => {
+              setMode("forgot");
+              setError(null);
+              setNotice(null);
+            }}
+            style={{
+              ...sx.bareButton,
+              width: "100%",
+              marginTop: 14,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Kam harruar fjalëkalimin
+          </button>
+        )}
+
         <button
           onClick={swap}
           style={{
@@ -220,18 +324,6 @@ export function AuthScreen() {
         </button>
       </div>
 
-      {/*
-        Ky shënim ndryshoi kur hyrja u lidh me serverin.
-
-        ⚠️  Më parë thoshte "fjalëkalimi nuk ruhet dhe nuk verifikohet" — e
-            vërtetë sa kohë prototipi e pranonte këdo. Tani `/auth/login` e
-            krahason me `users.password_hash` (bcrypt), ndaj ai tekst do të
-            ishte gënjeshtër pikërisht te ekrani ku përdoruesi vendos nëse t'i
-            besojë aplikacionit fjalëkalimin e vet.
-      */}
-      <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, textAlign: "center", margin: 0, lineHeight: 1.55 }}>
-        Fjalëkalimi verifikohet te serveri dhe ruhet i hash-uar — kurrë si tekst.
-      </p>
     </div>
   );
 }

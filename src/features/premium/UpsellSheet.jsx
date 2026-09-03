@@ -4,7 +4,6 @@ import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
 import { PLANS, TRIAL_DAYS, planNote, trialTimeline } from "../../domain/subscription.js";
-import { FREE_LIMIT } from "../../domain/access.js";
 import { cancelPath } from "../../services/billing.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
@@ -95,7 +94,7 @@ export function UpsellSheet() {
             Provoje {TRIAL_DAYS} ditë falas
           </h2>
           <p style={{ color: T.sub, fontSize: 13.5, margin: 0, lineHeight: 1.5 }}>
-            Falas janë vetëm {FREE_LIMIT} meditime. Me abonim hapet i gjithë katalogu.
+            I gjithë katalogu hapet me abonim — 244 meditime, programe dhe tinguj.
           </p>
         </div>
 

@@ -128,6 +128,22 @@ export function SessionProvider({ children }) {
   );
 
   /**
+   * Rivendosja e fjalëkalimit me token-in nga email-i.
+   *
+   * Kalon nga i njëjti `adoptAccount` si hyrja: përdoruesi sapo provoi
+   * identitetin përmes email-it, ndaj hyn menjëherë. Një ekran hyrjeje pas
+   * kësaj do të ishte hap i kotë.
+   */
+  const completeReset = useCallback(
+    async ({ token, password }) => {
+      const result = await auth.resetPassword({ token, password });
+      if (result.ok) await adoptAccount(result.account);
+      return result;
+    },
+    [adoptAccount]
+  );
+
+  /**
    * Shkëputje.
    *
    * Progresi RUHET në pajisje — zakonet, medaljet, të preferuarat. Kur
@@ -358,6 +374,7 @@ export function SessionProvider({ children }) {
 
       signIn,
       signUp,
+      completeReset,
       signOut,
 
       subscription,
@@ -396,6 +413,7 @@ export function SessionProvider({ children }) {
       ready,
       signIn,
       signUp,
+      completeReset,
       signOut,
       subscription,
       status,

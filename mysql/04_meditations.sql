@@ -10,7 +10,7 @@
 --      Për t'i fshehur derisa audio të jetë gati:
 --        UPDATE meditations SET published_at = NULL;
 --
---  Falas janë 3: një për ankthin, një për zemrën, një për trurin.
+--  Falas janë 0: një për ankthin, një për zemrën, një për trurin.
 -- ═══════════════════════════════════════════════════════════════
 
 SET NAMES utf8mb4;
@@ -32,7 +32,7 @@ CREATE TEMPORARY TABLE tmp_meditations (
 INSERT INTO tmp_meditations
   (title, subgroup, technique_slug, category_slug, duration_sec, audio_url, description, is_premium)
 VALUES
-  ('Liro ankthin në 10 minuta', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/liro-ankthin-ne-10-minuta.mp3', 'Liro ankthin në 10 minuta — praktikë e udhëhequr nga Arte Gogo.', 0),
+  ('Liro ankthin në 10 minuta', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/liro-ankthin-ne-10-minuta.mp3', 'Liro ankthin në 10 minuta — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Dil nga paniku', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/dil-nga-paniku.mp3', 'Dil nga paniku — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Qetëso zemërimin', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/qeteso-zemerimin.mp3', 'Qetëso zemërimin — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Shkrij trishtimin', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/shkrij-trishtimin.mp3', 'Shkrij trishtimin — praktikë e udhëhequr nga Arte Gogo.', 1),
@@ -46,7 +46,7 @@ VALUES
   ('Qetëso mendimet obsesive', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/qeteso-mendimet-obsesive.mp3', 'Qetëso mendimet obsesive — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Rikthe shpresën', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/rikthe-shpresen.mp3', 'Rikthe shpresën — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Ndërprit mbingarkesën emocionale', 'Emocione', 'meditime-riprogramimi', 'emocionet', 600, 'meditime/meditime-riprogramimi/nderprit-mbingarkesen-emocionale.mp3', 'Ndërprit mbingarkesën emocionale — praktikë e udhëhequr nga Arte Gogo.', 1),
-  ('Hap zemrën', 'Zemra', 'meditime-per-zemren', 'zemra-plot', 600, 'meditime/meditime-per-zemren/hap-zemren.mp3', 'Hap zemrën — praktikë e udhëhequr nga Arte Gogo.', 0),
+  ('Hap zemrën', 'Zemra', 'meditime-per-zemren', 'zemra-plot', 600, 'meditime/meditime-per-zemren/hap-zemren.mp3', 'Hap zemrën — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Aktivizo dhembshurinë', 'Zemra', 'meditime-per-zemren', 'zemra-plot', 600, 'meditime/meditime-per-zemren/aktivizo-dhembshurine.mp3', 'Aktivizo dhembshurinë — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Fal veten', 'Zemra', 'meditime-per-zemren', 'falja', 600, 'meditime/meditime-per-zemren/fal-veten.mp3', 'Fal veten — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Fal dikë', 'Zemra', 'meditime-per-zemren', 'falja', 600, 'meditime/meditime-per-zemren/fal-dike.mp3', 'Fal dikë — praktikë e udhëhequr nga Arte Gogo.', 1),
@@ -64,7 +64,7 @@ VALUES
   ('Rrit karizmën', 'Vetëbesimi', 'meditime-riprogramimi', 'vetebesim', 600, 'meditime/meditime-riprogramimi/rrit-karizmen.mp3', 'Rrit karizmën — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Aktivizo liderin', 'Vetëbesimi', 'meditime-riprogramimi', 'vetebesim', 600, 'meditime/meditime-riprogramimi/aktivizo-liderin.mp3', 'Aktivizo liderin — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Aktivizo autoritetin', 'Vetëbesimi', 'meditime-riprogramimi', 'vetebesim', 600, 'meditime/meditime-riprogramimi/aktivizo-autoritetin.mp3', 'Aktivizo autoritetin — praktikë e udhëhequr nga Arte Gogo.', 1),
-  ('Fokus ekstrem', 'Truri', 'meditime-per-trurin', 'tru-i-fuqizuar', 600, 'meditime/meditime-per-trurin/fokus-ekstrem.mp3', 'Fokus ekstrem — praktikë e udhëhequr nga Arte Gogo.', 0),
+  ('Fokus ekstrem', 'Truri', 'meditime-per-trurin', 'tru-i-fuqizuar', 600, 'meditime/meditime-per-trurin/fokus-ekstrem.mp3', 'Fokus ekstrem — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Kujtesë më e mirë', 'Truri', 'meditime-per-trurin', 'tru-i-fuqizuar', 600, 'meditime/meditime-per-trurin/kujtese-me-e-mire.mp3', 'Kujtesë më e mirë — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Studim intensiv', 'Truri', 'meditime-per-trurin', 'tru-i-fuqizuar', 600, 'meditime/meditime-per-trurin/studim-intensiv.mp3', 'Studim intensiv — praktikë e udhëhequr nga Arte Gogo.', 1),
   ('Për provime', 'Truri', 'meditime-per-trurin', 'tru-i-fuqizuar', 600, 'meditime/meditime-per-trurin/per-provime.mp3', 'Për provime — praktikë e udhëhequr nga Arte Gogo.', 1),
@@ -288,5 +288,5 @@ SELECT t.title, t.subgroup, tec.id, cat.id, t.duration_sec,
 
 DROP TEMPORARY TABLE IF EXISTS tmp_meditations;
 
--- Kontroll: duhet të kthejë 244 dhe 3.
+-- Kontroll: duhet të kthejë 244 dhe 0.
 SELECT COUNT(*) AS meditime, SUM(is_premium = 0) AS falas FROM meditations;
