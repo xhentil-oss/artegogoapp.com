@@ -378,8 +378,23 @@ export function SessionProvider({ children }) {
       signOut,
 
       subscription,
+      /* Gjendja e vërtetë e abonimit — e paprekur nga rregulli i admin-it më
+         poshtë, që karta e abonimit të mos i thotë adminit se ka blerë diçka. */
       subscriptionStatus: status,
-      isPremium: status.isPremium,
+      /**
+       * A është përmbajtja e hapur.
+       *
+       * ⚠️  Admini e ka gjithmonë të hapur, pa abonim. Ai e ndërton vetë
+       *     përmbajtjen dhe duhet ta shohë ashtu siç e sheh përdoruesi me
+       *     abonim; një paywall mbi punën e vet do të ishte i pakuptimtë.
+       *
+       * ⚠️  Kjo është VETËM pamje. Porta e vërtetë rri te serveri
+       *     (`canAccessAudio` te `api/src/auth.js`), i cili lexon `is_admin`
+       *     nga databaza. Pa atë ndryshim, ndërtuesi do të hapej këtu dhe
+       *     dëgjimi do të dështonte me `402` — pra kyçja duhej hequr te të dyja
+       *     anët, jo vetëm te kjo.
+       */
+      isPremium: status.isPremium || canAdmin,
 
       subscribe,
       purchasePlan,

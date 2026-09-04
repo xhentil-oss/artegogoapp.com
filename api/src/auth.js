@@ -90,6 +90,20 @@ const hasPremium = (user) =>
   Boolean(user?.subscription_end_at) &&
   new Date(user.subscription_end_at) > new Date();
 
+/**
+ * A lejohet të dëgjojë audio.
+ *
+ * Admini hyn kudo pa abonim: ai e ndërton dhe e kontrollon vetë përmbajtjen,
+ * dhe do të ishte e pakuptimtë ta bllokonte paywall-i i tij.
+ *
+ * ⚠️  E ndarë nga `hasPremium` me qëllim. `hasPremium` i përgjigjet pyetjes
+ *     "a ka abonim", dhe atë përgjigje e përdor `/me/subscription` për të
+ *     treguar gjendjen te ekrani. Po ta shtonim admin-in atje, paneli i
+ *     abonimit do t'i thoshte adminit se ka një abonim që nuk e ka blerë —
+ *     dhe `/cancel` do të vepronte mbi asgjë.
+ */
+const canAccessAudio = (user) => Boolean(user?.is_admin) || hasPremium(user);
+
 module.exports = {
   hashPassword,
   verifyPassword,
@@ -97,4 +111,5 @@ module.exports = {
   requireAuth,
   requireAdmin,
   hasPremium,
+  canAccessAudio,
 };

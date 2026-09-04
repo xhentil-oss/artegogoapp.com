@@ -39,7 +39,17 @@ export function ProfileScreen() {
             <div style={{ color: T.faint, fontSize: 12, marginTop: 1, ...sx.truncate }}>{email}</div>
           )}
           <div style={{ color: T.sub, fontSize: 13.5, marginTop: 2 }}>
-            {isPremium ? (
+            {/*
+                Admini e ka përmbajtjen të hapur pa abonim, ndaj etiketa e tij
+                nuk mund të jetë ajo e abonimit: kurora e artë mbi fjalën
+                "Skaduar" do të dukej gabim — dhe do të ishte, sepse të dyja do
+                të ishin të vërteta njëkohësisht.
+            */}
+            {canAdmin ? (
+              <span style={{ color: T.accent, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <Crown size={13} /> Administrator
+              </span>
+            ) : isPremium ? (
               <span style={{ color: T.gold, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 4 }}>
                 <Crown size={13} /> {STATUS_LABEL[subscriptionStatus.status]}
               </span>

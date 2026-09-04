@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Tags,
   Upload,
+  Users,
 } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { useAdminSync } from "../../hooks/useAdmin.js";
@@ -22,8 +23,15 @@ import { PoolsTab } from "./tabs/PoolsTab.jsx";
 import { ProgramsTab } from "./tabs/ProgramsTab.jsx";
 import { CommunityTab } from "./tabs/CommunityTab.jsx";
 import { LiveTab } from "./tabs/LiveTab.jsx";
+import { UsersTab } from "./tabs/UsersTab.jsx";
 
-/** Gjashtë tabet e seksionit 11, në të njëjtin rend si te specifikimi. */
+/**
+ * Tabet e panelit — gjashtë të seksionit 11, plus "Përdoruesit".
+ *
+ * Ai i fundit nuk është te specifikimi: u shtua sepse lista e llogarive
+ * shihej vetëm nga phpMyAdmin. Rri në fund që rendi i gjashtë origjinalëve
+ * të mbetet i njëjti.
+ */
 const PANEL_TABS = [
   { id: "media", label: "Media", icon: Upload, Component: MediaTab },
   { id: "classification", label: "Klasifikimi", icon: Tags, Component: ClassificationTab },
@@ -31,6 +39,7 @@ const PANEL_TABS = [
   { id: "programs", label: "Programet", icon: CalendarDays, Component: ProgramsTab },
   { id: "community", label: "Komuniteti", icon: MessageCircle, Component: CommunityTab },
   { id: "live", label: "Live", icon: Radio, Component: LiveTab },
+  { id: "users", label: "Përdoruesit", icon: Users, Component: UsersTab },
 ];
 
 /**

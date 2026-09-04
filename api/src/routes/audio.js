@@ -1,7 +1,7 @@
 const express = require("express");
 const crypto = require("node:crypto");
 const { one } = require("../db");
-const { requireAuth, hasPremium } = require("../auth");
+const { requireAuth, canAccessAudio } = require("../auth");
 
 const router = express.Router();
 
@@ -51,7 +51,7 @@ router.get("/:meditationId", requireAuth, async (req, res, next) => {
     if (!row || !row.published_at) return res.status(404).json({ error: "Meditimi nuk u gjet." });
     if (!row.audio_url) return res.status(404).json({ error: "Audio ende nuk është ngarkuar." });
 
-    if (row.is_premium && !hasPremium(req.user)) {
+    if (row.is_premium && !canAccessAudio(req.user)) {
       /* 402 Payment Required — aplikacioni e njeh dhe hap paywall-in. */
       return res.status(402).json({ error: "Ky meditim kërkon abonim.", requiresSubscription: true });
     }

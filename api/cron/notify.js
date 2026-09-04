@@ -21,9 +21,83 @@
  *
  * I sigurt për t'u rregjur sa herë të duash: `dedupe_key` e ndalon përsëritjen.
  */
-const { pool, query } = require("../src/db");
+/**
+ * ═══════════════ VARIABLAT E MJEDISIT ═══════════════
+ *
+ * ⚠️  Cron-i NUK i trashëgon variablat e "Setup Node.js App".
+ *
+ *     Ato ia jep Passenger-i procesit të internetit. Një cron niset nga
+ *     sistemi, në një mjedis krejt të zbrazët — pra pa `DB_PASSWORD` do të
+ *     dështonte çdo 15 minuta me `ER_ACCESS_DENIED`, dhe askush nuk do ta
+ *     merrte vesh, sepse cron-i nuk ka ku ta thotë.
+ *
+ *     Prandaj lexohet `.env` nga rrënja e API-t, nëse ekziston.
+ *
+ * ⚠️  Vlerat ekzistuese NUK mbishkruhen. Nëse dikush e nis me dorë brenda
+ *     mjedisit të aplikacionit, ato që ka tashmë janë të sakta; një `.env` i
+ *     vjetruar nuk duhet t'i zërë vendin në heshtje.
+ */
+function loadEnvFile() {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const file = path.join(__dirname, "..", ".env");
+
+  let text;
+  try {
+    text = fs.readFileSync(file, "utf8");
+  } catch {
+    return 0; /* s'ka `.env` — mjedisi vjen nga gjetkë */
+  }
+
+  let loaded = 0;
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+
+    const eq = line.indexOf("=");
+    if (eq < 1) continue;
+
+    const key = line.slice(0, eq).trim();
+    let value = line.slice(eq + 1).trim();
+
+    /* Thonjëzat rrethuese hiqen: dikush që e shkruan fjalëkalimin me thonjëza
+       do t'i dërgonte ato te MySQL-ja si pjesë e tij. */
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+      loaded += 1;
+    }
+  }
+  return loaded;
+}
+
+loadEnvFile();
+
+const { pool, query, one } = require("../src/db");
 const { pickForSlot, SLOT_BY_REMINDER } = require("../src/routes/notifications");
-const push = require("../src/push");
+/**
+ * Web Push është opsional.
+ *
+ * ⚠️  Pa këtë mbrojtje, mungesa e `src/push.js` ose e paketës `web-push` do ta
+ *     vriste cron-in te rreshti i parë — dhe bashkë me të do të humbisnin edhe
+ *     njoftimet e ziles, që nuk kanë asnjë lidhje me push-in. Ato dy gjëra
+ *     duhen ndarë: rreshti te `notifications` është e vërteta, dërgimi te
+ *     telefoni është shtesë.
+ */
+const push = (() => {
+  try {
+    return require("../src/push");
+  } catch (err) {
+    console.warn("[artegogo/cron] push i paongarkuar:", err.message);
+    return { sendToUser: async () => ({ sent: 0, failed: 0, reason: "push i pavendosur" }) };
+  }
+})();
 
 /** Sa minuta prapa shikon çdo rregji. Pak më gjerë se intervali, që një
  *  vonesë e cron-it të mos e humbasë kujtesën fare. */
@@ -201,14 +275,110 @@ async function runExpiries() {
   return result.affectedRows ?? 0;
 }
 
+/* ═══════════════ 4. RRUGËTIMI — DITA E RADHËS ═══════════════ */
+
+/**
+ * Ora e kujtesës së rrugëtimit, sipas orës LOKALE të përdoruesit.
+ *
+ * E fiksuar në 07:00 sipas kërkesës. Nuk përdor `reminders.time_of_day`, sepse
+ * ajo tabelë mban kujtesat e meditimit të lirë (mëngjes/mesditë/mbrëmje) dhe
+ * përdoruesi mund t'i ketë fikur të treja — rrugëtimi është zotim tjetër dhe
+ * nuk duhet të heshtë bashkë me to.
+ */
+const PROGRAM_HOUR = Number(process.env.PROGRAM_REMINDER_HOUR || 7);
+
+/**
+ * Njofton për ditën e radhës të rrugëtimit.
+ *
+ * ⚠️  Dita e radhës gjendet nga DITËT E PAKRYERA, jo nga `current_day`.
+ *
+ *     `current_day` është kursor pamor dhe mund të ngecë: dikush që kërcen te
+ *     dita 5 pa e mbyllur të 3-tën do të merrte kujtesë për një ditë që e ka
+ *     bërë. Mungesa e rreshtit te `user_program_day_completions` është e vetmja
+ *     e dhënë që thotë me siguri se çfarë mbetet.
+ *
+ * ⚠️  Kush e ka kryer ditën e sotme nuk merr asgjë — pikërisht sepse dita e
+ *     parë e pakryer bëhet ajo e nesërmja, dhe `dedupe_key` mban një njoftim
+ *     për ditë kalendarike. Pa këtë, aplikacioni do t'i kujtonte punë të bërë.
+ */
+async function runProgramReminders() {
+  const rows = await query(
+    `SELECT p.user_id, p.program_id, u.timezone, pr.title AS program_title
+       FROM user_program_progress p
+       JOIN users u  ON u.id = p.user_id
+       JOIN programs pr ON pr.id = p.program_id
+      WHERE p.completed_at IS NULL`
+  );
+
+  let made = 0;
+  for (const row of rows) {
+    const { date, minutes } = localParts(row.timezone);
+    const due = PROGRAM_HOUR * 60;
+    if (due > minutes || minutes - due > WINDOW_MIN) continue;
+
+    const next = await one(
+      `SELECT d.day_number, d.title,
+              (SELECT pdm.meditation_id
+                 FROM program_day_meditations pdm
+                WHERE pdm.program_day_id = d.id
+                ORDER BY pdm.order_in_day
+                LIMIT 1) AS meditation_id
+         FROM program_days d
+        WHERE d.program_id = ?
+          AND NOT EXISTS (
+                SELECT 1 FROM user_program_day_completions c
+                 WHERE c.user_id = ? AND c.program_id = d.program_id
+                   AND c.day_number = d.day_number)
+        ORDER BY d.day_number
+        LIMIT 1`,
+      [row.program_id, row.user_id]
+    );
+
+    /* Rrugëtimi u mbarua — asgjë për të kujtuar. */
+    if (!next) continue;
+
+    const title = `${row.program_title} · Dita ${next.day_number}`;
+    const body = next.title || "Dita jote e radhës të pret.";
+
+    const created = await createNotification({
+      userId: row.user_id,
+      title,
+      body,
+      type: "program_update",
+      /* Meditimi, jo programi: prekja e njoftimit duhet të hapë atë që
+         dëgjohet, jo një listë ku duhet kërkuar sërish. */
+      relatedId: next.meditation_id ?? null,
+      dedupeKey: `program:${row.program_id}:${date}`,
+    });
+
+    if (created) {
+      made += 1;
+      const result = await sendPush(row.user_id, {
+        title,
+        body,
+        tag: "program",
+        meditationId: next.meditation_id ?? null,
+      });
+      await query(
+        `UPDATE notifications SET push_sent_at = NOW(), push_result = ?
+          WHERE user_id = ? AND dedupe_key = ?`,
+        [result.sent > 0 ? `dërguar te ${result.sent}` : (result.reason ?? "dështoi"),
+         row.user_id, `program:${row.program_id}:${date}`]
+      );
+    }
+  }
+  return made;
+}
+
 async function main() {
   const started = Date.now();
   try {
     const reminders = await runReminders();
+    const programs = await runProgramReminders();
     const trials = await runTrialEnding();
     const expired = await runExpiries();
     console.log(
-      `[artegogo/cron] kujtesa: ${reminders} · prova që mbarojnë: ${trials} · skaduan: ${expired} · ${Date.now() - started}ms`
+      `[artegogo/cron] kujtesa: ${reminders} · rrugëtim: ${programs} · prova që mbarojnë: ${trials} · skaduan: ${expired} · ${Date.now() - started}ms`
     );
   } catch (err) {
     console.error("[artegogo/cron] dështoi:", err.message);
@@ -220,4 +390,4 @@ async function main() {
 
 if (require.main === module) main();
 
-module.exports = { runReminders, runTrialEnding, runExpiries, localParts };
+module.exports = { runReminders, runProgramReminders, runTrialEnding, runExpiries, localParts };

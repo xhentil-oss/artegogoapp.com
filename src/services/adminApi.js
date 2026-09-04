@@ -149,3 +149,42 @@ export async function hidePost(id) {
     return { ok: false, error: err?.message ?? "Fshehja dështoi." };
   }
 }
+
+/* ─────────────── përdoruesit ─────────────── */
+
+/**
+ * Lista e përdoruesve të regjistruar.
+ *
+ * ⚠️  Nuk kalon nga `contentRepository` dhe nuk ruhet te `adminStore`.
+ *
+ *     Ato dy shtresa mbajnë përmbajtjen e aplikacionit — meditimet, pool-et,
+ *     postimet — të cilat lexohen nga dhjetëra ekrane dhe duhen mbajtur në një
+ *     kopje të vetme. Përdoruesit i sheh një ekran i vetëm, dhe një kopje
+ *     lokale do të vjetrohej pa e vënë re kush: dikush regjistrohet, admini
+ *     hap panelin, dhe lista tregon gjendjen e djeshme. Prandaj lexohet nga
+ *     serveri sa herë hapet skeda.
+ *
+ * @returns {Promise<{ok:boolean, items?:object[], total?:number, error?:string}>}
+ */
+export async function fetchUsers({ q = "", limit = 100, offset = 0 } = {}) {
+  const params = new URLSearchParams();
+  if (q.trim()) params.set("q", q.trim());
+  params.set("limit", String(limit));
+  params.set("offset", String(offset));
+
+  try {
+    const data = await api.get(`/admin/users?${params}`);
+    return { ok: true, items: data?.items ?? [], total: data?.total ?? 0 };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Lista nuk u lexua dot." };
+  }
+}
+
+/** Numrat e kokës — gjithsej, në provë, me abonim, sot, këtë javë. */
+export async function fetchUserStats() {
+  try {
+    return { ok: true, stats: await api.get("/admin/users/stats") };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Numrat nuk u lexuan dot." };
+  }
+}
