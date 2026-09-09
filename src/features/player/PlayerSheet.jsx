@@ -341,7 +341,19 @@ export function PlayerSheet({ sequence }) {
         >
           <Headphones size={18} color={onDark.secondary} />
           <span style={{ color: onDark.secondary, fontSize: 13.5 }}>
-            Tinguj demo — zëvendëso me audio reale
+            {/*
+                Shiriti thotë ÇFARË po luan vërtet.
+
+                ⚠️  Më parë shkruante gjithmonë "Tinguj demo", edhe kur skedari
+                    ekzistonte — sepse player-i nuk luante fare skedarë. Tani
+                    gjendja vjen nga motori, ndaj nuk gënjen dot: nëse thotë
+                    demo, demo është.
+            */}
+            {engine.realAudio
+              ? "Audio e plotë"
+              : engine.audioStatus === "loading"
+                ? "Po hapet audioja…"
+                : (REASON_TEXT[engine.audioReason] ?? "Tinguj demo")}
           </span>
         </div>
         <div style={circle(50, onDark.fill)}>

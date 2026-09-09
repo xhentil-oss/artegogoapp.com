@@ -22,7 +22,7 @@ export function MedCard({ block, index = 0, square = false }) {
     <RowItem width={square ? CARD_WIDTH.square : CARD_WIDTH.wide}>
       <button onClick={() => playItems(block)} className="ag-card" style={sx.cardButton}>
         <div style={cover(square ? "square" : ASPECT_WIDE)}>
-          <CoverArt intent={block.intent} title={block.title} sub={author} big={square} />
+          <CoverArt intent={block.intent} title={block.title} sub={author} big={square} image={block.cover} />
           <AccessBadge {...accessBadge(block)} />
         </div>
       </button>
@@ -47,7 +47,7 @@ export function GridCard({ block, index = 0 }) {
     <div>
       <button onClick={() => playItems(block)} className="ag-card" style={sx.cardButton}>
         <div style={cover("square")}>
-          <CoverArt intent={block.intent} title={block.title} sub={author} big />
+          <CoverArt intent={block.intent} title={block.title} sub={author} big image={block.cover} />
           <AccessBadge {...accessBadge(block)} />
           <div
             style={{
@@ -94,7 +94,7 @@ export function CompactMedCard({ item, index = 0 }) {
         style={{ ...sx.cardButton, textAlign: "left" }}
       >
         <div style={cover("square", 16)}>
-          <CoverArt intent={item.intent} />
+          <CoverArt intent={item.intent} image={item.cover} />
           <AccessBadge {...accessBadge(item)} size={12} />
         </div>
 

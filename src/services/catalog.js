@@ -25,6 +25,53 @@ import { relativeTime } from "../lib/format.js";
 /** Serveri i kufizon 100 rreshta për kërkesë; katalogu ka 244. */
 const PAGE = 100;
 
+/*
+ * ═══ VERSIONI I KATALOGUT ═══
+ *
+ * I njëjti model si `services/adminStore.js`: një numër që rritet, plus
+ * abonim — dhe `Root` e lexon me `useSyncExternalStore`.
+ *
+ * ⚠️  PSE DUHET: përmbajtja shkon te vargje moduli që ekranet lexojnë
+ *     sinkron, ndaj kur katalogu mbërrin PAS render-it të parë (server i
+ *     ngadaltë, ose një riprovë pas dështimit) asnjë ekran nuk e merr vesh.
+ *     Pikërisht kjo e bëri bibliotekën të tregonte përmbajtjen lokale — më
+ *     pak kategori — dhe të mbetej ashtu derisa faqja rifreskohej.
+ */
+let version = 0;
+const listeners = new Set();
+
+/** Rezultati i mbushjes së fundit — pamja e lexon për të njoftuar rënien. */
+let lastResult = { ok: true, count: 0 };
+
+export const catalogVersion = () => version;
+export const catalogResult = () => lastResult;
+
+export function subscribeCatalog(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function commitCatalog(result) {
+  lastResult = result;
+  version += 1;
+  listeners.forEach((listener) => listener());
+}
+
+/**
+ * Shënon se pamja u vizatua me përmbajtjen lokale ndërsa serveri lexohet ende.
+ *
+ * ⚠️  PA KËTË ka një boshllëk të matur: nisja vizaton te 2,5 s, ndërsa afati i
+ *     `api.js` është 15 s. Kur serveri pranon lidhjen dhe nuk përgjigjet, për
+ *     dymbëdhjetë sekonda e gjysmë tregohet përmbajtje lokale PA asnjë shenjë,
+ *     dhe pastaj njoftimi shfaqet vetvetiu nën sy — dukje edhe më ngatërruese
+ *     sesa heshtja.
+ */
+export function markCatalogPending() {
+  /* Vetëm kur nuk ka mbërritur asnjë përgjigje — një dështim i vërtetë, ose
+     një sukses, nuk duhet mbivendosur nga kjo. */
+  if (version === 0) commitCatalog({ ok: false, pending: true, count: 0 });
+}
+
 /** Aq faqe sa mbulojnë katalogun edhe kur rritet — pa lak të pafund. */
 const MAX_PAGES = 20;
 
@@ -48,6 +95,9 @@ function toItem(row) {
     phase: PHASES.CORE,
     intent: intentForCategory(categoryId),
     subTheme: row.subgroup ?? "Të tjera",
+    /* Kopertina e vërtetë, nëse databaza e mban. `null` → karta vizaton
+       peizazhin procedural, siç bënte gjithmonë. */
+    cover: row.cover_url ?? null,
     /*
      * Serveri nuk ka nocionin e "koleksionit" — ai ndan sipas teknikës. Slug-u
      * i teknikës zë vendin e tij, që çelësat e panelit të admin-it
@@ -247,7 +297,9 @@ export async function hydrateCatalog() {
      *     aplikacionit. Më mirë përmbajtja lokale sesa asnjë.
      */
     if (rows.length === 0) {
-      return { ok: false, count: 0, error: "Serveri nuk ktheu asnjë meditim." };
+      const bosh = { ok: false, count: 0, error: "Serveri nuk ktheu asnjë meditim." };
+      commitCatalog(bosh);
+      return bosh;
     }
 
     const items = rows.map(toItem);
@@ -260,8 +312,14 @@ export async function hydrateCatalog() {
     }
 
     replaceCatalog(items);
-    return { ok: true, count: items.length };
+    /* Njoftimi bëhet PASI përmbajtja është vendosur, që ekrani i ri-vizatuar
+       të lexojë të dhënat e reja e jo ato të vjetra. */
+    const mire = { ok: true, count: items.length };
+    commitCatalog(mire);
+    return mire;
   } catch (err) {
-    return { ok: false, count: 0, error: err?.message ?? "Gabim i panjohur." };
+    const keq = { ok: false, count: 0, error: err?.message ?? "Gabim i panjohur." };
+    commitCatalog(keq);
+    return keq;
   }
 }

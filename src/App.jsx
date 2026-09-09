@@ -28,6 +28,8 @@ import { MiniPlayer } from "./features/player/MiniPlayer.jsx";
 import { CompletionSheet } from "./features/player/CompletionSheet.jsx";
 import { NotificationsSheet } from "./features/notifications/NotificationsSheet.jsx";
 import { useAdminVersion } from "./hooks/useAdmin.js";
+import { useCatalogVersion } from "./hooks/useCatalog.js";
+import { CatalogNotice } from "./components/CatalogNotice.jsx";
 
 /**
  * Rrënja e aplikacionit — vetëm kompozim.
@@ -49,6 +51,12 @@ function Root() {
      pool-et, programet dhe feed-in njëherësh, ndaj ripërpunimi i tërë pemës
      është edhe më i thjeshtë edhe më i saktë se abonime nëpër çdo ekran. */
   useAdminVersion();
+  /*
+   * I njëjti arsyetim si për admin-in, por për katalogun: kur ai mbërrin pas
+   * render-it të parë — server i ngadaltë, ose një riprovë pas dështimit —
+   * pema duhet ripërpunuar, përndryshe ekranet mbeten me përmbajtjen lokale.
+   */
+  useCatalogVersion();
 
   /* derisa të lexohet ruajtja nuk dimë nëse duhet onboarding-u — një pamje
      bosh e shkurtër është më e mirë se një pulsim i ekranit të gabuar */
@@ -74,6 +82,7 @@ function Root() {
   return (
     <AppShell light>
       <TopBar />
+      <CatalogNotice />
       <ActiveTab />
       <BottomNav />
       <Overlays />

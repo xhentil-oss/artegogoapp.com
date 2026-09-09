@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════════════════════════
+#  public_html/audio/.htaccess
+#
+#  Çdo kërkesë nën `/audio/` shkon te `audio.php`. Vetë skedarët MP3 NUK
+#  ndodhen këtu — rrinë jashtë `public_html` — ndaj kjo dosje mban vetëm dy
+#  skedarë: këtë dhe verifikuesin.
+#
+#  ⚠️  Rregullat e një `.htaccess` te nën-dosje NUK trashëgojnë atë të rrënjës
+#      (`RewriteEngine On` e rinis zinxhirin), ndaj rishkrimi i SPA-s te
+#      `public_html/.htaccess`, nëse ekziston, nuk e prek këtë dosje.
+# ═══════════════════════════════════════════════════════════════
+
+# Pa listë dosjeve, dhe pa MultiViews: me të, `/audio/x` do të gjente vetë
+# `/audio/x.php` dhe do t'i anashkalonte rregullat më poshtë.
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /audio/
+
+  # Verifikuesi shërbehet drejtpërdrejt; pa këtë do të rishkruante vetveten.
+  RewriteRule ^audio\.php$ - [L]
+
+  # Gjithçka tjetër → verifikuesi. `QSA` mban `expires`, `u` dhe `sig`.
+  # Rruga jepet edhe te `f` si rezervë, por `audio.php` e lexon nga REQUEST_URI.
+  RewriteRule ^(.+)$ audio.php?f=$1 [QSA,L]
+</IfModule>
+
+# Nëse mod_rewrite mungon (nuk duhet të ndodhë te cPanel), asnjë kërkesë nuk
+# duhet të kthehet me sukses e pa verifikuar. Kjo e mbyll dosjen përveç PHP-së.
+<FilesMatch "\.(mp3|m4a|ogg|wav)$">
+  Require all denied
+</FilesMatch>

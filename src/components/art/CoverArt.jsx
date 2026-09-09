@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { fonts } from "../../theme/tokens.js";
 import { sceneFor, SceneLayers } from "./scenes.jsx";
 
@@ -11,9 +11,64 @@ import { sceneFor, SceneLayers } from "./scenes.jsx";
  * Id-të e gradientëve rrjedhin nga `useId()`, që dy kapakë të njëjtë në
  * faqe të mos përplasen me `<defs>` të njëjta.
  */
-export function CoverArt({ intent, title, sub, big = false }) {
-  const scene = sceneFor(intent);
+export function CoverArt({ intent, title, sub, big = false, image = null }) {
+  /*
+   * Dështimi i imazhit mbahet te gjendja, që karta të kthehet te arti dhe të
+   * mos mbetet bosh.
+   *
+   * ⚠️  E domosdoshme: kopertinat rrinë te `public/`, ndaj një emër i shkruar
+   *     gabim ose një skedar i pangarkuar do të jepte një kuti të zbrazët pa
+   *     asnjë shenjë pse. `onError` e kthen te peizazhi procedural, dhe karta
+   *     mbetet e lexueshme.
+   */
+  const [failed, setFailed] = useState(false);
+
+  /*
+   * ⚠️  `useId()` THIRRET PARA çdo dalje të parakohshme.
+   *
+   *     Kur rrinte poshtë degës së imazhit, render-i i parë (me foto) e
+   *     kapërcente, dhe pasi `onError` e ndryshonte `failed`, dega tjetër
+   *     thërriste një hook më shumë. React e ndal atë çast me "Rendered more
+   *     hooks than during the previous render" — dhe ekrani mbetet i bardhë.
+   *
+   *     Rregulli i hook-eve nuk është formalitet: numri dhe rendi i tyre duhet
+   *     i njëjtë në ÇDO render të të njëjtit komponent.
+   */
   const uid = useId().replace(/:/g, "");
+
+  if (image && !failed) {
+    return (
+      <div style={{ position: "absolute", inset: 0 }}>
+        <img
+          src={image}
+          alt=""
+          onError={() => setFailed(true)}
+          /*
+           * `cover`: kopertinat vijnë me përpjesëtime të ndryshme, ndërsa
+           * kartat kanë tre forma (1:1, 22:15). Pa të, fotoja do të shtypej.
+           * `loading="lazy"`: një folder me dhjetëra karta nuk duhet t'i
+           * shkarkojë të gjitha para se përdoruesi të rrëshqasë.
+           */
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          loading="lazy"
+          decoding="async"
+        />
+        {/* I njëjti mjegullim si te arti — pa të, titulli i bardhë humbet mbi
+            pjesët e ndritshme të fotos. */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
+          }}
+        />
+        {title && <CoverTitle title={title} sub={sub} big={big} />}
+      </div>
+    );
+  }
+
+  const scene = sceneFor(intent);
   const bgId = `bg-${uid}`;
   const sunId = `sun-${uid}`;
   const shadeId = `shade-${uid}`;

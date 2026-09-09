@@ -181,11 +181,31 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: "Gabim i brendshëm." });
 });
 
-/* Ekzekutim i drejtpërdrejtë (`npm start`, ose lokalisht). Nën Passenger,
-   `require.main` nuk është ky skedar dhe porta menaxhohet nga hosti. */
-if (require.main === module) {
-  const port = Number(process.env.PORT || 3000);
-  app.listen(port, () => console.log(`Arte Gogo API — http://localhost:${port}`));
-}
+/**
+ * PORTA HAPET GJITHMONË.
+ *
+ * ⚠️  KY RRESHT E RRËZOI API-N PËR TË GJITHË MË 9 SHTATOR 2026.
+ *
+ *     Më parë këtu rrinte `if (require.main === module)`, me shpjegimin që
+ *     "nën Passenger porta menaxhohet nga hosti". Ai shpjegim është i gabuar:
+ *     Passenger-i e kërkon këtë skedar SI MODUL, ndaj `require.main` nuk është
+ *     ai, kushti del `false`, dhe `listen()` nuk thirret KURRË. Passenger
+ *     pastaj pret një server që nuk vjen dhe pas afatit kthen
+ *     "Web application could not be started" — pa asnjë gabim te `stderr.log`,
+ *     sepse aplikacioni nuk rrëzohet: thjesht nuk dëgjon.
+ *
+ *     E riprodhuar: `node app.js` te serveri shkruante rregullisht
+ *     "Arte Gogo API — http://localhost:3000", ndërsa çdo `/api/*` ngecte 25
+ *     sekonda. Dhe vendore, `require("./app.js")` e lë portën 3000 të mbyllur.
+ *
+ *     Pse "punonte deri dje": skedari u ndryshua më 4 shtator, por Passenger
+ *     mbajti gjallë procesin e mëparshëm me ditë. Nisja e re — e detyruar nga
+ *     një RESTART për `AUDIO_BASE_URL` — e nxori defektin në dritë.
+ *
+ *     Passenger e mbulon `listen()` me kodin e vet dhe e shpërfill portën që i
+ *     jepet, ndaj kjo thirrje është e saktë te dy rastet: një thirrje, kurrë dy.
+ */
+const port = Number(process.env.PORT || 3000);
+app.listen(port, () => console.log(`Arte Gogo API — http://localhost:${port}`));
 
 module.exports = app;

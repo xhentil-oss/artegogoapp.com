@@ -44,7 +44,54 @@
     <meta name="format-detection" content="telephone=no" />
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      Splash-i brenda `#root`.
+
+      ⚠️  Pa të, koha midis ngarkimit të HTML-së dhe render-it të parë të
+          React-it është faqe KREJT E BARDHË. Në telefon mbi rrjet të dobët
+          ajo zgjat sa shkarkohet e analizohet paketa, dhe një ekran i bardhë
+          lexohet si aplikacion i prishur — jo si pritje.
+
+          React-i i heq vetë fëmijët e `#root` te render-i i parë, ndaj nuk
+          duhet asnjë kod për ta fshirë. I gjithë stili rri inline me qëllim:
+          një fletë e jashtme do të ishte një kërkesë më shumë pikërisht në
+          çastin që duam të shkurtojmë.
+    -->
+    <div id="root">
+      <div
+        id="ag-splash"
+        style="
+          position: fixed;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #fff;
+        "
+      >
+        <img
+          src="/transparent-logo-2.png"
+          alt="Arte Gogo"
+          width="132"
+          height="132"
+          style="width: 132px; height: auto; opacity: 0.9; animation: ag-splash 1.6s ease-in-out infinite"
+        />
+      </div>
+    </div>
+    <style>
+      @keyframes ag-splash {
+        0%, 100% { opacity: 0.35; }
+        50% { opacity: 0.9; }
+      }
+      /* Vetëm splash-i: `#root > div` do të prekte edhe rrënjën e vërtetë të
+         aplikacionit pasi React-i vizaton, dhe do t'i ngjyrosnte sfondin. */
+      @media (prefers-color-scheme: dark) {
+        #ag-splash { background: #0e0e12; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #ag-splash img { animation: none; }
+      }
+    </style>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
