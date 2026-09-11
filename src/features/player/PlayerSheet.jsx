@@ -45,6 +45,17 @@ export function PlayerSheet({ sequence }) {
   const meta = intentMeta(engine.current?.intent);
   const Icon = meta.icon;
 
+  /*
+   * Kopertina e diskut.
+   *
+   * ⚠️  Dështimi mbahet PËR ID, jo si flamur i thjeshtë. Me një flamur, një
+   *     kopertinë që mungon te hapi i parë do të fshihte edhe atë të hapit të
+   *     dytë, sepse gjendja nuk do të rinisej kurrë brenda të njëjtës seancë.
+   */
+  const [kopertinaDeshtoi, setKopertinaDeshtoi] = useState(null);
+  const kopertina =
+    engine.current?.cover && kopertinaDeshtoi !== currentId ? engine.current.cover : null;
+
   const close = () => {
     engine.detach();
     minimize();
@@ -231,36 +242,71 @@ export function PlayerSheet({ sequence }) {
           transition: "box-shadow .6s ease",
         }}
       >
-        <div
-          style={{
-            ...sx.absoluteFill,
-            background:
-              "repeating-conic-gradient(from 0deg, rgba(255,255,255,0.05) 0deg 6deg, transparent 6deg 12deg)",
-          }}
-        />
-        <div
-          style={{
-            width: FLUID.playerRing,
-            aspectRatio: "1 / 1",
-            borderRadius: "50%",
-            background:
-              "conic-gradient(from 0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.3), rgba(255,255,255,0.9))",
-            ...sx.center,
-            animation: engine.playing ? "spin 16s linear infinite" : "none",
-          }}
-        >
-          <div
-            style={{
-              width: FLUID.playerCore,
-              aspectRatio: "1 / 1",
-              borderRadius: "50%",
-              background: tile(meta.g),
-              ...sx.center,
-            }}
-          >
-            <Icon size={40} color="#fff" />
-          </div>
-        </div>
+        {/*
+            Kur meditimi ka kopertinë, ajo ZË VENDIN e diskut — nuk shkon
+            poshtë tij.
+
+            ⚠️  Unaza që rrotullohet dhe rrezet janë zbukurim për rastin kur
+                nuk ka foto. Po t'i mbanim mbi një kopertinë të vërtetë, do të
+                mbulonin pikërisht qendrën e saj, atje ku fotografi vendos
+                subjektin. Fryma e diskut (`breathe`) dhe shkëlqimi mbeten —
+                ato tregojnë se po luhet, pa i hipur imazhit.
+
+            ⚠️  `onError` e kthen te disku: një kopertinë e pangarkuar ose një
+                emër i shkruar gabim nuk duhet të lërë katror bosh. I njëjti
+                rregull si te `CoverArt`.
+        */}
+        {kopertina ? (
+          <>
+            <img
+              src={kopertina}
+              alt=""
+              onError={() => setKopertinaDeshtoi(currentId)}
+              style={{ ...sx.absoluteFill, width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            {/* Shtresë e lehtë poshtë: pa të, titulli i bardhë humbet mbi
+                kopertinat e ndritshme. */}
+            <div
+              style={{
+                ...sx.absoluteFill,
+                background: "linear-gradient(180deg, transparent 55%, rgba(0,0,0,0.28) 100%)",
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <div
+              style={{
+                ...sx.absoluteFill,
+                background:
+                  "repeating-conic-gradient(from 0deg, rgba(255,255,255,0.05) 0deg 6deg, transparent 6deg 12deg)",
+              }}
+            />
+            <div
+              style={{
+                width: FLUID.playerRing,
+                aspectRatio: "1 / 1",
+                borderRadius: "50%",
+                background:
+                  "conic-gradient(from 0deg, rgba(255,255,255,0.9), rgba(255,255,255,0.3), rgba(255,255,255,0.9))",
+                ...sx.center,
+                animation: engine.playing ? "spin 16s linear infinite" : "none",
+              }}
+            >
+              <div
+                style={{
+                  width: FLUID.playerCore,
+                  aspectRatio: "1 / 1",
+                  borderRadius: "50%",
+                  background: tile(meta.g),
+                  ...sx.center,
+                }}
+              >
+                <Icon size={40} color="#fff" />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ---------- titulli ---------- */}
