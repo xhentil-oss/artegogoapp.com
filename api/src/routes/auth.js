@@ -127,6 +127,55 @@ router.put("/me", requireAuth, async (req, res, next) => {
   }
 });
 
+/* ---------------------------------------------------------------
+   DELETE /auth/me  — fshirje e llogarisë nga vetë përdoruesi
+   --------------------------------------------------------------- */
+
+/**
+ * Fshin llogarinë dhe çdo gjurmë të saj.
+ *
+ * ⚠️  NUK KTHEHET MBRAPSHT. Të 20 tabelat që i referohen `users` kanë
+ *     `ON DELETE CASCADE`: seancat, medaljet, streak-u, zakonet, gjendjet,
+ *     të preferuarat, shkarkimet, krijimet, rrugëtimi, njoftimet, abonimet
+ *     dhe pajisjet e push-it ikin bashkë me rreshtin. Prandaj kërkohet
+ *     fjalëkalimi edhe pse përdoruesi është tashmë i identifikuar — një
+ *     token i vjedhur, ose një telefon i lënë hapur, nuk duhet të mjaftojë.
+ *
+ * ⚠️  ADMINI NUK FSHIHET NGA APLIKACIONI. Do të mbyllte panelin përgjithmonë,
+ *     dhe rikthimi do të kërkonte një `UPDATE` me dorë te phpMyAdmin. Kjo
+ *     bëhet me vetëdije te databaza, jo me një prekje te telefoni.
+ *
+ * ⚠️  ABONIMI TE DYQANI NUK ANULOHET KËTU, dhe nuk anulohet dot: atë e mban
+ *     Apple ose Google. Klienti duhet ta thotë hapur para se të pyesë, se
+ *     përndryshe përdoruesi fshin llogarinë dhe vazhdon të paguajë.
+ */
+router.delete("/me", requireAuth, async (req, res, next) => {
+  try {
+    const { password } = req.body ?? {};
+
+    const user = await one("SELECT id, password_hash, is_admin FROM users WHERE id = ?", [req.userId]);
+    if (!user) return res.status(404).json({ error: "Llogaria nuk u gjet." });
+
+    if (user.is_admin) {
+      return res.status(403).json({
+        error: "Llogaria e administratorit nuk fshihet nga aplikacioni.",
+      });
+    }
+
+    if (!password || !(await verifyPassword(password, user.password_hash))) {
+      return res.status(401).json({ error: "Fjalëkalimi nuk përputhet." });
+    }
+
+    await query("DELETE FROM users WHERE id = ?", [req.userId]);
+
+    /* 204: nuk ka më çfarë të kthehet, dhe token-i i klientit sapo u bë i
+       pavlefshëm — `requireAuth` nuk e gjen më përdoruesin. */
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 /* ═══════════════ RIVENDOSJA E FJALËKALIMIT ═══════════════ */
 
 /** Sa gjatë vlen një link. I shkurtër me qëllim. */

@@ -15,6 +15,7 @@ import { DailyRhythm } from "./DailyRhythm.jsx";
 import { MoodTracker } from "./MoodTracker.jsx";
 import { HabitTracker } from "./HabitTracker.jsx";
 import { PracticeHistory } from "./PracticeHistory.jsx";
+import { DeleteAccount } from "./DeleteAccount.jsx";
 
 /** Avatari mban çiftin Violet të paletës. */
 const AVATAR_GRADIENT = brandPair;
@@ -156,6 +157,11 @@ export function ProfileScreen() {
       >
         <LogOut size={15} /> Dil nga llogaria
       </button>
+
+      {/* Fshirja rri POSHTË daljes dhe e zbehtë me qëllim: është veprim i
+          rrallë e i pakthyeshëm, ndaj nuk duhet të konkurrojë me atë që
+          përdoruesi kërkon vërtet. */}
+      <DeleteAccount />
     </div>
   );
 }

@@ -324,6 +324,27 @@ export function SessionProvider({ children }) {
     storage.remove(STORAGE_KEYS.onboarding);
   }, [persistSubscription]);
 
+  /**
+   * Fshirje e llogarisë — e pakthyeshme.
+   *
+   * ⚠️  Gjendja e React-it riniset VETËM pasi serveri e ka kryer fshirjen.
+   *     Nëse fjalëkalimi nuk përputhet, asgjë nuk preket dhe ekrani e tregon
+   *     gabimin; përndryshe përdoruesi do të dilte nga llogaria pa e fshirë.
+   */
+  const deleteAccount = useCallback(
+    async (password) => {
+      const result = await auth.deleteAccount(password);
+      if (!result.ok) return result;
+
+      setAccount(null);
+      setProfile(null);
+      persistSubscription(null);
+      setAdminView(false);
+      return result;
+    },
+    [persistSubscription]
+  );
+
   /** E drejta vjen nga llogaria, pra nga serveri. */
   const canAdmin = Boolean(account?.isAdmin);
 
@@ -376,6 +397,7 @@ export function SessionProvider({ children }) {
       signUp,
       completeReset,
       signOut,
+      deleteAccount,
 
       subscription,
       /* Gjendja e vërtetë e abonimit — e paprekur nga rregulli i admin-it më
@@ -430,6 +452,7 @@ export function SessionProvider({ children }) {
       signUp,
       completeReset,
       signOut,
+      deleteAccount,
       subscription,
       status,
       subscribe,

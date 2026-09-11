@@ -104,7 +104,7 @@ function CategoryBox({ category, onOpen }) {
               position: "relative",
             }}
           >
-            <CoverArt intent={item.intent} />
+            <CoverArt intent={item.intent} image={item.cover} />
           </div>
         ))}
       </div>

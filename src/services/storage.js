@@ -63,6 +63,34 @@ export const storage = {
       /* pa pasojë */
     }
   },
+
+  /**
+   * Fshin ÇDO çelës të aplikacionit nga kjo pajisje.
+   *
+   * ⚠️  Vetëm ata me prefiksin `artegogo:`. Një `localStorage.clear()` do të
+   *     fshinte edhe çelësat e çdo gjëje tjetër te i njëjti origjin.
+   *
+   * ⚠️  Përdoret VETËM te fshirja e llogarisë, jo te dalja. Zakonet, gjendjet
+   *     dhe të preferuarat ruhen pa ndarje sipas llogarie — pra pas një
+   *     fshirjeje, pa këtë, llogaria e radhës te e njëjta pajisje do t'i
+   *     gjente ato të dikujt tjetër.
+   */
+  async clearAll() {
+    if (!isAvailable) return 0;
+    try {
+      /* Emrat mblidhen të parët: heqja gjatë përsëritjes i zhvendos indekset
+         dhe do të linte gjysmën pa fshirë. */
+      const emrat = [];
+      for (let i = 0; i < window.localStorage.length; i += 1) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(PREFIX)) emrat.push(k);
+      }
+      emrat.forEach((k) => window.localStorage.removeItem(k));
+      return emrat.length;
+    } catch {
+      return 0;
+    }
+  },
 };
 
 /** Emrat e çelësave — të mbledhur, që të mos shkruhen si literale nëpër kod. */

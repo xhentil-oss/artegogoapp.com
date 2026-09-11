@@ -119,6 +119,40 @@ export async function signOut() {
   await storage.remove(STORAGE_KEYS.rewards);
 }
 
+/**
+ * Fshin llogarinë përgjithmonë.
+ *
+ * ⚠️  NUK KTHEHET MBRAPSHT. Serveri fshin rreshtin te `users`, dhe të 20
+ *     tabelat e lidhura ikin me `ON DELETE CASCADE`: seancat, medaljet,
+ *     streak-u, zakonet, të preferuarat, krijimet, rrugëtimi, abonimi.
+ *
+ * ⚠️  PAJISJA PASTROHET E TËRA, jo si te `signOut`. Zakonet dhe të preferuarat
+ *     ruhen pa ndarje sipas llogarie, ndaj po të mbeteshin, llogaria e radhës
+ *     te ky telefon do t'i shihte si të vetat.
+ *
+ * ⚠️  Pastrimi bëhet VETËM pas suksesit te serveri. Po ta bënim përpara, një
+ *     fjalëkalim i gabuar do të zhdukte të dhënat e pajisjes pa fshirë asgjë
+ *     te serveri — humbja më e keqe e mundshme.
+ *
+ * @param {string} password fjalëkalimi aktual, si konfirmim
+ * @returns {Promise<{ok:true} | {ok:false, error:string}>}
+ */
+export async function deleteAccount(password) {
+  if (!password) return { ok: false, error: "Shkruaj fjalëkalimin për të konfirmuar." };
+
+  try {
+    await api.del("/auth/me", { body: { password } });
+  } catch (err) {
+    if (err?.status === 401) return { ok: false, error: "Fjalëkalimi nuk përputhet." };
+    if (err?.status === 403) return { ok: false, error: err.message };
+    return { ok: false, error: err?.message ?? "Fshirja nuk u krye." };
+  }
+
+  await clearToken();
+  await storage.clearAll();
+  return { ok: true };
+}
+
 /* ─────────────── rivendosja e fjalëkalimit ─────────────── */
 
 /**

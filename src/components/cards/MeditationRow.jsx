@@ -74,7 +74,7 @@ export function SearchResultRow({ block, index = 0, onBeforePlay }) {
       }}
     >
       <div style={{ width: 54, height: 54, borderRadius: 11, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-        <CoverArt intent={block.intent} />
+        <CoverArt intent={block.intent} image={block.cover} />
       </div>
 
       <div style={sx.flexText}>

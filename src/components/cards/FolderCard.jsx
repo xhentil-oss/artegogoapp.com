@@ -65,7 +65,7 @@ export function FolderCard({ collection, onOpen }) {
                 boxShadow: shadows.soft,
               }}
             >
-              <CoverArt intent={item.intent} />
+              <CoverArt intent={item.intent} image={item.cover} />
             </div>
           ))}
           {Array.from({ length: emptySlots }, (_, i) => (

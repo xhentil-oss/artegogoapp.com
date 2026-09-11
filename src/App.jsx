@@ -11,6 +11,7 @@ import { TopBar } from "./components/layout/TopBar.jsx";
 import { BottomNav } from "./components/layout/BottomNav.jsx";
 
 import { AuthScreen } from "./features/auth/AuthScreen.jsx";
+import { resetTokenFromUrl } from "./services/auth.js";
 import { OnboardingScreen } from "./features/onboarding/OnboardingScreen.jsx";
 import { TodayScreen } from "./features/today/TodayScreen.jsx";
 import { CommunityScreen } from "./features/community/CommunityScreen.jsx";
@@ -61,6 +62,31 @@ function Root() {
   /* derisa të lexohet ruajtja nuk dimë nëse duhet onboarding-u — një pamje
      bosh e shkurtër është më e mirë se një pulsim i ekranit të gabuar */
   if (!ready) return <AppShell light />;
+
+  /*
+   * LINK-U I RIVENDOSJES KA PËRPARËSI MBI SESIONIN.
+   *
+   * ⚠️  Pa këtë, kush ishte ende i futur te pajisja dhe klikonte link-un e
+   *     email-it hynte DREJT te aplikacioni: `AuthScreen` — i vetmi që e lexon
+   *     `?reset=` — vizatohej vetëm te dega `!hasAccount`, ndaj forma e
+   *     fjalëkalimit të ri nuk shfaqej kurrë. Link-u dukej sikur nuk bënte
+   *     asgjë, dhe token-i mbetej i pashfrytëzuar te adresa deri sa skadonte.
+   *
+   * ⚠️  Lexohet gjatë render-it, jo te `useState`. Pas rivendosjes AuthScreen
+   *     e heq `?reset=` nga adresa dhe gjendja e sesionit ndryshon — pra ky
+   *     render i dytë e gjen adresën të pastër dhe kalon më tej vetë. Po ta
+   *     ruanim te gjendja, ekrani i rivendosjes do të ngecte përgjithmonë.
+   *
+   * Nëse token-i i takon një llogarie tjetër nga ajo e hapur, `adoptAccount`
+   * e trajton: profili i vjetër hiqet dhe onboarding-u rinis.
+   */
+  if (resetTokenFromUrl()) {
+    return (
+      <AppShell>
+        <AuthScreen />
+      </AppShell>
+    );
+  }
 
   /* Dy porta, në rend: pa llogari → hyrje; me llogari po pa profil → onboarding. */
   if (!hasAccount) {
