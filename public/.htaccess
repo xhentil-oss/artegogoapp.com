@@ -1,0 +1,53 @@
+# ═══════════════════════════════════════════════════════════════
+#  CACHE — pse një vendosje e re nuk shihet te telefoni
+#
+#  ⚠️  NDODHI VËRTET, DY HERË. Pas ngarkimit të një pakete të re, telefoni
+#      vazhdonte të tregonte sjelljen e vjetër. Shkaku: shfletuesi e mban
+#      `index.html` në cache, dhe ai tregon emrin e vjetër të paketës —
+#      `assets/index-<hash>.js`. Ai skedar ende ekziston te serveri, ndaj
+#      ngarkohet pa asnjë gabim, dhe aplikacioni duket sikur nuk u përditësua.
+#
+#  Zgjidhja është e ndarë në dysh:
+#    · `index.html` — kurrë e ruajtur; kontrollohet te serveri çdo herë. Është
+#      2 KB, ndaj kostoja është zero.
+#    · `assets/*` — emrat përmbajnë hash-in e përmbajtjes, pra një skedar i
+#      dhënë nuk ndryshon KURRË. Mund të ruhet një vit pa rrezik; kur kodi
+#      ndryshon, ndryshon edhe emri.
+#
+#  Ky skedar rri te `public/`, ndaj Vite e kopjon vetë te `dist/` në çdo
+#  ndërtim dhe zbret bashkë me paketën.
+# ═══════════════════════════════════════════════════════════════
+
+<IfModule mod_headers.c>
+  # HTML: gjithmonë i freskët.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Service Worker: kurrë i ruajtur. Ai është hallka që merr njoftimet, dhe
+  # një kopje e vjetër do të vazhdonte të rrjedhë me javë.
+  <FilesMatch "^sw\.js$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Manifesti: i shkurtër — ndryshon rrallë, por kur ndryshon duhet parë.
+  <FilesMatch "\.webmanifest$">
+    Header set Cache-Control "public, max-age=3600"
+  </FilesMatch>
+</IfModule>
+
+# Paketat me hash: të pandryshueshme.
+<IfModule mod_headers.c>
+  <FilesMatch "^index-[A-Za-z0-9_-]+\.(js|css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# ⚠️  Kopertinat dhe ikonat NUK marrin `immutable`: emrat e tyre nuk kanë hash,
+#     dhe një kopertinë e zëvendësuar do të mbetej e vjetër me muaj te
+#     telefonat. Një ditë mjafton.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(png|jpe?g|svg|webp)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+</IfModule>
