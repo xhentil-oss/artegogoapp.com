@@ -37,7 +37,7 @@ export function ProgramsScreen() {
       <h1
         style={{
           fontSize: "clamp(24px, 8vw, 30px)",
-          fontWeight: 800,
+          fontWeight: 700,
           color: T.ink,
           margin: `8px ${layout.gutter}px 4px`,
           letterSpacing: -0.5,

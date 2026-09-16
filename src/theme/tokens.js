@@ -67,17 +67,24 @@ export const shadows = {
 };
 
 /**
- * TIPOGRAFIA sipas specifikimit:
- *   · `body`    — sans geometrik (Poppins) për ndërfaqen e përgjithshme
- *   · `display` — serif (Playfair/Georgia) për tituj hero dhe momente të
- *                 veçanta: emri i programit, ekrani i përmbylljes
+ * TIPOGRAFIA — sipas specifikimit të klientes (16 shtator 2026).
  *
- * Fontet ngarkohen te `index.html`. Fallback-et e sistemit vijnë menjëherë
- * pas tyre, ndaj teksti lexohet edhe nëse Google Fonts nuk arrihet.
+ * `body`    — i gjithë ndërfaqja.
+ * `display` — VETËM momentet e veçanta: titujt e folderave, emrat e
+ *             programeve, titujt mbi kapakë, ekrani i përmbylljes.
+ *
+ * ⚠️  Të dy janë fonte SISTEMI, pa asnjë shkarkim. Më parë ishin Poppins dhe
+ *     Playfair Display nga Google Fonts — dy kërkesa rrjeti para render-it të
+ *     parë, plus pulsimi kur teksti kalonte nga fonti rezervë te ai i vërtetë.
+ *     Tani nuk ka as njërën, as tjetrin.
+ *
+ * ⚠️  Askund tjetër nuk shkruhet emër fonti. Çdo ekran i merr nga këta dy
+ *     tokena, ndaj një ndryshim i ardhshëm bëhet vetëm këtu — dhe te `body`
+ *     te `styles/global.css`, që duhet të përputhet me `fonts.body`.
  */
 export const fonts = {
-  body: "'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif",
-  display: "'Playfair Display', Georgia, 'Times New Roman', serif",
+  body: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  display: "Georgia, serif",
 };
 
 /**
@@ -136,11 +143,29 @@ export const layout = {
  * Opaciteti mbahet i ulët me qëllim: aurora duhet të ndihet, jo të shihet —
  * sfondi mbetet i bardhë dhe teksti i errët ruan kontrastin.
  */
+/**
+ * ⚠️  Forca u rregullua dy herë më 16 shtator 2026:
+ *     0.13/0.14/0.12 → 0.26/0.28/0.22 (nuancat mezi dalloheshin nga e bardha)
+ *     → 0.16/0.18/0.14 (shumë të errëta te Komuniteti).
+ *
+ *     Shkaku i lëkundjes: fillimisht shiriti i sipërm dhe hero-ja e mbulonin
+ *     auroren me të bardhë, ndaj dyfishimi u mat mbi një ngjyrë të zbutur.
+ *     Kur ato sfonde ranë, e njëjta vlerë doli dyfish më e fortë se ç'dukej.
+ *
+ *     Kjo është e vetmja pikë ku rregullohet: `AuroraBackdrop` i lexon që
+ *     këtu, dhe ai vendoset një herë te `AppShell` — pra ndryshimi prek çdo
+ *     ekran njëherësh.
+ */
 export const aurora = {
   height: 420,
-  turquoise: "rgba(26, 140, 140, 0.13)",
-  lilac: "rgba(124, 92, 224, 0.14)",
-  blue: "rgba(90, 140, 224, 0.12)",
+  /* Turkez i ndritshëm, jo i errët: `#1A8C8C` është teal i thellë, dhe mbi të
+     bardhë me opacitet të ulët del gri-jeshil, jo gurkali. Ky ton i çelët e
+     jep ngjyrën e kërkuar pa e errësuar këndin. */
+  turquoise: "rgba(64, 190, 185, 0.30)",
+  lilac: "rgba(139, 110, 235, 0.30)",
+  /* Blu-ja e mesit vetëm i lidh dy anët. Kur ishte e fortë, i përziente të
+     dyja në një gri të vetme dhe dallimi majtas/djathtas humbiste. */
+  blue: "rgba(90, 140, 224, 0.10)",
 };
 
 /** Ngjyra mbi sfonde të errët (player, completion). */

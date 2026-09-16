@@ -30,8 +30,19 @@ export function SectionHead({ title, accent, action, onAction, hint, flush = fal
         margin: "26px 0 14px",
       }}
     >
-      <h3 style={{ fontSize: 21, fontWeight: 800, color: T.ink, margin: 0, letterSpacing: -0.3 }}>
-        {title} {accent && <span style={{ color: T.accent }}>{accent}</span>}
+      {/*
+          Titulli është i TËRI i zi — kërkesë e klientes, 16 shtator 2026.
+
+          ⚠️  Fjala e dytë vizatohej me violetin e theksit (`T.accent`), ndaj
+              te çdo seksion dilte një fjalë me ngjyrë tjetër: "Meditimet e tua
+              për **sot**", "Të **preferuarat**", "Vazhdo **programet**".
+
+              Prop-i `accent` mbetet me qëllim: e ndan titullin në dy pjesë te
+              nëntë thirrjet, dhe po ta hiqnim do të duhej prekur secila. Nëse
+              ngjyra kërkohet ndonjëherë sërish, ndryshon vetëm ky rresht.
+      */}
+      <h3 style={{ fontSize: 21, fontWeight: 700, color: T.ink, margin: 0, letterSpacing: -0.3 }}>
+        {title} {accent}
       </h3>
 
       {action && onAction && (

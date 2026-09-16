@@ -53,7 +53,7 @@ export const GREETINGS = {
 
 /** Hapat e ritmit ditor — shkyçen sipas orës. */
 export const DAILY_RHYTHM_STEPS = [
-  { id: "morning", title: "Cakto qëllimin",          sub: "Nis ditën me qartësi",              icon: "sunrise", fromHour: 5,  intent: "energy" },
-  { id: "midday",  title: "Rivendosja e mesditës",   sub: "Kontrollo gjendjen & merr frymë",   icon: "sun",     fromHour: 12, intent: "calm" },
-  { id: "evening", title: "Reflekto & çliro",        sub: "Mbylle ditën me qetësi",            icon: "moon",    fromHour: 19, intent: "sleep" },
+  { id: "morning", title: "Meditimi i mëngjesit", sub: "Nis ditën me energji",            icon: "sunrise", fromHour: 5,  intent: "energy" },
+  { id: "midday",  title: "Meditimi i drekës",    sub: "Rikthe koherencën",               icon: "sun",     fromHour: 12, intent: "calm" },
+  { id: "evening", title: "Meditimi i darkës",    sub: "Çlirohu, reflekto dhe rikrijo",   icon: "moon",    fromHour: 19, intent: "sleep" },
 ];

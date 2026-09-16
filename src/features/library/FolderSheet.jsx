@@ -46,7 +46,7 @@ export function FolderSheet({ collection }) {
             style={{
               color: "#fff",
               fontSize: "clamp(21px, 6vw, 27px)",
-              fontWeight: 800,
+              fontWeight: 700,
               margin: 0,
               /* titull hero — serif */
               fontFamily: fonts.display,

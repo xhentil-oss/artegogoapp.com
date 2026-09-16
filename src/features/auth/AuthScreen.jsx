@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { T, fonts, radii } from "../../theme/tokens.js";
+import { T, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
-import { brandSplash } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
 import {
   MIN_PASSWORD,
@@ -109,7 +108,6 @@ export function AuthScreen() {
     <div
       className="ag-viewport"
       style={{
-        background: brandSplash,
         display: "flex",
         flexDirection: "column",
         padding: `${padTop(28)} 28px ${padBottom(28)}`,
@@ -135,22 +133,11 @@ export function AuthScreen() {
               width: "auto",
               display: "block",
               margin: "0 auto",
-              /*
-               * Skedari është vizatim i errët; sfondi këtu është gradient
-               * vjollcë, ndaj mbi të mezi dallohej.
-               *
-               * `brightness(0)` i bën të gjitha pikselat e dukshëm të zinj,
-               * `invert(1)` i kthen në të bardhë — transparenca mbetet e
-               * paprekur. Kështu forma ruhet pa u dashur një skedar i dytë.
-               * Nëse vjen një version i bardhë i logos, ky rresht hiqet.
-               */
-              filter: "brightness(0) invert(1)",
             }}
           />
           <h1
             style={{
-              color: "#fff",
-              fontFamily: fonts.display,
+              color: T.ink,
               fontSize: 30,
               fontWeight: 700,
               margin: "16px 0 8px",
@@ -159,7 +146,7 @@ export function AuthScreen() {
           >
             {meta.title}
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 14.5, margin: 0, lineHeight: 1.55 }}>
+          <p style={{ color: T.sub, fontSize: 14.5, margin: 0, lineHeight: 1.55 }}>
             Arte Gogo — hapësira jote e qetësisë
           </p>
         </div>
@@ -208,16 +195,16 @@ export function AuthScreen() {
               style={{ ...sx.bareButton, ...sx.center, width: 34, height: 34, flexShrink: 0, cursor: "pointer" }}
             >
               {visible ? (
-                <EyeOff size={17} color="rgba(255,255,255,0.7)" />
+                <EyeOff size={17} color={T.faint} />
               ) : (
-                <Eye size={17} color="rgba(255,255,255,0.7)" />
+                <Eye size={17} color={T.faint} />
               )}
             </button>
           </FieldRow>
           )}
 
           {(mode === "up" || mode === "reset") && !error && !notice && (
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, margin: "0 0 14px 4px" }}>
+            <p style={{ color: T.faint, fontSize: 12, margin: "0 0 14px 4px" }}>
               Së paku {MIN_PASSWORD} shenja.
             </p>
           )}
@@ -231,15 +218,15 @@ export function AuthScreen() {
                 display: "flex",
                 alignItems: "flex-start",
                 gap: 8,
-                background: "rgba(255,255,255,0.16)",
-                border: "1px solid rgba(255,255,255,0.35)",
+                background: T.bg2,
+                border: `1px solid ${T.line}`,
                 borderRadius: radii.md,
                 padding: "11px 12px",
                 marginBottom: 14,
               }}
             >
-              <Mail size={15} color="#fff" style={{ flexShrink: 0, marginTop: 1 }} />
-              <span style={{ color: "#fff", fontSize: 12.5, lineHeight: 1.5 }}>{notice}</span>
+              <Mail size={15} color={T.sub} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span style={{ color: T.ink, fontSize: 12.5, lineHeight: 1.5 }}>{notice}</span>
             </div>
           )}
 
@@ -250,15 +237,15 @@ export function AuthScreen() {
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
-                background: "rgba(255,90,110,0.18)",
-                border: "1px solid rgba(255,90,110,0.5)",
+                background: "rgba(179,38,30,0.08)",
+                border: "1px solid rgba(179,38,30,0.3)",
                 borderRadius: radii.md,
                 padding: "10px 12px",
                 marginBottom: 14,
               }}
             >
-              <AlertCircle size={15} color="#fff" style={{ flexShrink: 0 }} />
-              <span style={{ color: "#fff", fontSize: 12.5, lineHeight: 1.45 }}>{error}</span>
+              <AlertCircle size={15} color="#B3261E" style={{ flexShrink: 0 }} />
+              <span style={{ color: "#B3261E", fontSize: 12.5, lineHeight: 1.45 }}>{error}</span>
             </div>
           )}
 
@@ -268,8 +255,8 @@ export function AuthScreen() {
             className="ag-press"
             style={{
               width: "100%",
-              background: "#fff",
-              color: T.ink,
+              background: T.ink,
+              color: "#fff",
               border: "none",
               borderRadius: radii.pill,
               padding: 16,
@@ -298,7 +285,7 @@ export function AuthScreen() {
               ...sx.bareButton,
               width: "100%",
               marginTop: 14,
-              color: "rgba(255,255,255,0.72)",
+              color: T.sub,
               fontSize: 13,
               fontWeight: 600,
               cursor: "pointer",
@@ -314,7 +301,7 @@ export function AuthScreen() {
             ...sx.bareButton,
             width: "100%",
             marginTop: 18,
-            color: "rgba(255,255,255,0.85)",
+            color: T.ink,
             fontSize: 14,
             fontWeight: 600,
             cursor: "pointer",
@@ -332,21 +319,18 @@ export function AuthScreen() {
 function FieldRow({ icon: Icon, children }) {
   return (
     <div
-      /* `ag-field-dark`: mban tekstin e autofill-it të bardhë mbi këtë sfond —
-         shih rregullin te `styles/global.css`. */
-      className="ag-field-dark"
       style={{
         display: "flex",
         alignItems: "center",
         gap: 10,
-        background: "rgba(255,255,255,0.12)",
-        border: "1px solid rgba(255,255,255,0.24)",
+        background: T.bg2,
+        border: `1px solid ${T.line}`,
         borderRadius: radii.pill,
         padding: "4px 14px",
         marginBottom: 12,
       }}
     >
-      <Icon size={17} color="rgba(255,255,255,0.7)" style={{ flexShrink: 0 }} />
+      <Icon size={17} color={T.faint} style={{ flexShrink: 0 }} />
       {children}
     </div>
   );
@@ -358,7 +342,7 @@ const inputStyle = {
   background: "transparent",
   border: "none",
   outline: "none",
-  color: "#fff",
+  color: T.ink,
   /* 16px: nën këtë prag iOS zmadhon faqen sapo preket fusha */
   fontSize: 16,
   fontFamily: "inherit",

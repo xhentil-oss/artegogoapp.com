@@ -5,33 +5,30 @@ import { listFeed } from "../../services/contentRepository.js";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { PostCard } from "./PostCard.jsx";
-import { useFeedComments } from "./useFeedComments.js";
 
 /**
  * Feed-i i frymëzimit.
  *
- * Komentet mbahen KËTU, jo brenda çdo kartele: të gjitha postimet ndajnë të
- * njëjtin çelës ruajtjeje, ndaj kopje të pavarura state-i do të shkruanin
- * njëra mbi tjetrën.
+ * ⚠️  Komentet u hoqën nga pamja me kërkesë të klientes (16 shtator 2026):
+ *     ranë numri "N komente", butoni "Komento" dhe fleta e shkrimit. Hook-u
+ *     `useFeedComments.js` mbeti në dosje, i pathirrur — po u kërkuan sërish,
+ *     kthehen pa u rishkruar.
  */
 export function FeedList() {
   const { isAdmin } = useSession();
-  const { commentsFor, addComment } = useFeedComments();
 
   return (
-    <div style={{ paddingBottom: 8, background: T.bg2, minHeight: "60vh" }}>
+    /* Sfond i tejdukshëm, jo gri: kartat ndahen vetë me kufirin dhe hijen e
+       tyre, dhe bishti i aurorës vazhdon pas të parës — te pamja e klientes
+       feed-i nuk rri mbi një pllakë gri. */
+    <div style={{ paddingBottom: 8, background: "transparent", minHeight: "60vh" }}>
       {/* Titulli u hoq: hero-ja mbi nën-tabet e mban tashmë identitetin e
           skedës, dhe dy tituj njëri mbi tjetrin zinin gjysmën e ekranit. */}
       {isAdmin && <Composer />}
 
       <div className="ag-stagger" style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 14px" }}>
         {listFeed().map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            comments={commentsFor(post.id)}
-            onComment={(text) => addComment(post.id, text)}
-          />
+          <PostCard key={post.id} post={post} />
         ))}
       </div>
     </div>

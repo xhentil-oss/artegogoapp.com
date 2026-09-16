@@ -1,21 +1,26 @@
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import { T, layout } from "../../theme/tokens.js";
-import { sx, circle } from "../../theme/styles.js";
+import { sx } from "../../theme/styles.js";
 import { padTop } from "../../theme/responsive.js";
-import { TABS } from "../../config/navigation.js";
+import { COMMUNITY_VIEWS, TABS } from "../../config/navigation.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
+import { PillButton } from "../ui/Controls.jsx";
+import { LiveDot } from "../ui/Badges.jsx";
 
 /**
- * Shiriti i sipërm: avatar, kërkim, njoftime. Ngjitet gjatë scroll-it.
+ * Shiriti i sipërm: nën-tabet e Komunitetit (vetëm aty), kërkim, njoftime.
+ * Ngjitet gjatë scroll-it.
  *
  * Padding-u lart shtohet me `safe-area-inset-top` që në iPhone me notch
  * (dhe si PWA pa shirit browser-i) të mos hyjë nën shiritin e statusit.
  */
 export function TopBar() {
-  const { openSearch, openNotifications, goToProfile, tab } = useNavigation();
-  /* Profili doli nga shiriti i poshtëm, ndaj avatari është e vetmja hyrje te
-     ai. Pa një shenjë aktive, asgjë në ekran nuk do të tregonte se ku je. */
-  const onProfile = tab === TABS.PROFILE;
+  const { openSearch, openNotifications, tab } = useNavigation();
+  /* Te Komuniteti, vendin e avatarit e zënë "Frymëzim / Live": pamja e
+     klientes i kërkon në të njëjtin rresht me kërkimin dhe zilen, jo në një
+     rresht të vetin nën hero. Avatari nuk humbet — hero-ja poshtë e ka të
+     vetin, dhe Profili tani është tab më vete poshtë. */
+  const komuniteti = tab === TABS.COMMUNITY;
 
   return (
     <div
@@ -23,30 +28,22 @@ export function TopBar() {
         position: "sticky",
         top: 0,
         zIndex: 30,
-        background: "rgba(255,255,255,0.85)",
-        backdropFilter: "blur(12px)",
+        /* ⚠️  Pa sfond, në çdo skedë: aurora duhet të mbërrijë deri lart, pa
+           një brez të bardhë që e pret. Turbullimi mbetet, ndaj kur faqja
+           rrëshqet poshtë shiritit përmbajtja nuk përzihet me ikonat. */
+        background: "transparent",
+        backdropFilter: "blur(14px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         padding: `${padTop(14)} ${layout.gutter}px 10px`,
       }}
     >
-      <button
-        onClick={goToProfile}
-        aria-label="Profili"
-        aria-current={onProfile ? "page" : undefined}
-        className="ag-press"
-        style={{
-          ...circle(44, onProfile ? "rgba(124,92,224,0.12)" : T.bg2),
-          border: `1.5px solid ${onProfile ? T.accent : T.line}`,
-          padding: 0,
-          overflow: "hidden",
-          cursor: "pointer",
-          transition: "background .2s, border-color .2s",
-        }}
-      >
-        <User size={22} color={onProfile ? T.accent : T.faint} />
-      </button>
+      {/* ⚠️  Avatari u hoq: Profili është tab më vete te shiriti i poshtëm, dhe
+          dy hyrje për të njëjtin ekran ishin një më shumë. Te Komuniteti vendin
+          e zë "Frymëzim / Live"; gjetkë mbetet një hapësirë bosh, që kërkimi dhe
+          zilja të rrinë djathtas. */}
+      {komuniteti ? <CommunityViews /> : <span />}
 
       {/* gap i vogël sepse butonat vetë mbajnë 44px zonë prekjeje */}
       <div style={{ display: "flex", gap: 2 }}>
@@ -59,6 +56,27 @@ export function TopBar() {
           <Bell size={24} color={T.ink} />
         </IconButton>
       </div>
+    </div>
+  );
+}
+
+/** Nën-tabet e Komunitetit, te vendi i avatarit. */
+function CommunityViews() {
+  const { communityView, setCommunityView } = useNavigation();
+
+  return (
+    <div style={{ display: "flex", gap: 8 }}>
+      {COMMUNITY_VIEWS.map((item) => (
+        <PillButton
+          key={item.id}
+          active={communityView === item.id}
+          onClick={() => setCommunityView(item.id)}
+          style={{ display: "flex", alignItems: "center", gap: 6 }}
+        >
+          {item.pulse && <LiveDot />}
+          {item.label}
+        </PillButton>
+      ))}
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function LiveScreen() {
           <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, color: T.ink }}>LIVE</span>
         </div>
 
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: T.ink, margin: "0 0 12px", letterSpacing: -0.3 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: T.ink, margin: "0 0 12px", letterSpacing: -0.3 }}>
           Transmetimet <span style={{ color: T.sub }}>Live</span>
         </h2>
         <p
@@ -50,9 +50,6 @@ export function LiveScreen() {
         ))}
       </div>
 
-      <p style={{ textAlign: "center", color: T.faint, fontSize: 12.5, padding: "18px 30px 0", lineHeight: 1.5 }}>
-        Anëtarët Premium marrin njoftim para çdo transmetimi live.
-      </p>
     </div>
   );
 }
@@ -92,7 +89,7 @@ function SessionCard({ session }) {
       )}
 
       <div style={{ fontSize: 42, marginBottom: 14 }}>{session.emoji}</div>
-      <div style={{ fontSize: 21, fontWeight: 800, color: T.ink, marginBottom: 8 }}>{session.title}</div>
+      <div style={{ fontSize: 21, fontWeight: 700, color: T.ink, marginBottom: 8 }}>{session.title}</div>
       <p style={{ fontSize: 14.5, color: T.sub, margin: "0 0 18px", lineHeight: 1.5 }}>{session.sub}</p>
 
       <button

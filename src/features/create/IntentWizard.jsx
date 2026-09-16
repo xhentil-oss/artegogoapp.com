@@ -87,7 +87,7 @@ function StepBar({ step }) {
 }
 
 function StepTitle({ children }) {
-  return <h3 style={{ fontSize: 20, fontWeight: 800, color: T.ink, margin: 0 }}>{children}</h3>;
+  return <h3 style={{ fontSize: 20, fontWeight: 700, color: T.ink, margin: 0 }}>{children}</h3>;
 }
 
 function IntentStep({ value, onChange }) {

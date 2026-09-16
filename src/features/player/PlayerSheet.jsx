@@ -315,7 +315,7 @@ export function PlayerSheet({ sequence }) {
           fontSize: "clamp(21px, 6.5vw, 26px)",
           color: "#fff",
           margin: "0 0 8px",
-          fontWeight: 800,
+          fontWeight: 700,
           textAlign: "center",
           lineHeight: 1.2,
         }}

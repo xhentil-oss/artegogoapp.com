@@ -35,7 +35,7 @@ export function ProfileScreen() {
           <User size={28} color="#fff" />
         </div>
         <div style={sx.flexText}>
-          <div style={{ color: T.ink, fontSize: 20, fontWeight: 800 }}>{name}</div>
+          <div style={{ color: T.ink, fontSize: 20, fontWeight: 700 }}>{name}</div>
           {email && (
             <div style={{ color: T.faint, fontSize: 12, marginTop: 1, ...sx.truncate }}>{email}</div>
           )}
@@ -66,20 +66,32 @@ export function ProfileScreen() {
           stats={[
             { value: totalMinutes, label: "MINUTA" },
             { value: history.length, label: "SEANCA" },
-            { value: streak, label: "RRESHT" },
+            { value: streak, label: "DITË RRESHT" },
           ]}
         />
       </div>
 
-      <SubscriptionCard />
+      {/* Medaljet para listave: progresi vjen i pari, koleksionet pas tij. */}
+      <MedalCase />
 
       <UserCollections />
 
-      <MedalCase />
       <DailyRhythm />
       <MoodTracker />
       <HabitTracker />
       <PracticeHistory series={dailyHistory} />
+
+      {/*
+        Karta e abonimit rri POSHTË, me kërkesë (16 shtator 2026).
+
+        ⚠️  Më parë ishte menjëherë pas statistikave, pra gjëja e parë që shihje
+            te profili ishte oferta. Tani hapin e parë e zënë progresi dhe
+            praktika; abonimi vjen pasi ke parë ç'ke bërë.
+
+        Mbetet mbi veprimet e llogarisë (dalja, fshirja): ato duhet të rrinë
+        të fundit, përndryshe një kartë pagese do të binte nën "Fshi llogarinë".
+      */}
+      <SubscriptionCard />
 
       {/*
         Ndërprerësi shfaqet VETËM për llogari me të drejtë admin-i.

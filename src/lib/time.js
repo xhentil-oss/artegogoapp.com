@@ -2,7 +2,9 @@
 
 /* Tri shkronja për secilën — etiketat e grafikëve rreshtohen vetëm nëse
    kanë gjerësi të njëjtë. */
-export const WEEKDAYS = ["Die", "Hën", "Mar", "Mër", "Enj", "Pre", "Sht"];
+/* Dy shkronja, si te pamja e klientes: shtatë etiketa tre-shkronjëshe
+   mbusheshin poshtë grafikut dhe e ngushtonin vetë grafikun. */
+export const WEEKDAYS = ["Di", "Hë", "Ma", "Më", "En", "Pr", "Sh"];
 export const MONTHS_SHORT = [
   "Jan", "Shk", "Mar", "Pri", "Maj", "Qer",
   "Kor", "Gsh", "Sht", "Tet", "Nën", "Dhj",

@@ -82,7 +82,7 @@ function Root() {
    */
   if (resetTokenFromUrl()) {
     return (
-      <AppShell>
+      <AppShell light>
         <AuthScreen />
       </AppShell>
     );
@@ -91,7 +91,7 @@ function Root() {
   /* Dy porta, në rend: pa llogari → hyrje; me llogari po pa profil → onboarding. */
   if (!hasAccount) {
     return (
-      <AppShell>
+      <AppShell light>
         <AuthScreen />
       </AppShell>
     );
@@ -99,7 +99,7 @@ function Root() {
 
   if (!isOnboarded) {
     return (
-      <AppShell>
+      <AppShell light>
         <OnboardingScreen />
       </AppShell>
     );

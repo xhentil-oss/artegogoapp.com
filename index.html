@@ -14,17 +14,14 @@
     <title>Arte Gogo — Meditim · Transformim</title>
     <meta name="description" content="Meditime të udhëhequra, frymëmarrje dhe praktika somatike në shqip." />
 
-    <!-- Tipografia sipas specifikimit:
-         · Poppins (sans geometrik) për ndërfaqen e përgjithshme
-         · Playfair Display (serif) për tituj hero dhe momente të veçanta
-         Të dy kanë fallback sistemi te `theme/tokens.js`, ndaj pamja mbetet
-         e qëndrueshme edhe pa rrjet. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Tipografia sipas specifikimit të klientes (16 shtator 2026):
+         · Sans  — system-ui për gjithë ndërfaqen
+         · Serif — Georgia vetëm për momentet e veçanta
+
+         Të dy janë fonte SISTEMI, ndaj këtu nuk ngarkohet asgjë. Më parë
+         rrinin Poppins dhe Playfair Display nga Google Fonts — dy lidhje
+         `preconnect` plus një fletë stili para render-it të parë. Emrat e
+         fonteve rrinë vetëm te `theme/tokens.js`. -->
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />

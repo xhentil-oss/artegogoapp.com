@@ -100,56 +100,61 @@ export function DotChart({ points, colorFor, dense = false, height = 90, labelEv
               height: "100%",
             }}
           >
-            {point.value != null ? (
-              <div
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  height: "100%",
-                }}
-              >
-                <div
+            {/*
+              ⚠️  Pika vendoset me `bottom` në PËRQINDJE TË LARTËSISË, jo me
+                  `margin-bottom`. Përqindjet e margin-it llogariten mbi
+                  GJERËSINË e prindit, ndaj me shtatë kolona të ngushta gjendja
+                  më e mirë ngjitej vetëm pak mbi mesin — dhe sipër saj mbetej
+                  një pjesë e mirë e grafikut bosh. Zbritja e `size` e mban
+                  rrethin brenda kornizës: 100% do të thotë "prek tavanin".
+            */}
+            <div style={{ position: "relative", width: "100%", height: "100%" }}>
+              {point.value != null ? (
+                <span
                   style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: `calc(${((point.value - 1) / 4) * 100}% - ${(((point.value - 1) / 4) * size).toFixed(2)}px)`,
+                    transform: "translateX(-50%)",
                     width: size,
                     height: size,
                     borderRadius: "50%",
                     background: colorFor(point.value),
-                    /* pika ngjitet sipas vlerës 1–5 */
-                    marginBottom: `${((point.value - 1) / 4) * 70}%`,
                     boxShadow: today
                       ? `0 0 0 3px #fff, 0 0 0 4.5px ${colorFor(point.value)}, 0 0 12px ${colorFor(point.value)}99`
                       : `0 0 8px ${colorFor(point.value)}88`,
-                    transition: "margin .4s",
+                    transition: "bottom .4s",
                   }}
                 />
-              </div>
-            ) : today ? (
-              <div
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "center",
-                  height: "100%",
-                }}
-              >
-                <div
+              ) : today ? (
+                <span
                   style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: "calc(50% - 6.5px)",
+                    transform: "translateX(-50%)",
                     width: 13,
                     height: 13,
                     borderRadius: "50%",
                     border: `2px dashed ${T.faint}`,
-                    /* në mes të shkallës 1–5, aty ku do të bjerë nesër */
-                    marginBottom: "35%",
+                    boxSizing: "border-box",
                   }}
                 />
-              </div>
-            ) : (
-              <div style={{ width: 5, height: 5, borderRadius: "50%", background: T.line }} />
-            )}
+              ) : (
+                <span
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: 0,
+                    transform: "translateX(-50%)",
+                    width: 5,
+                    height: 5,
+                    borderRadius: "50%",
+                    background: T.line,
+                  }}
+                />
+              )}
+            </div>
 
             {showLabel && (
               <div

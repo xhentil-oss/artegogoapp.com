@@ -12,24 +12,27 @@ export const TABS = {
  * SHIRITI I NAVIGIMIT — 5 tabe.
  * `featured` = butoni i mesit, i ngritur, me gradient violet.
  *
- * ⚠️  Ky rend NUK është ai i seksionit 3 të katalogut (Komunitet · Meditime ·
- *     Krijo · Programe · Profili). Klientja e ndryshoi me dorë: "Sot" u kthye
- *     i pari, si në ndërtimin fillestar, dhe Profili doli nga shiriti.
+ * Ky rend është ai i seksionit 3 të katalogut, i rikonfirmuar nga klientja më
+ * 16 shtator 2026: Komunitet · Meditime · Krijo · Programe · Profili.
  *
- * Profili nuk ka vend këtu me qëllim: hapet nga avatari te shiriti i sipërm.
- * Mbetet te `TABS` sepse ekrani ekziston dhe navigimi çon te ai — thjesht nuk
- * zë një nga pesë vendet e poshtme.
+ * ⚠️  "Sot" doli nga shiriti me kërkesë. Ekrani `TodayScreen` dhe `TABS.TODAY`
+ *     nuk u fshinë — dega te `App.jsx` rri aty dhe kthimi i tij do të thotë
+ *     vetëm një rresht këtu. Asgjë tjetër nuk e vendos më këtë tab, ndaj
+ *     aplikacioni nuk kalon dot aksidentalisht te një ekran pa vend në shirit.
+ *
+ * ⚠️  Profili u kthye te shiriti. Vazhdon të hapet edhe nga avatari lart —
+ *     të dyja rrugët thërrasin të njëjtin tab, ndaj nuk ka gjendje të dyfishtë.
  */
 export const NAV_ITEMS = [
-  { id: TABS.TODAY,     label: "Sot",       icon: "today" },
-  { id: TABS.PROGRAMS,  label: "Programe",  icon: "programs" },
-  { id: TABS.CREATE,    label: "Krijo",     icon: "create", featured: true },
-  { id: TABS.LIBRARY,   label: "Meditime",  icon: "library" },
   { id: TABS.COMMUNITY, label: "Komunitet", icon: "community" },
+  { id: TABS.LIBRARY,   label: "Meditime",  icon: "library" },
+  { id: TABS.CREATE,    label: "Krijo",     icon: "create", featured: true },
+  { id: TABS.PROGRAMS,  label: "Programe",  icon: "programs" },
+  { id: TABS.PROFILE,   label: "Profili",   icon: "profile" },
 ];
 
 /** Tab-i ku hapet aplikacioni — i pari i listës. */
-export const DEFAULT_TAB = TABS.TODAY;
+export const DEFAULT_TAB = TABS.COMMUNITY;
 
 /** Nën-tabet e "Komunitet": feed frymëzimi + Live. */
 export const COMMUNITY_VIEWS = [

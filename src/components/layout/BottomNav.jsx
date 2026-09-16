@@ -3,7 +3,6 @@ import { sx } from "../../theme/styles.js";
 import { NAV_ITEMS } from "../../config/navigation.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { NavIcon } from "../icons/NavIcon.jsx";
-import { LotusMark } from "../icons/BrandIcons.jsx";
 
 /**
  * Navigimi i poshtëm, i fiksuar, me butonin e ngritur "Krijo" në mes.
@@ -82,15 +81,23 @@ function FeaturedButton() {
       <div
         style={{
           position: "relative",
-          width: 50,
-          height: 50,
+          width: 54,
+          height: 54,
           borderRadius: "50%",
           background: `linear-gradient(145deg, ${T.eve2}, ${T.eve1})`,
           ...sx.center,
           boxShadow: `0 6px 20px ${T.eve1}88`,
         }}
       >
-        <LotusMark size={28} />
+        {/* Logoja e hyrjes, jo një ikonë e dytë: figura është e zezë mbi
+            sfond të tejdukshëm, ndaj kthehet e bardhë me filtër — kështu
+            skedari mbetet një i vetëm për hyrjen, onboarding-un dhe këtu. */}
+        <img
+          src="/transparent-logo-2.png"
+          alt=""
+          aria-hidden="true"
+          style={{ height: 29, width: "auto", filter: "brightness(0) invert(1)" }}
+        />
       </div>
     </div>
   );

@@ -32,7 +32,7 @@ export function CategoryScreen({ intent }) {
         <BackButton onClick={closeCategory} />
         <div>
           <Icon size={34} color="rgba(255,255,255,0.7)" style={{ marginBottom: 8 }} />
-          <h2 style={{ color: "#fff", fontSize: "clamp(22px, 7vw, 28px)", fontWeight: 800, margin: 0, lineHeight: 1.15 }}>
+          <h2 style={{ color: "#fff", fontSize: "clamp(22px, 7vw, 28px)", fontWeight: 700, margin: 0, lineHeight: 1.15 }}>
             {meta.label}
           </h2>
           <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, margin: "4px 0 0" }}>

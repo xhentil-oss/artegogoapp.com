@@ -36,6 +36,6 @@ export const SOUNDSCAPES = [
 /** Sesione live / workshope. */
 export const LIVE_SESSIONS = [
   { id: "l1", emoji: "🧘", title: "Meditime Live",     sub: "Sesione të udhëhequra nga Dr. Artemisa në kohë reale",   live: true,  when: "Tani" },
-  { id: "l2", emoji: "💡", title: "Workshope Online",  sub: "Mësimet dhe praktikat live me interaksion të drejtpërdrejtë", live: false, when: "E mërkurë · 19:00" },
-  { id: "l3", emoji: "🎯", title: "Q&A dhe Koçing",    sub: "Pyetje dhe përgjigje live — merr ndihmë direkt",         live: false, when: "E premte · 20:00" },
+  { id: "l2", emoji: "💡", title: "Workshope Online",      sub: "Mësimet dhe praktikat live me interaksion të drejtpërdrejtë", live: false, when: "E mërkurë dhe e premte · 19:00" },
+  { id: "l3", emoji: "🎯", title: "Pyetje & Përgjigje",    sub: "Pyetje dhe përgjigje live — merr ndihmë direkt",              live: false, when: "E mërkurë dhe e premte · 20:00" },
 ];

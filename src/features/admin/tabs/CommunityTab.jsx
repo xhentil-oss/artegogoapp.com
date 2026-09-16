@@ -20,6 +20,25 @@ export function CommunityTab() {
   const [type, setType] = useState(listPostTypes()[0] ?? "Frymëzim");
   const [text, setText] = useState("");
   const [meditationId, setMeditationId] = useState("");
+  /*
+   * PAMJA E POSTIMIT — zgjedhje, jo rregull.
+   *
+   * ⚠️  Më parë çdo postim dilte me një drejtkëndësh gradienti të vizatuar nga
+   *     kodi; nuk kishte mënyrë as ta hiqje, as të vendosje foton tënde. Tani
+   *     ruhet `images`: bosh = vetëm tekst, një adresë = një foto, disa = karusel.
+   */
+  const [pamja, setPamja] = useState("asnje");
+  const [imazhe, setImazhe] = useState("");
+
+  /* Një adresë për rresht; rreshtat bosh dhe hapësirat bien vetë. */
+  const listaImazheve =
+    pamja === "asnje"
+      ? []
+      : imazhe
+          .split(String.fromCharCode(10))
+          .map((rresht) => rresht.trim())
+          .filter(Boolean)
+          .slice(0, pamja === "nje" ? 1 : undefined);
 
   const ready = text.trim().length > 0;
   /*
@@ -56,6 +75,7 @@ export function CommunityTab() {
       comments: 0,
       text: text.trim(),
       meditationId: attached?.id ?? null,
+      images: listaImazheve,
     });
 
     /* Fushat pastrohen vetëm pas suksesit: nëse botimi dështon, teksti i
@@ -63,6 +83,8 @@ export function CommunityTab() {
     if (result.ok) {
       setText("");
       setMeditationId("");
+      setImazhe("");
+      setPamja("asnje");
     }
   };
 
@@ -102,6 +124,41 @@ export function CommunityTab() {
             aria-label="Teksti i postimit"
           />
         </Field>
+
+        <Field label="Pamja" hint="opsionale">
+          <Select
+            value={pamja}
+            onChange={(e) => setPamja(e.target.value)}
+            options={[
+              { id: "asnje", label: "Pa imazh — vetëm tekst" },
+              { id: "nje", label: "Një imazh" },
+              { id: "karusel", label: "Karusel (disa imazhe)" },
+            ]}
+            aria-label="Pamja e postimit"
+          />
+        </Field>
+
+        {pamja === "nje" && (
+          <Field label="Adresa e imazhit" hint="p.sh. /kopertina/emri.jpeg">
+            <TextInput
+              value={imazhe}
+              onChange={(e) => setImazhe(e.target.value)}
+              placeholder="/kopertina/emri.jpeg"
+              aria-label="Adresa e imazhit"
+            />
+          </Field>
+        )}
+
+        {pamja === "karusel" && (
+          <Field label="Adresat e imazheve" hint="një për rresht, sipas radhës">
+            <TextArea
+              value={imazhe}
+              onChange={(e) => setImazhe(e.target.value)}
+              placeholder={"/kopertina/e-para.jpeg" + String.fromCharCode(10) + "/kopertina/e-dyta.jpeg"}
+              aria-label="Adresat e imazheve"
+            />
+          </Field>
+        )}
 
         <Field label="Meditim i bashkangjitur" hint="opsional">
           <Select

@@ -34,13 +34,13 @@ export function MoodTracker() {
                 borderRadius: 16,
                 padding: "12px 4px",
                 cursor: "pointer",
-                transition: "all .2s",
-                transform: selected ? "scale(1.08)" : "scale(1)",
+                transition: "background .2s, border-color .2s",
               }}
             >
-              <span style={{ fontSize: 28, filter: selected ? "none" : "grayscale(0.5) opacity(0.75)" }}>
-                {mood.e}
-              </span>
+              {/* Pa zbehje: fytyrat rrinë me ngjyrat e veta edhe pa u zgjedhur,
+                  dhe zgjedhja shihet nga kufiri e sfondi, jo nga zbehja e
+                  tjetrave. */}
+              <span style={{ fontSize: 28 }}>{mood.e}</span>
             </button>
           );
         })}

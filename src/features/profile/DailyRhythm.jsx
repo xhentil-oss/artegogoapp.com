@@ -1,5 +1,5 @@
 import { Check, Lock, Moon, Play, Sun } from "lucide-react";
-import { T, radii, shadows } from "../../theme/tokens.js";
+import { T, radii } from "../../theme/tokens.js";
 import { circle } from "../../theme/styles.js";
 import { hourLabel } from "../../lib/format.js";
 import { DAILY_RHYTHM_STEPS } from "../../data/greetings.js";
@@ -23,7 +23,7 @@ const STARS = [[20, 30], [80, 20], [60, 60], [88, 70], [14, 80]];
  */
 export function DailyRhythm() {
   const { playItems } = usePlayback();
-  const { rhythmToday, rhythmCount, rhythmDay, rhythmAchievements } = useProgress();
+  const { rhythmToday, rhythmCount, rhythmDay } = useProgress();
 
   const hour = new Date().getHours();
   const percent = (rhythmCount / DAILY_RHYTHM_STEPS.length) * 100;
@@ -43,8 +43,10 @@ export function DailyRhythm() {
   return (
     <section
       style={{
-        /* sipërfaqe e brendshme — Sfond dytësor i paletës */
-        background: T.bg2,
+        /* Gradient i butë gurkali→gri: te pamja e klientes ritmi ditor është
+           i vetmi bllok me sfond të ngjyrosur, ndaj dallohet nga kartat e
+           tjera pa pasur nevojë për kufi. */
+        background: "linear-gradient(180deg, #DCE3EC 0%, #EDEFF3 62%, #F1F1F4 100%)",
         borderRadius: radii.xxl,
         padding: "24px 20px",
         marginBottom: 20,
@@ -82,12 +84,6 @@ export function DailyRhythm() {
         </ProgressRing>
       </div>
 
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20, position: "relative" }}>
-        <Chip emoji="🔥" label={`${rhythmCount} hapa sot`} />
-        {/* Arritjet janë ditët e plota të mbledhura, jo një flamur i sotëm. */}
-        <Chip emoji="⭐" label={`${rhythmAchievements} arritje`} />
-      </div>
-
       <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
         {DAILY_RHYTHM_STEPS.map((step) => (
           <StepRow
@@ -100,29 +96,7 @@ export function DailyRhythm() {
         ))}
       </div>
 
-      <div style={{ textAlign: "center", color: T.faint, fontSize: 12.5, marginTop: 16, position: "relative" }}>
-        Plotësoji të tri hapat që dita të hyjë në ditët rresht.
-      </div>
     </section>
-  );
-}
-
-function Chip({ emoji, label }) {
-  return (
-    <div
-      style={{
-        background: "#fff",
-        borderRadius: 24,
-        padding: "9px 18px",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        boxShadow: shadows.raised,
-      }}
-    >
-      <span style={{ fontSize: 16 }}>{emoji}</span>
-      <span style={{ fontSize: 14, fontWeight: 700, color: T.ink }}>{label}</span>
-    </div>
   );
 }
 

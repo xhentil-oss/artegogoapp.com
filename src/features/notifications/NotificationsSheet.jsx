@@ -72,7 +72,7 @@ export function NotificationsSheet() {
       >
         <header style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 4 }}>
           <div style={sx.flexText}>
-            <h2 style={{ color: T.ink, fontSize: 21, fontWeight: 800, margin: 0 }}>
+            <h2 style={{ color: T.ink, fontSize: 21, fontWeight: 700, margin: 0 }}>
               Njoftimet e ditës
             </h2>
             <p style={{ color: T.sub, fontSize: 13, margin: "3px 0 0" }}>

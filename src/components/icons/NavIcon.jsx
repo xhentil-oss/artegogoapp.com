@@ -7,13 +7,21 @@ import { T, nav } from "../../theme/tokens.js";
  * blu — shpërndahen nëpër elementet e ikonës. Kur nuk është aktiv, e gjithë
  * ikona bie në një gri të vetme.
  *
+ * Përmasa: 28px (lotusi 29, që petalet e holla të peshojnë njësoj me format e
+ * mbushura). U rrit nga 24 me kërkesë — te telefoni ikonat dukeshin të vogla
+ * krahas etiketave.
+ *
  * Çdo ikonë ndjek përshkrimin e tabelës:
- *   Sot       · diell verdhë me rreze rozë/blu mbi horizont
- *   Komunitet · trekëndësh rozë, zemër verdhë, rreth blu, katror rozë
- *   Meditime  · lotus (petal verdhë + rozë + blu)
- *   Programe  · dy shirita + diagonal
- *   Profili   · kokë verdhë + trup rozë — jashtë shiritit, te avatari lart
- *   Krijo     · figurë meditative mbi gradient violet — vizatohet te `BottomNav`
+ *   Komunitet · trekëndësh rozë, zemër verdhë, rreth blu, katror rozë (të mbushura)
+ *   Meditime  · lotus me vija — petal qendror + dy anësorë, pa kërcell
+ *   Krijo     · logoja e hyrjes mbi gradient violet — vizatohet te `BottomNav`
+ *   Programe  · tre libra të mbushur e të hollë, i fundit i pjerrët
+ *   Profili   · kokë + supe, vetëm vijë
+ *   Sot       · diell mbi horizont — jashtë shiritit që nga 16 shtatori
+ *
+ * ⚠️  Forma e secilës u fiksua nga pamja e klientes (16 shtator 2026): vetëm
+ *     "Komunitet" është me forma të mbushura, tri të tjerat janë vija të holla.
+ *     Mos e "njëso" stilin pa e pyetur — dallimi është i qëllimshëm.
  */
 export function NavIcon({ icon, active }) {
   /** Ngjyra e elementit: e brand-it kur aktiv, gri kur jo. */
@@ -23,7 +31,7 @@ export function NavIcon({ icon, active }) {
     case "today":
       /* diell mbi horizont — dita që sapo nis */
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="11.4" r="4.2" fill={c(nav.yellow)} />
           <path
             d="M12 2.6v2.3M4.8 11.4H2.5M21.5 11.4h-2.3M6.6 6 5 4.4M17.4 6 19 4.4"
@@ -42,7 +50,7 @@ export function NavIcon({ icon, active }) {
 
     case "community":
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
           <path d="M6.2 3.4 L9.6 9.2 H2.8 Z" fill={c(nav.pink)} />
           <path
             d="M17.8 9.4c-1.1-1-2.6-.6-3.1.5-.5-1.1-2-1.5-3.1-.5-1.2 1.1-.7 2.8 3.1 5.1 3.8-2.3 4.3-4 3.1-5.1z"
@@ -54,38 +62,63 @@ export function NavIcon({ icon, active }) {
       );
 
     case "library":
-      /* lotus: petal qendror + dy anësorë + baza */
+      /* lotus me vija të holla: petali qendror + dy anësorë, pa kërcell */
       return (
-        <svg width="25" height="25" viewBox="0 0 24 24" fill="none">
-          <path d="M12 3.2c2.4 2.6 2.4 6.6 0 9.4-2.4-2.8-2.4-6.8 0-9.4z" fill={c(nav.yellow)} />
-          <path d="M4.1 8.6c3.4.6 6 3.6 6.4 7.4-3.6-.7-6.1-3.7-6.4-7.4z" fill={c(nav.pink)} />
-          <path d="M19.9 8.6c-.3 3.7-2.8 6.7-6.4 7.4.4-3.8 3-6.8 6.4-7.4z" fill={c(nav.blue)} />
+        <svg width="29" height="29" viewBox="0 0 24 24" fill="none">
+          {/* Lulja zbret 2.6 njësi: pa kërcellin, pesha e saj rrinte shumë
+              lart dhe nuk qëndronte në një vijë me ikonat fqinje. */}
+          <g transform="translate(0 2.6)">
           <path
-            d="M3.4 14.6c2.4 3.9 5.2 5.8 8.6 5.8s6.2-1.9 8.6-5.8"
-            stroke={c(nav.pink)}
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            fill="none"
+            d="M12 3.4c2.3 2.7 2.3 6.5 0 9.2-2.3-2.7-2.3-6.5 0-9.2z"
+            stroke={c(nav.yellow)}
+            strokeWidth="1.7"
+            strokeLinejoin="round"
           />
+          <path
+            d="M4.4 8.8c3.2.7 5.6 3.5 6 7.1-3.4-.7-5.8-3.5-6-7.1z"
+            stroke={c(nav.pink)}
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M19.6 8.8c-.2 3.6-2.6 6.4-6 7.1.4-3.6 2.8-6.4 6-7.1z"
+            stroke={c(nav.blue)}
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+          />
+          </g>
         </svg>
       );
 
     case "programs":
-      /* dy shirita + diagonal */
+      /* tre libra të mbushur e të hollë, i fundit i mbështetur pjerrtas */
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <rect x="3.4" y="8.5" width="3.4" height="12" rx="1.7" fill={c(nav.yellow)} />
-          <rect x="9.6" y="4" width="3.4" height="16.5" rx="1.7" fill={c(nav.pink)} />
-          <path d="M16.4 19.6 L21.2 6.2" stroke={c(nav.blue)} strokeWidth="3.2" strokeLinecap="round" />
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <rect x="4.2" y="4.6" width="3.2" height="14.8" rx="1.6" fill={c(nav.yellow)} />
+          <rect x="9.6" y="4.6" width="3.2" height="14.8" rx="1.6" fill={c(nav.pink)} />
+          <rect
+            x="15"
+            y="4.6"
+            width="3.2"
+            height="14.8"
+            rx="1.6"
+            fill={c(nav.blue)}
+            transform="rotate(14 16.6 12)"
+          />
         </svg>
       );
 
     case "profile":
-      /* kokë e verdhë + trup rozë */
+      /* kokë + supe, vetëm vijë */
       return (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="7.4" r="4.1" fill={c(nav.yellow)} />
-          <path d="M3.9 21c0-4.3 3.6-7.2 8.1-7.2s8.1 2.9 8.1 7.2z" fill={c(nav.pink)} />
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8.1" r="3.9" stroke={c(nav.yellow)} strokeWidth="1.7" />
+          <path
+            d="M4.9 20.4c0-3.8 3.3-6.1 7.1-6.1s7.1 2.3 7.1 6.1"
+            stroke={c(nav.pink)}
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
         </svg>
       );
 

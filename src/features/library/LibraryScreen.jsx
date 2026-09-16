@@ -34,7 +34,7 @@ export function LibraryScreen() {
   return (
     <div style={sx.screen}>
       <div style={{ padding: `8px ${layout.gutter}px 0` }}>
-        <h2 style={{ fontSize: 28, fontWeight: 800, color: T.ink, margin: "0 0 8px", letterSpacing: -0.5 }}>
+        <h2 style={{ fontSize: 28, fontWeight: 700, color: T.ink, margin: "0 0 8px", letterSpacing: -0.5 }}>
           Meditim
         </h2>
         <p style={{ fontSize: 15, color: T.sub, margin: 0, lineHeight: 1.5 }}>

@@ -90,7 +90,7 @@ export function UpsellSheet() {
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <Crown size={34} color={T.gold} style={{ marginBottom: 10 }} />
-          <h2 style={{ color: T.ink, fontSize: 24, fontWeight: 800, margin: "0 0 6px" }}>
+          <h2 style={{ color: T.ink, fontSize: 24, fontWeight: 700, margin: "0 0 6px" }}>
             Provoje {TRIAL_DAYS} ditë falas
           </h2>
           <p style={{ color: T.sub, fontSize: 13.5, margin: 0, lineHeight: 1.5 }}>
@@ -280,7 +280,7 @@ function PlanOption({ option, selected, onSelect }) {
       </div>
 
       <div style={{ color: T.sub, fontSize: 12, marginBottom: 3 }}>{option.label}</div>
-      <div style={{ color: T.ink, fontSize: 21, fontWeight: 800, letterSpacing: -0.4 }}>
+      <div style={{ color: T.ink, fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>
         {option.price}
       </div>
       <div style={{ color: T.faint, fontSize: 11, marginTop: 2 }}>{planNote(option)}</div>

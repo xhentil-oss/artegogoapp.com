@@ -104,7 +104,7 @@ function Greeting({ name, greeting, quote }) {
         <h1
           style={{
             fontSize: "clamp(24px, 8vw, 30px)",
-            fontWeight: 800,
+            fontWeight: 700,
             color: T.ink,
             margin: "2px 0 0",
             letterSpacing: -0.5,

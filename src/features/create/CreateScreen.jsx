@@ -43,7 +43,7 @@ export function CreateScreen() {
       <h1
         style={{
           fontSize: 28,
-          fontWeight: 800,
+          fontWeight: 700,
           color: T.ink,
           margin: `8px ${layout.gutter}px 2px`,
           letterSpacing: -0.5,

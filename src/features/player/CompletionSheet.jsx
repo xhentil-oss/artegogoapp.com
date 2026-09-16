@@ -93,7 +93,7 @@ export function CompletionSheet({ sequence }) {
           style={{
             color: "#fff",
             fontSize: "clamp(23px, 7.5vw, 30px)",
-            fontWeight: 800,
+            fontWeight: 700,
             margin: "0 0 10px",
             /* moment i veçantë — serif sipas specifikimit */
             fontFamily: fonts.display,
