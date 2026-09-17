@@ -22,11 +22,10 @@ export const MOODS = [
 
 /** Etiketat emocionale që zgjidhen pas një seance. */
 export const SESSION_MOODS = [
-  { emoji: "😌", label: "I qetë" },
-  { emoji: "💗", label: "I hapur" },
-  { emoji: "✨", label: "I freskët" },
-  { emoji: "🌊", label: "I lehtësuar" },
-  { emoji: "🔥", label: "Energjik" },
+  { emoji: "😌", label: "i/e qetë" },
+  { emoji: "💗", label: "i/e plotë" },
+  { emoji: "🌊", label: "i/e lehtësuar" },
+  { emoji: "✨", label: "i/e lumtur" },
 ];
 
 /** Periudhat e grafikëve. */

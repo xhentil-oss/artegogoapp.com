@@ -1,4 +1,4 @@
-import { Bookmark, Download, Play, Sparkles, Trash2 } from "lucide-react";
+import { Bookmark, Play, Sparkles, Trash2 } from "lucide-react";
 import { T, radii } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
@@ -7,6 +7,7 @@ import { totalMinutes } from "../../domain/sequence.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { SectionHead } from "../../components/ui/SectionHead.jsx";
+import { CoverArt } from "../../components/art/CoverArt.jsx";
 
 /**
  * Tri listat e përdoruesit te profili: të krijuara, të preferuara,
@@ -57,9 +58,9 @@ export function UserCollections() {
             {savedSessions.map((session) => (
               <Item
                 key={session.id}
+                label="Seanca jote"
                 title={session.name}
-                meta={`${totalMinutes(session.blocks)}m · ${session.blocks.length} hapa`}
-                icon={Sparkles}
+                meta={`${totalMinutes(session.blocks)} min · ${session.blocks.length} hapa`}
                 intent={session.blocks[0]?.intent}
                 onPlay={() => playItems(session.blocks)}
                 onRemove={() => removeSession(session.id)}
@@ -76,9 +77,10 @@ export function UserCollections() {
             {favoriteItems.map((item) => (
               <Item
                 key={item.id}
+                label="Meditim në Arte Gogo"
                 title={item.title}
-                meta={`${intentMeta(item.intent).label} · ${item.dur}m`}
-                icon={Bookmark}
+                meta={`${intentMeta(item.intent).label} · ${item.dur} min`}
+                cover={item.cover}
                 intent={item.intent}
                 onPlay={() => playItems(item)}
               />
@@ -94,9 +96,10 @@ export function UserCollections() {
             {downloadedItems.map((item) => (
               <Item
                 key={item.id}
+                label="Meditim në Arte Gogo"
                 title={item.title}
-                meta={`${intentMeta(item.intent).label} · ${item.dur}m`}
-                icon={Download}
+                meta={`${intentMeta(item.intent).label} · ${item.dur} min`}
+                cover={item.cover}
                 intent={item.intent}
                 onPlay={() => playItems(item)}
               />
@@ -142,7 +145,11 @@ function List({ children }) {
   );
 }
 
-function Item({ title, meta, icon: Icon, intent, onPlay, onRemove }) {
+/**
+ * Rreshti i listës — e njëjta formë si meditimi i bashkangjitur te postimet:
+ * kapak katror, mbishkrim i vogël, titull, dhe poshtë çasti me kohëzgjatjen.
+ */
+function Item({ label, title, meta, cover, intent, onPlay, onRemove }) {
   const colors = intentMeta(intent);
 
   return (
@@ -155,29 +162,45 @@ function Item({ title, meta, icon: Icon, intent, onPlay, onRemove }) {
           ...sx.card,
           display: "flex",
           alignItems: "center",
-          gap: 13,
-          padding: 12,
+          gap: 12,
+          padding: 10,
           textAlign: "left",
         }}
       >
-        <div style={circle(44, tile(colors.g))}>
-          <Play size={17} color="#fff" style={{ marginLeft: 2 }} />
+        {/* `CoverArt` bie vetë te peizazhi procedural kur fotoja mungon. */}
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 12,
+            overflow: "hidden",
+            position: "relative",
+            flexShrink: 0,
+          }}
+        >
+          <CoverArt intent={intent} image={cover} />
         </div>
 
         <div style={sx.flexText}>
-          <div style={{ color: T.ink, fontSize: 15.5, fontWeight: 700, ...sx.truncate }}>{title}</div>
           <div
             style={{
-              color: T.sub,
-              fontSize: 12.5,
-              marginTop: 3,
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
+              color: T.faint,
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: 1.1,
+              textTransform: "uppercase",
             }}
           >
-            <Icon size={12} /> {meta}
+            {label}
           </div>
+          <div style={{ color: T.ink, fontSize: 14.5, fontWeight: 700, marginTop: 2, ...sx.truncate }}>
+            {title}
+          </div>
+          <div style={{ color: T.sub, fontSize: 12, marginTop: 2 }}>{meta}</div>
+        </div>
+
+        <div style={{ ...circle(40, tile(colors.g)), ...sx.center, flexShrink: 0 }}>
+          <Play size={17} color="#fff" style={{ marginLeft: 2 }} />
         </div>
       </button>
 

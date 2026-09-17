@@ -99,7 +99,7 @@ export function CompletionSheet({ sequence }) {
             fontFamily: fonts.display,
           }}
         >
-          Bravo, {name}
+          Urime, {name}
         </h2>
         <p style={{ color: onDark.secondary, fontSize: 15, lineHeight: 1.6, margin: "0 0 28px" }}>
           Sapo plotësove edhe një hap drejt koherencës zemër-tru. Mbaje këtë ndjesi me vete.
@@ -167,13 +167,7 @@ export function CompletionSheet({ sequence }) {
             marginBottom: 12,
           }}
         >
-          {mood ? "Ruaj dhe vazhdo" : "Vazhdo"}
-        </button>
-        <button
-          onClick={() => dismissCompletion(mood)}
-          style={{ ...sx.bareButton, color: "rgba(255,255,255,0.6)", fontSize: 14 }}
-        >
-          Shih progresin tim
+          Vazhdo
         </button>
       </div>
     </div>

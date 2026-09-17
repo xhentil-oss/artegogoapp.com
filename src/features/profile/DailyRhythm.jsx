@@ -43,10 +43,10 @@ export function DailyRhythm() {
   return (
     <section
       style={{
-        /* Gradient i butë gurkali→gri: te pamja e klientes ritmi ditor është
-           i vetmi bllok me sfond të ngjyrosur, ndaj dallohet nga kartat e
-           tjera pa pasur nevojë për kufi. */
-        background: "linear-gradient(180deg, #DCE3EC 0%, #EDEFF3 62%, #F1F1F4 100%)",
+        /* I njëjti sfond si kartat e tjera të profilit (`Si u ndjeve sot?`,
+           medaljet): një gradient i vetëm gurkali e nxirrte këtë bllok nga
+           familja, ndaj u kthye te Sfondi dytësor i paletës. */
+        background: T.bg2,
         borderRadius: radii.xxl,
         padding: "24px 20px",
         marginBottom: 20,
