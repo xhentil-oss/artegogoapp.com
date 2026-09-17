@@ -6,9 +6,10 @@ import { tile } from "../../theme/gradients.js";
 import { autoGrid } from "../../theme/responsive.js";
 import { intentMeta } from "../../domain/intent.js";
 import { reorder, totalMinutes, withUid } from "../../domain/sequence.js";
-import { listBuilderLibrary, listIntentions } from "../../services/contentRepository.js";
+import { listBuilderLibrary, listTechniques } from "../../services/contentRepository.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { PillGroup } from "../../components/ui/Controls.jsx";
+import { tingulliShtimit } from "../../lib/sfx.js";
 import { BuilderRow } from "../../components/cards/MeditationRow.jsx";
 
 const ALL = "all";
@@ -44,11 +45,13 @@ export function BlockBuilder({ sequence, setSequence }) {
           intentMeta(b.intent).label.toLowerCase().includes(term)
       );
     }
-    return filter === ALL ? all : all.filter((b) => b.intent === filter);
+    return filter === ALL ? all : all.filter((b) => b.techniqueId === filter);
   }, [all, searching, term, filter]);
 
   const add = (block) => {
     if (isLocked(block)) return openUpsell();
+    /* Tingëllon vetëm kur shtimi ndodh vërtet — jo kur hapet paywall-i. */
+    tingulliShtimit();
     setSequence([...sequence, withUid(block)]);
     /* pas shtimit nga kërkimi, kthehu te pamja normale */
     if (searching) setQuery("");
@@ -61,12 +64,26 @@ export function BlockBuilder({ sequence, setSequence }) {
     dragIndex.current = null;
   };
 
+  /*
+   * Filtrat janë TEKNIKAT ("si bëhet"), jo qëllimet ("për çfarë").
+   *
+   * ⚠️  Më parë ishin qëllimet (Qetësim, Fokus, Gjumë…), por klientja i kërkon
+   *     ndarjet e katalogut: Meditime për Trupin, EFT / Tapping, Hipnoterapi
+   *     e kështu me radhë. `listTechniques()` i kthen vetëm ato që kanë
+   *     përmbajtje — një filtër që nxjerr listë bosh është më keq se mungesa.
+   *
+   * ⚠️  Të 15 mini-blloqet lokale nuk mbajnë teknikë, ndaj shfaqen te
+   *     "Të gjitha". Kjo është e qëllimshme: ato janë copëza ndërtimi, jo
+   *     meditime të katalogut.
+   */
+  const techniques = listTechniques();
   const filterOptions = [
     { id: ALL, label: "Të gjitha" },
-    ...listIntentions().map((i) => ({ id: i.id, label: i.label })),
+    ...techniques.map((t) => ({ id: t.id, label: t.label })),
   ];
 
-  const activeLabel = filter === ALL ? "Të gjitha" : intentMeta(filter).label;
+  const activeLabel =
+    filter === ALL ? "Të gjitha" : (techniques.find((t) => t.id === filter)?.label ?? "Të gjitha");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16, padding: `0 ${layout.gutter}px` }}>

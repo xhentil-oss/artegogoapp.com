@@ -38,6 +38,7 @@ export function PostCard({ post }) {
    */
   /* Toleron edhe mungesën, edhe një varg të vetëm — postimet e vjetra s'e kanë. */
   const images = Array.isArray(post.images) ? post.images : post.image ? [post.image] : [];
+  const video = typeof post.video === "string" ? post.video.trim() : "";
 
   const bashkangjitur = post.meditationId ? findMeditation(post.meditationId) : null;
   const metaMed = intentMeta(bashkangjitur?.intent ?? post.intent);
@@ -160,7 +161,11 @@ export function PostCard({ post }) {
             thotë postim vetëm me tekst, një adresë jep një foto, disa adresa
             japin karusel. Zgjedhja bëhet te paneli i admin-it.
       */}
-      {images.length > 0 && <PostImages images={images} label={post.type} />}
+      {video ? (
+        <PostVideo src={video} label={post.type} />
+      ) : (
+        images.length > 0 && <PostImages images={images} label={post.type} />
+      )}
 
       {/* ---------- meditimi i bashkangjitur ---------- */}
       {/*
@@ -273,6 +278,50 @@ export function PostCard({ post }) {
 
       {flash && <Toast message={flash} />}
     </article>
+  );
+}
+
+/**
+ * Videoja e postimit.
+ *
+ * ⚠️  Pa `autoPlay`: një video që nis vetë mes një feed-i meditimi është e
+ *     kundërta e asaj që kërkon ky aplikacion. Nis vetëm kur preket.
+ *
+ * `playsInline` është i domosdoshëm për iPhone — pa të, videoja hapet me
+ * player-in e sistemit në ekran të plotë dhe e nxjerr përdoruesin nga feed-i.
+ */
+function PostVideo({ src, label }) {
+  return (
+    <div style={{ position: "relative", background: "#000" }}>
+      <video
+        src={src}
+        controls
+        playsInline
+        preload="metadata"
+        style={{ width: "100%", height: 260, objectFit: "cover", display: "block" }}
+      />
+
+      {label && (
+        <span
+          style={{
+            position: "absolute",
+            top: 14,
+            left: 14,
+            background: "rgba(0,0,0,0.35)",
+            color: "#fff",
+            fontSize: 10,
+            letterSpacing: 1.5,
+            padding: "5px 12px",
+            borderRadius: 20,
+            textTransform: "uppercase",
+            backdropFilter: "blur(4px)",
+            pointerEvents: "none",
+          }}
+        >
+          {label}
+        </span>
+      )}
+    </div>
   );
 }
 

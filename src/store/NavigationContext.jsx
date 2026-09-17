@@ -15,6 +15,8 @@ export function NavigationProvider({ children }) {
   const [tab, setTab] = useState(DEFAULT_TAB);
   const [category, setCategory] = useState(null);
   const [folder, setFolder] = useState(null);
+  /* Meditimi i hapur si fletë "ç'është kjo", para se të nisë dëgjimi. */
+  const [meditation, setMeditation] = useState(null);
   const [overlay, setOverlay] = useState({
     search: false,
     upsell: false,
@@ -70,6 +72,7 @@ export function NavigationProvider({ children }) {
       tab,
       category,
       folder,
+      meditation,
       overlay,
       communityView,
       setCommunityView,
@@ -80,6 +83,8 @@ export function NavigationProvider({ children }) {
       closeCategory: () => setCategory(null),
       openFolder: setFolder,
       closeFolder: () => setFolder(null),
+      openMeditation: setMeditation,
+      closeMeditation: () => setMeditation(null),
       openSearch: () => setOverlayFlag("search", true),
       closeSearch: () => setOverlayFlag("search", false),
       openUpsell: () => setOverlayFlag("upsell", true),
@@ -91,7 +96,7 @@ export function NavigationProvider({ children }) {
       closeNotifications: () => setOverlayFlag("notifications", false),
     }),
     [
-      tab, category, folder, overlay, communityView,
+      tab, category, folder, meditation, overlay, communityView,
       goToCommunity, goToProfile, goToTab, openCategory, setOverlayFlag,
       openAdmin, adminTab,
     ]

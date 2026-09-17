@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { storage, STORAGE_KEYS } from "../services/storage.js";
+import { tingulliShkycjes } from "../lib/sfx.js";
 import {
   journeyProgress,
   journeyStops,
@@ -136,6 +137,10 @@ export function JourneyProvider({ children }) {
           [programId]: { ...current, [day]: localDayKey() },
         },
       });
+
+      /* Tingëllon vetëm këtu, pas kontrollit të mësipërm: përfundimi i së
+         njëjtës ditë dy herë nuk shkyç asgjë, ndaj nuk duhet as të dëgjohet. */
+      tingulliShkycjes();
 
       /*
        * Serveri e zbaton po ashtu rregullin "një ndalesë në ditë" dhe kthen

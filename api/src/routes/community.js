@@ -45,7 +45,26 @@ admin.post("/posts", async (req, res, next) => {
     meditationId = null,
     mediaUrl = null,
     mediaType = null,
+    media = [],
   } = req.body ?? {};
+
+  /*
+   * MEDIA — një listë, por me një të parë që shkon edhe te kolonat e vjetra.
+   *
+   * ⚠️  `community_posts.media_url` NUK braktiset. Ajo mbetet burimi për çdo
+   *     klient që nuk e njeh tabelën e re — përfshi aplikacionet e instaluara
+   *     te telefonat, që përditësohen kur t'u teket përdoruesit. Lista shkon
+   *     te `community_post_media`, dhe e para përsëritet te postimi.
+   */
+  const lista = Array.isArray(media)
+    ? media
+        .filter((m) => m && typeof m.url === "string" && m.url.trim())
+        .map((m) => ({ url: m.url.trim(), type: m.type === "video" ? "video" : "image" }))
+        .slice(0, 10)
+    : [];
+
+  const parjaUrl = mediaUrl ?? lista[0]?.url ?? null;
+  const parjaType = mediaType ?? lista[0]?.type ?? null;
 
   const body = String(text ?? "").trim();
   if (!body) return res.status(400).json({ error: "Postimi nuk mund të jetë bosh." });
@@ -53,10 +72,10 @@ admin.post("/posts", async (req, res, next) => {
 
   /* Media pa lloj nuk vizatohet dot; kufizimi `chk_post_media` e refuzon
      gjithsesi, por një 400 me shpjegim është më i dobishëm se një 500. */
-  if (Boolean(mediaUrl) !== Boolean(mediaType)) {
+  if (Boolean(parjaUrl) !== Boolean(parjaType)) {
     return res.status(400).json({ error: "Media kërkon edhe URL-në edhe llojin." });
   }
-  if (mediaType && !["image", "video"].includes(mediaType)) {
+  if (parjaType && !["image", "video"].includes(parjaType)) {
     return res.status(400).json({ error: "Lloj media i panjohur." });
   }
 
@@ -77,8 +96,27 @@ admin.post("/posts", async (req, res, next) => {
           media_url, media_type, meditation_id, is_published)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [id, String(author).slice(0, 120), String(role).slice(0, 120), dbType, body,
-       mediaUrl, mediaType, meditationId]
+       parjaUrl, parjaType, meditationId]
     );
+
+    /*
+     * Karuseli. Dështimi këtu NUK e prish postimin: teksti dhe media e parë
+     * janë ruajtur tashmë, dhe një tabelë që mungon (migrimi i parrjedhur) do
+     * të thoshte "postimi u humb" për diçka që në fakt u ruajt.
+     */
+    if (lista.length > 0) {
+      try {
+        for (const [radha, m] of lista.entries()) {
+          await query(
+            `INSERT INTO community_post_media (post_id, media_url, media_type, position)
+             VALUES (?, ?, ?, ?)`,
+            [id, m.url, m.type, radha]
+          );
+        }
+      } catch (err) {
+        console.warn("[artegogo] karuseli nuk u ruajt:", err?.code ?? err?.message);
+      }
+    }
 
     res.status(201).json(
       await one(

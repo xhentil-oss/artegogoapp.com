@@ -1,24 +1,22 @@
 import { useState } from "react";
-import { Layers, Lock, Sparkles, Wand2 } from "lucide-react";
+import { Lock, Sparkles } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
-import { toSequence, totalMinutes } from "../../domain/sequence.js";
+import { totalMinutes } from "../../domain/sequence.js";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { usePlayer } from "../../store/PlayerContext.jsx";
 import { Paywall } from "../premium/Paywall.jsx";
-import { IntentWizard } from "./IntentWizard.jsx";
 import { BlockBuilder } from "./BlockBuilder.jsx";
 import { GenerateProgress } from "./GenerateProgress.jsx";
 
-const MODES = [
-  { id: "wizard", label: "Gjenero", icon: Wand2 },
-  { id: "blocks", label: "Ndërto", icon: Layers },
-];
-
 /**
- * Skeda "Krijo": dy rrugë për të montuar një seancë — wizard i udhëhequr
- * ose ndërtues manual.
+ * Skeda "Krijo": seanca montohet hap pas hapi te ndërtuesi.
+ *
+ * ⚠️  Kishte dy rrugë — "Gjenero" (wizard që e zgjidhte vetë seancën nga një
+ *     qëllim) dhe "Ndërto". Klientja e hoqi të parën (17 shtator 2026), ndaj
+ *     ra edhe ndërruesi mes tyre: një çelës me një zgjedhje të vetme nuk është
+ *     çelës. `IntentWizard.jsx` mbeti në dosje, i pathirrur, nëse kthehet.
  *
  * Ruajtja me emër NUK ndodh këtu: sipas specifikimit ajo i takon ekranit të
  * përmbylljes, pasi seanca të jetë dëgjuar.
@@ -27,7 +25,6 @@ export function CreateScreen() {
   const { isPremium } = useSession();
   const { play } = usePlayer();
 
-  const [mode, setMode] = useState("wizard");
   const [sequence, setSequence] = useState([]);
   const [generating, setGenerating] = useState(false);
 
@@ -61,18 +58,7 @@ export function CreateScreen() {
         <GenerateProgress onDone={startPlayback} />
       ) : (
         <>
-          <ModeSwitch value={mode} onChange={setMode} />
-
-          {mode === "wizard" ? (
-            <IntentWizard
-              onGenerate={(blocks) => {
-                setSequence(toSequence(blocks));
-                setMode("blocks");
-              }}
-            />
-          ) : (
-            <BlockBuilder sequence={sequence} setSequence={setSequence} />
-          )}
+          <BlockBuilder sequence={sequence} setSequence={setSequence} />
 
           {sequence.length > 0 && (
             <SummaryBar sequence={sequence} onCreate={() => setGenerating(true)} />
@@ -101,7 +87,7 @@ function LockedPreview() {
       <div style={{ position: "relative", marginTop: 16 }}>
         <div style={{ opacity: 0.4, pointerEvents: "none", filter: "grayscale(0.35)" }}>
           <div style={{ margin: `0 -${layout.gutter}px` }}>
-            <IntentWizard onGenerate={() => {}} />
+            <BlockBuilder sequence={[]} setSequence={() => {}} />
           </div>
         </div>
 
@@ -137,37 +123,6 @@ function LockedPreview() {
           </span>
         </button>
       </div>
-    </div>
-  );
-}
-
-function ModeSwitch({ value, onChange }) {
-  return (
-    <div style={{ display: "flex", gap: 6, margin: `0 ${layout.gutter}px 18px` }}>
-      {MODES.map(({ id, label, icon: Icon }) => {
-        const active = value === id;
-        return (
-          <button
-            key={id}
-            onClick={() => onChange(id)}
-            style={{
-              flex: 1,
-              ...sx.center,
-              gap: 7,
-              background: active ? T.ink : T.bg2,
-              color: active ? "#fff" : T.sub,
-              border: `1px solid ${active ? T.ink : T.line}`,
-              borderRadius: radii.md,
-              padding: 12,
-              cursor: "pointer",
-              fontSize: 13.5,
-              fontWeight: 700,
-            }}
-          >
-            <Icon size={15} /> {label}
-          </button>
-        );
-      })}
     </div>
   );
 }

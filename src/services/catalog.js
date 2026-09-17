@@ -204,6 +204,26 @@ const POST_LABEL = {
   meditim: "Meditim",
 };
 
+/**
+ * Media e një postimi → `{ images, video }`, forma që pret `PostCard`.
+ *
+ * ⚠️  Videoja dhe imazhet nuk përzihen: një postim është ose me video, ose me
+ *     foto. Nëse lista i ka të dyja (gabim të dhënash), videoja fiton dhe
+ *     fotot shpërfillen — më mirë një pamje e vetme e qartë sesa dy njëherësh.
+ */
+function ndajMedian(row) {
+  const lista = Array.isArray(row.media) && row.media.length > 0
+    ? row.media
+    : row.media_url && row.media_type
+      ? [{ url: row.media_url, type: row.media_type }]
+      : [];
+
+  const video = lista.find((m) => m.type === "video");
+  if (video) return { images: [], video: video.url };
+
+  return { images: lista.filter((m) => m.type === "image").map((m) => m.url), video: null };
+}
+
 function toPost(row) {
   return {
     id: row.id,
@@ -232,6 +252,14 @@ function toPost(row) {
        ngjyroset njësoj për të gjitha — më mirë një ngjyrë e vetme sesa një
        kusht që pretendon të zgjedhë dhe kthen të njëjtën gjë. */
     intent: "heart",
+    /*
+     * MEDIA E POSTIMIT.
+     *
+     * `row.media` vjen nga `community_post_media` dhe mban karuselin e plotë.
+     * Kur mungon — server i vjetër, ose migrimi i parrjedhur — bihet te
+     * `media_url`/`media_type` e vetë postimit, pra te sjellja e mëparshme.
+     */
+    ...ndajMedian(row),
     publishedAt: row.published_at,
   };
 }

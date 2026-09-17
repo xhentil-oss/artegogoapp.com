@@ -22,7 +22,6 @@ import { usePlayer } from "../../store/PlayerContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
-import { Leaf } from "../../components/icons/BrandIcons.jsx";
 import { useState } from "react";
 import { usePlayerEngine } from "./usePlayerEngine.js";
 
@@ -324,7 +323,14 @@ export function PlayerSheet({ sequence }) {
       </h2>
       <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
         <div style={circle(24, tile(meta.g))}>
-          <Leaf size={13} />
+          {/* Logoja e hyrjes — e njëjta si te "Krijo" dhe te postimet: e zezë
+              mbi sfond të tejdukshëm, ndaj kthehet e bardhë me filtër. */}
+          <img
+            src="/transparent-logo-2.png"
+            alt=""
+            aria-hidden="true"
+            style={{ height: 14, width: "auto", filter: "brightness(0) invert(1)" }}
+          />
         </div>
         <span style={{ color: onDark.primary, fontSize: 15 }}>Arte Gogo · {meta.label}</span>
       </div>

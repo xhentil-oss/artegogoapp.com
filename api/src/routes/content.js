@@ -205,19 +205,54 @@ router.get("/feed", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const offset = Math.max(0, Number(req.query.offset) || 0);
 
-    res.json(
-      await query(
-        `SELECT p.id, p.author_name, p.author_avatar_url, p.author_role, p.is_verified,
-                p.post_type, p.text_content, p.media_url, p.media_type,
-                p.reaction_count, p.comment_count, p.published_at,
-                m.id AS meditation_id, m.title AS meditation_title, m.duration_sec
-           FROM community_posts p
-           LEFT JOIN meditations m ON m.id = p.meditation_id
-          WHERE p.is_published = 1
-          ORDER BY p.published_at DESC
-          LIMIT ${limit} OFFSET ${offset}`
-      )
+    const posts = await query(
+      `SELECT p.id, p.author_name, p.author_avatar_url, p.author_role, p.is_verified,
+              p.post_type, p.text_content, p.media_url, p.media_type,
+              p.reaction_count, p.comment_count, p.published_at,
+              m.id AS meditation_id, m.title AS meditation_title, m.duration_sec
+         FROM community_posts p
+         LEFT JOIN meditations m ON m.id = p.meditation_id
+        WHERE p.is_published = 1
+        ORDER BY p.published_at DESC
+        LIMIT ${limit} OFFSET ${offset}`
     );
+
+    /*
+     * MEDIA E KARUSELIT — një kërkesë e dytë, jo `JOIN`.
+     *
+     * ⚠️  Me `JOIN`, një postim me katër imazhe do të kthehej katër herë, dhe
+     *     `LIMIT 20` do të numëronte rreshtat e medias, jo postimet: faqja e
+     *     parë do të kishte pesë postime në vend të njëzetës.
+     *
+     * ⚠️  Tabela mund të mos ekzistojë ende (migrimi `14_post_media.sql` nuk
+     *     është rrjedhur). Atëherë feed-i kthehet me median e vjetër, siç
+     *     ishte — një veçori e re nuk duhet ta rrëzojë atë që punonte.
+     */
+    if (posts.length > 0) {
+      const ids = posts.map((p) => p.id);
+      try {
+        const media = await query(
+          `SELECT post_id, media_url, media_type, position
+             FROM community_post_media
+            WHERE post_id IN (${ids.map(() => "?").join(",")})
+            ORDER BY post_id, position`,
+          ids
+        );
+
+        const sipasPostimit = new Map();
+        for (const rresht of media) {
+          if (!sipasPostimit.has(rresht.post_id)) sipasPostimit.set(rresht.post_id, []);
+          sipasPostimit.get(rresht.post_id).push({ url: rresht.media_url, type: rresht.media_type });
+        }
+
+        for (const post of posts) post.media = sipasPostimit.get(post.id) ?? [];
+      } catch (err) {
+        if (err?.code !== "ER_NO_SUCH_TABLE") throw err;
+        console.warn("[artegogo] `community_post_media` mungon — feed-i vazhdon me median e vjetër.");
+      }
+    }
+
+    res.json(posts);
   } catch (err) {
     next(err);
   }

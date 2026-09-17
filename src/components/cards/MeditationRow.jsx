@@ -3,23 +3,23 @@ import { T, radii } from "../../theme/tokens.js";
 import { sx, iconBox, circle } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
 import { intentMeta } from "../../domain/intent.js";
-import { authorFor } from "../../lib/placeholders.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
+import { useNavigation } from "../../store/NavigationContext.jsx";
 import { CoverArt } from "../art/CoverArt.jsx";
-import { Rating } from "../ui/Badges.jsx";
 
 /**
  * Rresht listë për një meditim — varianti me ikonë gradient.
  * Përdoret në pamjen e një kategorie.
  */
-export function MeditationRow({ block, index = 0 }) {
-  const { isLocked, playItems } = usePlayback();
+export function MeditationRow({ block }) {
+  const { isLocked } = usePlayback();
+  const { openMeditation } = useNavigation();
   const locked = isLocked(block);
   const meta = intentMeta(block.intent);
 
   return (
     <button
-      onClick={() => playItems(block)}
+      onClick={() => openMeditation(block)}
       className="ag-card"
       style={{
         display: "flex",
@@ -41,7 +41,7 @@ export function MeditationRow({ block, index = 0 }) {
 
         </div>
         <div style={{ color: T.sub, fontSize: 13, marginTop: 3, display: "flex", alignItems: "center", gap: 5 }}>
-          {authorFor(index)} · {block.dur}m · <Rating index={index} size={11} />
+          {meta.label} · {block.dur}m
         </div>
       </div>
     </button>
@@ -51,15 +51,15 @@ export function MeditationRow({ block, index = 0 }) {
 /**
  * Rresht listë me kapak të vogël — varianti i rezultateve të kërkimit.
  */
-export function SearchResultRow({ block, index = 0, onBeforePlay }) {
-  const { playItems } = usePlayback();
+export function SearchResultRow({ block, onBeforePlay }) {
+  const { openMeditation } = useNavigation();
   const meta = intentMeta(block.intent);
 
   return (
     <button
       onClick={() => {
         onBeforePlay?.();
-        playItems(block);
+        openMeditation(block);
       }}
       className="ag-card"
       style={{
@@ -83,7 +83,7 @@ export function SearchResultRow({ block, index = 0, onBeforePlay }) {
 
         </div>
         <div style={{ color: T.sub, fontSize: 12.5, marginTop: 2 }}>
-          {meta.label} · {authorFor(index)} · {block.dur}m
+          {meta.label} · {block.dur}m
         </div>
       </div>
 

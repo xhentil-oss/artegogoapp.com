@@ -1,0 +1,34 @@
+# ═══════════════════════════════════════════════════════════════
+#  public_html/media/.htaccess
+#
+#  Kjo dosje mban VETËM skedarë të ngarkuar nga paneli: imazhe dhe video.
+#  Prandaj këtu asgjë nuk duhet të EKZEKUTOHET, vetëm të shërbehet.
+#
+#  ⚠️  Rruga `/admin/media` e shkruan prapashtesën vetë, sipas llojit të
+#      skedarit — pra një `.php` nuk shkruhet dot as me emër të sajuar. Kjo
+#      është shtresa e dytë: po u shtua ndonjë skedar këtu me dorë, ose po u
+#      ndryshua filtri nesër, Apache-ja prapë nuk e ekzekuton.
+# ═══════════════════════════════════════════════════════════════
+
+# Asnjë përpunues skriptesh në këtë dosje.
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .cgi .pl .py .jsp .asp .sh
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .cgi .pl .py .jsp .asp .sh
+AddType text/plain .php .phtml .cgi .pl .py .sh
+
+# Pa listim të dosjes: adresat janë të njohura nga postimet, jo për shfletim.
+Options -Indexes -ExecCGI
+
+<IfModule mod_headers.c>
+  # Imazhet dhe videot ndryshojnë rrallë, por emrat e tyre janë unikë
+  # (kohë + shenja rastësore), ndaj mund të ruhen gjatë pa rrezik.
+  <FilesMatch "\.(png|jpe?g|webp|gif|mp4|webm|mov)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+  # Mos e lejo shfletuesin të hamendësojë llojin: një skedar i ngarkuar duhet
+  # të shërbehet si ai lloj që deklaron serveri, jo si ai që duket.
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>

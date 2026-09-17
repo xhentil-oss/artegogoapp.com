@@ -37,6 +37,7 @@ function optional(path) {
 const pushRoutes = optional("./src/routes/push");
 const community = optional("./src/routes/community");
 const users = optional("./src/routes/users");
+const media = optional("./src/routes/media");
 
 /**
  * API-JA E ARTE GOGO-S
@@ -140,6 +141,7 @@ api.use("/me", meRoutes);
 api.use("/admin", notify.adminRoutes);
 if (community) api.use("/admin", community.adminRoutes);
 if (users) api.use("/admin", users.adminRoutes);
+if (media) api.use("/admin", media.adminRoutes);
 api.use(notify.publicRoutes);
 if (pushRoutes) api.use(pushRoutes.publicRoutes);
 api.use("/audio", audioRoutes);

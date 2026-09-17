@@ -19,17 +19,13 @@ const CONFETTI_COUNT = 14;
 /** Ekrani i përmbylljes: statistika, zgjedhje gjendjeje, konfeti. */
 export function CompletionSheet({ sequence }) {
   const { name } = useSession();
-  const { dismissCompletion, completedSource } = usePlayer();
+  const { dismissCompletion } = usePlayer();
   /* Seanca regjistrohet te `complete()` përpara se kjo fletë të dalë, ndaj
      streak-u këtu e përfshin edhe ditën e sotme. */
   const { streak } = useProgress();
   const { saveSession } = useCollections();
   const [mood, setMood] = useState(null);
   useBodyScrollLock();
-
-  /* Kutia e ruajtjes ka kuptim vetëm për seanca të ndërtuara nga përdoruesi —
-     një meditim i katalogut ekziston tashmë dhe s'ka pse të ruhet sërish. */
-  const fromBuilder = completedSource === "builder";
 
   const meta = intentMeta(sequence[0]?.intent ?? "calm");
   const confetti = buildConfetti(meta.g);
@@ -116,9 +112,13 @@ export function CompletionSheet({ sequence }) {
           />
         </div>
 
-        {fromBuilder && (
-          <SaveSessionBox onSave={(sessionName) => saveSession(sessionName, sequence)} />
-        )}
+        {/*
+          ⚠️  Shfaqet pas ÇDO seance, jo vetëm pas atyre të ndërtuara te "Krijo".
+              Më parë kushti ishte `completedSource === "builder"`, ndaj pas një
+              meditimi të bibliotekës kutia nuk dilte fare dhe nuk kishte rrugë
+              ta mbaje atë dëgjim me një emër tëndin.
+        */}
+        <SaveSessionBox onSave={(sessionName) => saveSession(sessionName, sequence)} />
 
         <div style={{ color: onDark.primary, fontSize: 15, fontWeight: 600, marginBottom: 14 }}>Si u ndjeve?</div>
         <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 30, flexWrap: "wrap" }}>

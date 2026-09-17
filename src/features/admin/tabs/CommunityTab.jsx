@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Send, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
+import { Loader2, Send, Trash2, Upload } from "lucide-react";
 import { T, radii } from "../../../theme/tokens.js";
 import { sx } from "../../../theme/styles.js";
 import { listFeed, listMeditations, listPostTypes } from "../../../services/contentRepository.js";
 import { createPost, deletePost } from "../../../services/adminStore.js";
+import { uploadMedia } from "../../../services/adminApi.js";
 import { nextId } from "../../../lib/id.js";
 import { Empty, Field, Panel, PrimaryButton, Select, TextArea, TextInput } from "../AdminUI.jsx";
 
@@ -29,10 +30,13 @@ export function CommunityTab() {
    */
   const [pamja, setPamja] = useState("asnje");
   const [imazhe, setImazhe] = useState("");
+  /* Ngarkimi: sa skedarë po presin, dhe gabimi i fundit. */
+  const [duke, setDuke] = useState(0);
+  const [gabimi, setGabimi] = useState(null);
 
   /* Një adresë për rresht; rreshtat bosh dhe hapësirat bien vetë. */
   const listaImazheve =
-    pamja === "asnje"
+    pamja === "asnje" || pamja === "video"
       ? []
       : imazhe
           .split(String.fromCharCode(10))
@@ -76,6 +80,10 @@ export function CommunityTab() {
       text: text.trim(),
       meditationId: attached?.id ?? null,
       images: listaImazheve,
+      /* Videoja është NJË adresë, jo listë: edhe databaza mban një media për
+         postim (`media_url` + `media_type`), ndaj karuseli i videove do të
+         humbiste te botimi. */
+      video: pamja === "video" ? imazhe.trim() : null,
     });
 
     /* Fushat pastrohen vetëm pas suksesit: nëse botimi dështon, teksti i
@@ -133,10 +141,36 @@ export function CommunityTab() {
               { id: "asnje", label: "Pa imazh — vetëm tekst" },
               { id: "nje", label: "Një imazh" },
               { id: "karusel", label: "Karusel (disa imazhe)" },
+              { id: "video", label: "Video" },
             ]}
             aria-label="Pamja e postimit"
           />
         </Field>
+
+        {pamja !== "asnje" && (
+          <Ngarkuesi
+            shume={pamja === "karusel"}
+            video={pamja === "video"}
+            duke={duke}
+            gabimi={gabimi}
+            onNis={() => {
+              setDuke((n) => n + 1);
+              setGabimi(null);
+            }}
+            onMbaro={(rezultat) => {
+              setDuke((n) => Math.max(0, n - 1));
+              if (!rezultat.ok) {
+                setGabimi(rezultat.error);
+                return;
+              }
+              /* Karuseli i shton adresat në radhë; imazhi dhe videoja e
+                 zëvendësojnë atë që ishte — fusha mban vetëm një. */
+              setImazhe((tani) =>
+                pamja === "karusel" ? [tani.trim(), rezultat.url].filter(Boolean).join(String.fromCharCode(10)) : rezultat.url
+              );
+            }}
+          />
+        )}
 
         {pamja === "nje" && (
           <Field label="Adresa e imazhit" hint="p.sh. /kopertina/emri.jpeg">
@@ -149,8 +183,22 @@ export function CommunityTab() {
           </Field>
         )}
 
+        {pamja === "video" && (
+          <Field label="Adresa e videos" hint="p.sh. /video/emri.mp4">
+            <TextInput
+              value={imazhe}
+              onChange={(e) => setImazhe(e.target.value)}
+              placeholder="/video/emri.mp4"
+              aria-label="Adresa e videos"
+            />
+          </Field>
+        )}
+
         {pamja === "karusel" && (
-          <Field label="Adresat e imazheve" hint="një për rresht, sipas radhës">
+          <Field
+            label="Adresat e imazheve"
+            hint="një për rresht, sipas radhës"
+          >
             <TextArea
               value={imazhe}
               onChange={(e) => setImazhe(e.target.value)}
@@ -230,5 +278,82 @@ export function CommunityTab() {
         })}
       </Panel>
     </>
+  );
+}
+
+/**
+ * BUTONI I NGARKIMIT — hap dosjen te kompjuteri, galerinë te telefoni.
+ *
+ * ⚠️  `<input type="file">` fshihet dhe hapet nga butoni. Pamja e tij vendase
+ *     ndryshon në çdo shfletues dhe nuk stilohet dot; butoni ynë duket njësoj
+ *     kudo, dhe prekja e tij e hap të njëjtën dritare.
+ *
+ * ⚠️  `accept` e kufizon zgjedhjen QË NË DRITARE, jo pas saj: përdoruesi nuk
+ *     duhet të zgjedhë një skedar dhe pastaj të lexojë se nuk pranohet. Serveri
+ *     e kontrollon sërish — kjo është lehtësi, jo mbrojtje.
+ */
+function Ngarkuesi({ shume, video, duke, gabimi, onNis, onMbaro }) {
+  const fusha = useRef(null);
+
+  const zgjodhi = async (event) => {
+    const files = [...(event.target.files ?? [])];
+    /* Fusha pastrohet menjëherë: pa këtë, zgjedhja e TË NJËJTIT skedar dy herë
+       radhazi nuk nxit asnjë ngjarje `change`. */
+    event.target.value = "";
+
+    for (const file of files) {
+      onNis();
+      /* Me radhë, jo të gjithë njëherësh: një video 40MB dhe tri foto paralel
+         e mbytin lidhjen shtëpiake, dhe radha e karuselit do të prishej. */
+      onMbaro(await uploadMedia(file));
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <input
+        ref={fusha}
+        type="file"
+        accept={video ? "video/*" : "image/*"}
+        multiple={shume}
+        onChange={zgjodhi}
+        style={{ display: "none" }}
+      />
+
+      <button
+        type="button"
+        onClick={() => fusha.current?.click()}
+        disabled={duke > 0}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          width: "100%",
+          background: T.bg2,
+          border: `1px dashed ${T.line}`,
+          borderRadius: radii.md,
+          padding: 14,
+          cursor: duke > 0 ? "default" : "pointer",
+          color: T.ink,
+          fontSize: 13.5,
+          fontWeight: 700,
+        }}
+      >
+        {duke > 0 ? (
+          <>
+            <Loader2 size={15} className="ag-spin" /> Po ngarkohet…
+          </>
+        ) : (
+          <>
+            <Upload size={15} /> {video ? "Zgjidh videon" : shume ? "Zgjidh imazhet" : "Zgjidh imazhin"}
+          </>
+        )}
+      </button>
+
+      {gabimi && (
+        <div style={{ color: "#B3261E", fontSize: 12.5, marginTop: 8, lineHeight: 1.5 }}>{gabimi}</div>
+      )}
+    </div>
   );
 }

@@ -150,6 +150,50 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
   return payload;
 }
 
+/**
+ * NGARKIM SKEDARI — multipart, jo JSON.
+ *
+ * ⚠️  `Content-Type` NUK vendoset. Shfletuesi duhet ta shkruajë vetë, sepse
+ *     vetëm ai e di kufirin (`boundary`) që ndan pjesët e trupit. Po ta
+ *     vendosnim ne, serveri do të merrte një kufi të gabuar dhe skedari do të
+ *     mbërrinte i palexueshëm.
+ *
+ * ⚠️  Afat i gjatë, jo 15 sekondat e zakonshme: një video 40MB mbi një lidhje
+ *     shtëpiake i kalon lehtë, dhe ndërprerja do të dukej si gabim serveri.
+ */
+export async function upload(path, formData, { timeoutMs = 180000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(`${BASE}${path}`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: formData,
+    });
+  } catch (err) {
+    throw new ApiError(err?.name === "AbortError" ? SLOW : OFFLINE, 0);
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (response.status === 401) await clearToken();
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch {
+    /* Përgjigje pa JSON — p.sh. faqja e gabimit e Passenger-it. */
+  }
+
+  if (!response.ok) {
+    throw new ApiError(payload?.error ?? `Gabim ${response.status}.`, response.status);
+  }
+  return payload;
+}
+
 export const api = {
   get: (path, opts) => request(path, { ...opts, method: "GET" }),
   post: (path, body, opts) => request(path, { ...opts, method: "POST", body }),

@@ -187,3 +187,21 @@ svg,
 video {
   max-width: 100%;
 }
+
+/* Rrotullim i vazhdueshëm — ikona e pritjes gjatë ngarkimit të skedarëve. */
+@keyframes ag-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ag-spin {
+  animation: ag-spin 0.9s linear infinite;
+}
+
+/* Kush e ka çaktivizuar lëvizjen nuk duhet ta shohë as këtë. */
+@media (prefers-reduced-motion: reduce) {
+  .ag-spin {
+    animation: none;
+  }
+}

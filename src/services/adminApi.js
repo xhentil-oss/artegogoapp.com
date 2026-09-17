@@ -1,4 +1,4 @@
-import { api } from "./api.js";
+import { api, upload } from "./api.js";
 import { hydrateCatalog, refreshFeed } from "./catalog.js";
 import { listMeditations, listSubGroups } from "./contentRepository.js";
 import { isDatabaseId } from "../lib/ids.js";
@@ -117,13 +117,61 @@ export const savableGroups = () =>
  *
  * @returns {Promise<{ok:boolean, post?:object, error?:string}>}
  */
-export async function publishPost({ text, type, author, meditationId = null }) {
+/**
+ * NGARKON NJË SKEDAR dhe kthen adresën e tij publike.
+ *
+ * ⚠️  Kthen `{ ok, url, type }` ose `{ ok: false, error }` — kurrë nuk hedh.
+ *     Paneli e thërret brenda një cikli skedarësh; një përjashtim i vetëm do
+ *     ta ndalte ngarkimin e të tjerëve pa asnjë shenjë pse.
+ */
+export async function uploadMedia(file) {
+  try {
+    const form = new FormData();
+    form.append("file", file);
+    const res = await upload("/admin/media", form);
+    return { ok: true, url: res.url, type: res.type };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Ngarkimi dështoi." };
+  }
+}
+
+/** A është gati ngarkimi te serveri — dhe nëse jo, pse. */
+export async function mediaStatus() {
+  try {
+    return await api.get("/admin/media/status");
+  } catch (err) {
+    return { ready: false, reason: err?.message ?? "Nuk u lexua gjendja." };
+  }
+}
+
+export async function publishPost({ text, type, author, meditationId = null, images = [], video = null }) {
+  /*
+   * MEDIA → një listë, plus e para veçmas.
+   *
+   * ⚠️  `mediaUrl`/`mediaType` dërgohen ende. Ato shkojnë te kolonat e vjetra
+   *     të postimit, që aplikacionet e painstaluara sërish te telefonat —
+   *     ato që nuk e njohin tabelën e re — të vazhdojnë ta shohin median.
+   *     Lista shkon te `community_post_media` dhe mban karuselin.
+   *
+   * ⚠️  Të dyja fushat shkojnë bashkë ose s'shkon asnjëra: `chk_post_media` te
+   *     databaza e refuzon njërën pa tjetrën, dhe API-ja kthen 400.
+   */
+  const media = video
+    ? [{ url: video, type: "video" }]
+    : images.filter(Boolean).map((url) => ({ url, type: "image" }));
+
+  const mediaUrl = media[0]?.url ?? null;
+  const mediaType = media[0]?.type ?? null;
+
   try {
     const post = await api.post("/admin/posts", {
       text,
       type,
       author,
       meditationId: meditationId && isDatabaseId(meditationId) ? meditationId : null,
+      mediaUrl,
+      mediaType,
+      media,
     });
     /* Feed-i rilexohet, që postimi i ri të shfaqet ashtu siç e shohin të
        tjerët — me kohën dhe id-në e vërtetë, jo me atë të pritjes. */

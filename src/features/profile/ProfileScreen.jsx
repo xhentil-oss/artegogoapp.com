@@ -14,7 +14,6 @@ import { MedalCase, MedalDemoControls } from "./MedalCase.jsx";
 import { DailyRhythm } from "./DailyRhythm.jsx";
 import { MoodTracker } from "./MoodTracker.jsx";
 import { HabitTracker } from "./HabitTracker.jsx";
-import { PracticeHistory } from "./PracticeHistory.jsx";
 import { DeleteAccount } from "./DeleteAccount.jsx";
 
 /** Avatari mban çiftin Violet të paletës. */
@@ -24,7 +23,7 @@ const AVATAR_GRADIENT = brandPair;
 export function ProfileScreen() {
   const { name, email, isPremium, isAdmin, setIsAdmin, subscriptionStatus, signOut, canAdmin } = useSession();
   const { openAdmin } = useNavigation();
-  const { history, streak, dailyHistory } = useProgress();
+  const { history, streak } = useProgress();
 
   const totalMinutes = history.reduce((sum, entry) => sum + entry.min, 0);
 
@@ -79,7 +78,6 @@ export function ProfileScreen() {
       <DailyRhythm />
       <MoodTracker />
       <HabitTracker />
-      <PracticeHistory series={dailyHistory} />
 
       {/*
         Karta e abonimit rri POSHTË, me kërkesë (16 shtator 2026).

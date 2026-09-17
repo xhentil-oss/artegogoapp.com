@@ -18,6 +18,7 @@ import { CommunityScreen } from "./features/community/CommunityScreen.jsx";
 import { LibraryScreen } from "./features/library/LibraryScreen.jsx";
 import { CategoryScreen } from "./features/library/CategoryScreen.jsx";
 import { FolderSheet } from "./features/library/FolderSheet.jsx";
+import { MeditationSheet } from "./features/library/MeditationSheet.jsx";
 import { CreateScreen } from "./features/create/CreateScreen.jsx";
 import { ProgramsScreen } from "./features/programs/ProgramsScreen.jsx";
 import { ProfileScreen } from "./features/profile/ProfileScreen.jsx";
@@ -137,17 +138,18 @@ function ActiveTab() {
 
 /**
  * Shtresat mbi ekran, të renditura sipas z-index-it:
- * mini-player (45) → folder (55) → kërkim (60) → player (60)
+ * mini-player (45) → folder (55) → meditimi (58) → kërkim (60) → player (60)
  * → përmbyllje / admin (65) → upsell (70)
  */
 function Overlays() {
-  const { folder, overlay } = useNavigation();
+  const { folder, meditation, overlay } = useNavigation();
   const { active, minimized, completed } = usePlayer();
 
   return (
     <>
       {minimized && !active && <MiniPlayer sequence={minimized} />}
       {folder && <FolderSheet collection={folder} />}
+      {meditation && <MeditationSheet item={meditation} />}
       {overlay.search && <SearchSheet />}
       {active && <PlayerSheet sequence={active} />}
       {completed && <CompletionSheet sequence={completed} />}
