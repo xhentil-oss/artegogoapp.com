@@ -1,5 +1,5 @@
 import { api, upload } from "./api.js";
-import { hydrateCatalog, refreshFeed } from "./catalog.js";
+import { hydrateCatalog, refreshFeed, refreshLive } from "./catalog.js";
 import { listMeditations, listSubGroups } from "./contentRepository.js";
 import { isDatabaseId } from "../lib/ids.js";
 import { subKey } from "../data/classification.js";
@@ -234,5 +234,66 @@ export async function fetchUserStats() {
     return { ok: true, stats: await api.get("/admin/users/stats") };
   } catch (err) {
     return { ok: false, error: err?.message ?? "Numrat nuk u lexuan dot." };
+  }
+}
+
+/* ─────────────── sesionet live (Zoom) ─────────────── */
+
+/**
+ * SESIONET LIVE
+ *
+ * Çdo shkrim ndiqet nga `refreshLive()`, që kartelat te skeda "Live" të
+ * tregojnë menjëherë gjendjen e vërtetë — jo atë që pret paneli se u ruajt.
+ *
+ * ⚠️  Lista për panelin lexohet nga `/admin/live`, jo nga `/content/live`:
+ *     rruga publike e fsheh linkun kur sesioni është i fikur, dhe admini
+ *     duhet ta shohë pikërisht atëherë — që ta vendosë para se ta nisë.
+ */
+export async function fetchLiveSessions() {
+  try {
+    return { ok: true, items: (await api.get("/admin/live")) ?? [] };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Sesionet nuk u lexuan dot." };
+  }
+}
+
+export async function createLiveSession(body) {
+  try {
+    const session = await api.post("/admin/live", body);
+    await refreshLive();
+    return { ok: true, session };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Sesioni nuk u ruajt." };
+  }
+}
+
+export async function updateLiveSession(id, patch) {
+  try {
+    const session = await api.put(`/admin/live/${encodeURIComponent(id)}`, patch);
+    await refreshLive();
+    return { ok: true, session };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Ndryshimi nuk u ruajt." };
+  }
+}
+
+/** Ndez ose fik një sesion. Serveri i fik vetë të tjerët kur ky ndizet. */
+export async function setLiveOn(id, on) {
+  try {
+    const session = await api.post(`/admin/live/${encodeURIComponent(id)}/live`, { on });
+    await refreshLive();
+    return { ok: true, session };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Gjendja nuk u ndryshua." };
+  }
+}
+
+export async function deleteLiveSession(id) {
+  try {
+    await api.del(`/admin/live/${encodeURIComponent(id)}`);
+    await refreshLive();
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Fshirja dështoi." };
   }
 }

@@ -18,6 +18,30 @@ import { intentMeta } from "./intent.js";
 const MAX_RESULTS = 80;
 
 /**
+ * Fjalë që nuk ndajnë asgjë te ky katalog.
+ *
+ * ⚠️  PSE EKZISTON KJO LISTË: përshkrimet u mbushën me tekst të vërtetë
+ *     (`mysql/15_pershkrime.sql`), dhe disa prej tyre nisin me llojin e
+ *     praktikës — "Meditim trupor i mëngjesit", "Meditim manifestimi për
+ *     bollëkun". Që nga ai çast, kërkimi për "meditim" kthente edhe zëra si
+ *     "Çifti" ose "Pas punës": fjala ishte te përshkrimi, por përshkrimi NUK
+ *     shfaqet te rreshti i rezultatit. Pra përdoruesi shihte tituj pa lidhje
+ *     me atë që shkroi — një përputhje e padukshme duket gabim, edhe kur nuk
+ *     është.
+ *
+ *     Te një aplikacion meditimi, "meditim" i përshkruan të 250-ta; si term
+ *     kërkimi nuk zgjedh asgjë. Ndaj për këto fjalë kërkohet vetëm te titulli
+ *     dhe te etiketat — ato që lexohen te rreshti.
+ *
+ *     Kufizimi vlen VETËM kur fjala është e gjithë kërkesa. "Meditim
+ *     manifestimi" kalon normalisht dhe i gjen ato të teknikës.
+ */
+const FJALE_TE_PERGJITHSHME = new Set([
+  "meditim", "meditimi", "meditimin", "meditime", "meditimet", "meditimeve",
+  "praktike", "praktikë", "praktika", "praktikat",
+]);
+
+/**
  * Sa mirë përputhet një meditim — numri më i vogël del më lart.
  *
  * Renditja ka rëndësi kur kërkimi prek qindra zëra: pa të, "Gjumë" do të
@@ -36,7 +60,9 @@ function score(item, query) {
      peshon më shumë se teksti i lirë i përshkrimit. */
   if (item.subTheme?.toLowerCase().includes(query)) return 3;
   if (intentMeta(item.intent).label.toLowerCase().includes(query)) return 4;
-  if (item.desc?.toLowerCase().includes(query)) return 5;
+
+  /* Përshkrimi i fundit, dhe kurrë për fjalët e përgjithshme — shih lart. */
+  if (!FJALE_TE_PERGJITHSHME.has(query) && item.desc?.toLowerCase().includes(query)) return 5;
 
   return null;
 }

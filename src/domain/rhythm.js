@@ -39,23 +39,37 @@ export function stepsOn(habitsData = {}, dayKey) {
 export const countOn = (habitsData, dayKey) => Object.keys(stepsOn(habitsData, dayKey)).length;
 
 /**
- * Ditët ku janë kryer TË TRE hapat.
+ * Ditët që numërohen për ritmin: ato me TË PAKTËN NJË hap të kryer.
  *
- * Vetëm një ditë e plotë numërohet si arritje — kjo është ajo që premton
- * teksti "Plotësoji të tri hapat".
+ * ⚠️  Më parë kërkoheshin të TRE hapat. Rregulli u ndryshua me kërkesë të
+ *     klientes (18 shtator 2026): mëngjesi, dreka OSE darka — një i vetëm —
+ *     e bën ditën të vlefshme.
+ *
+ *     Ndryshimi qëndron edhe në vetvete. Me rregullin e vjetër, kush meditonte
+ *     çdo mëngjes për një muaj rrinte përgjithmonë te "dita 1": i vetmi numër
+ *     që e mat ritmin nuk lëvizte kurrë, ndërsa praktika ishte e përditshme.
+ *     Tre hapat mbeten ideali i ditës, jo pragu i saj.
+ *
+ * Pamja nuk ndryshon: unaza vazhdon të tregojë "hapi N nga 3", sepse dita me
+ * të tre hapat mbetet e mundshme dhe e dukshme — thjesht nuk kërkohet më.
  */
-export function fullDays(habitsData = {}) {
+export function practiceDays(habitsData = {}) {
   return Object.keys(habitsData)
-    .filter((day) => countOn(habitsData, day) === STEP_COUNT)
+    .filter((day) => countOn(habitsData, day) > 0)
     .sort();
 }
 
 /**
  * Numri i ditës që po jetohet.
  *
- * Ditët e plota të mbaruara + 1 për atë në vazhdim. Kështu një përdorues i ri
- * sheh "dita 1" — siç shihte edhe më parë — por tani numri rritet vërtet, në
- * vend që të mbetet 1 përgjithmonë.
+ * Ditët e praktikuara të mbaruara + 1 për atë në vazhdim. Kështu një përdorues
+ * i ri sheh "dita 1", dhe dita e nesërme bëhet "dita 2" nëse sot u krye qoftë
+ * edhe një hap i vetëm.
+ *
+ * ⚠️  E sotmja PËRJASHTOHET nga numërimi me qëllim: ajo është dita që po
+ *     jetohet, jo një e mbaruar. Pa këtë, unaza do të kërcente nga 1 në 2
+ *     sapo të mbaronte meditimi i mëngjesit — pra dita do të ndërrohej nën sy
+ *     ndërsa ti je ende brenda saj.
  */
 export const dayNumber = (habitsData, todayKey) =>
-  fullDays(habitsData).filter((day) => day !== todayKey).length + 1;
+  practiceDays(habitsData).filter((day) => day !== todayKey).length + 1;

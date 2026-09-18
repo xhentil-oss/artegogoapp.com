@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Send, User } from "lucide-react";
 import { T, radii, shadows } from "../../theme/tokens.js";
 import { circle } from "../../theme/styles.js";
 import { listFeed } from "../../services/contentRepository.js";
+import { refreshFeedIfStale } from "../../services/catalog.js";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { PostCard } from "./PostCard.jsx";
@@ -16,6 +18,30 @@ import { PostCard } from "./PostCard.jsx";
  */
 export function FeedList() {
   const { isAdmin } = useSession();
+
+  /*
+   * NUMRI I PËLQIMEVE ËSHTË I PËRBASHKËT — ndaj feed-i rilexohet.
+   *
+   * ⚠️  `post.likes` vjen nga serveri dhe ngrin te çasti kur u lexua feed-i:
+   *     në nisje, një herë. Kur një llogari tjetër pëlqen të njëjtin postim,
+   *     numri rritet te databaza, por kartela këtu do të tregonte ende atë të
+   *     vjetrin derisa faqja të rifreskohej me dorë — dhe dy pëlqime nga dy
+   *     profile do të dukeshin si një i vetëm.
+   *
+   *     Rileximi bëhet kur hapet skeda (ky komponent çmontohet kur shkohet
+   *     gjetkë) dhe kur dritarja kthehet në plan të parë — pra pikërisht kur
+   *     përdoruesi po e shikon. Afati te `refreshFeedIfStale` e ndal
+   *     përsëritjen: një kalim i shpejtë mes skedave nuk bën katër kërkesa.
+   */
+  useEffect(() => {
+    refreshFeedIfStale();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refreshFeedIfStale();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   return (
     /* Sfond i tejdukshëm, jo gri: kartat ndahen vetë me kufirin dhe hijen e

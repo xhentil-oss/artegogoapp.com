@@ -1,6 +1,7 @@
 import { api, hasToken } from "./api.js";
 import { STORAGE_KEYS } from "./storage.js";
 import { findMeditation } from "./contentRepository.js";
+import { postFromServer } from "./catalog.js";
 import { isDatabaseId } from "../lib/ids.js";
 /* Etiketa e ditës mbahet te një vend i vetëm: dy kopje devijojnë, dhe grafiku
    do të tregonte "31 Gsh" ndërsa historiku "Sot" për të njëjtën ditë. */
@@ -196,6 +197,60 @@ function idListStore(path) {
   };
 }
 
+/* ─────────────── postimet: pëlqimet dhe të ruajturat ─────────────── */
+
+/**
+ * Pëlqimet — `{ postId: dataISO }`, e njëjta formë si të preferuarat.
+ *
+ * ⚠️  Numri i pëlqimeve NUK mbahet këtu. Ai vjen me postimin nga serveri, ku
+ *     e rinumëron trigger-i; lokalisht mbahet vetëm "e pëlqeva unë". Dy vende
+ *     që mbajnë numra do të devijonin, dhe kartela do të tregonte një numër
+ *     që nuk e ka asnjë tjetër.
+ */
+const postLikes = {
+  async load() {
+    const rows = await api.get("/me/post-likes");
+    return Object.fromEntries((rows ?? []).map((row) => [row.id, row.created_at]));
+  },
+
+  async write(prev, next) {
+    const { added, removed } = diffKeys(prev, next);
+    await Promise.all([
+      ...added.filter(isDatabaseId).map((id) => api.put(`/me/post-likes/${encodeURIComponent(id)}`)),
+      ...removed.filter(isDatabaseId).map((id) => api.del(`/me/post-likes/${encodeURIComponent(id)}`)),
+    ]);
+  },
+};
+
+/**
+ * Të ruajturat — `{ postId: { at, post } }`.
+ *
+ * ⚠️  Mbahet EDHE postimi, jo vetëm id-ja. Feed-i kthen 50 të fundit; një
+ *     postim i ruajtur para një muaji nuk gjendet më atje, ndaj lista e
+ *     profilit do të kishte rreshta bosh. Serveri e kthen të plotë pikërisht
+ *     për këtë (`GET /me/post-saves`).
+ *
+ * ⚠️  Serveri kthen vetëm postime `is_published = 1`: një postim i hequr nga
+ *     admini zhduket vetvetiu nga lista në leximin e parë. Nuk fshihet me dorë
+ *     — po u rikthye, kthehet edhe te të ruajturat.
+ */
+const postSaves = {
+  async load() {
+    const rows = await api.get("/me/post-saves");
+    return Object.fromEntries(
+      (rows ?? []).map((row) => [row.id, { at: row.created_at, post: postFromServer(row) }])
+    );
+  },
+
+  async write(prev, next) {
+    const { added, removed } = diffKeys(prev, next);
+    await Promise.all([
+      ...added.filter(isDatabaseId).map((id) => api.put(`/me/post-saves/${encodeURIComponent(id)}`)),
+      ...removed.filter(isDatabaseId).map((id) => api.del(`/me/post-saves/${encodeURIComponent(id)}`)),
+    ]);
+  },
+};
+
 /* ─────────────── seancat e ndërtuara (Krijo) ─────────────── */
 
 /*
@@ -278,6 +333,8 @@ const REMOTE = {
   [STORAGE_KEYS.favorites]: idListStore("favorites"),
   [STORAGE_KEYS.downloads]: idListStore("downloads"),
   [STORAGE_KEYS.customSessions]: creations,
+  [STORAGE_KEYS.postLikes]: postLikes,
+  [STORAGE_KEYS.postSaves]: postSaves,
 };
 
 /**

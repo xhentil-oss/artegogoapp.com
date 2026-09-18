@@ -10,6 +10,7 @@ import { ToggleSwitch } from "../../components/ui/Controls.jsx";
 import { STATUS_LABEL } from "../../domain/subscription.js";
 import { SubscriptionCard, SubscriptionDemoControls } from "../premium/SubscriptionCard.jsx";
 import { UserCollections } from "./UserCollections.jsx";
+import { SavedPosts } from "../community/SavedPosts.jsx";
 import { MedalCase, MedalDemoControls } from "./MedalCase.jsx";
 import { DailyRhythm } from "./DailyRhythm.jsx";
 import { MoodTracker } from "./MoodTracker.jsx";
@@ -74,6 +75,10 @@ export function ProfileScreen() {
       <MedalCase />
 
       <UserCollections />
+
+      {/* Postimet e ruajtura rrinë pas listave të meditimeve: të dyja janë
+          "të mijat", dhe "Ruaj" te feed-i e ka premtuar pikërisht këtë vend. */}
+      <SavedPosts />
 
       <DailyRhythm />
       <MoodTracker />

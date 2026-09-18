@@ -8,7 +8,8 @@ import { useNavigation } from "../../store/NavigationContext.jsx";
 import { usePlayer } from "../../store/PlayerContext.jsx";
 import { Paywall } from "../premium/Paywall.jsx";
 import { BlockBuilder } from "./BlockBuilder.jsx";
-import { GenerateProgress } from "./GenerateProgress.jsx";
+import { FILL_MS, GenerateProgress } from "./GenerateProgress.jsx";
+import { tingulliMbushjes } from "../../lib/sfx.js";
 
 /**
  * Skeda "Krijo": seanca montohet hap pas hapi te ndërtuesi.
@@ -61,7 +62,15 @@ export function CreateScreen() {
           <BlockBuilder sequence={sequence} setSequence={setSequence} />
 
           {sequence.length > 0 && (
-            <SummaryBar sequence={sequence} onCreate={() => setGenerating(true)} />
+            <SummaryBar
+              sequence={sequence}
+              onCreate={() => {
+                /* Tingulli nis KËTU, brenda klikimit: iOS-i e lejon zërin vetëm
+                   nga një prekje e vërtetë. Shih `lib/sfx.js`. */
+                tingulliMbushjes(FILL_MS);
+                setGenerating(true);
+              }}
+            />
           )}
         </>
       )}

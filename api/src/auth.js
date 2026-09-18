@@ -72,6 +72,40 @@ async function requireAuth(req, res, next) {
   }
 }
 
+/**
+ * Vërteton NËSE ka token, por nuk e kërkon.
+ *
+ * Për rrugë publike që kthejnë diçka më shumë kur dihet kush pyet — feed-i,
+ * ku postimi duhet të tregojë edhe a e ke pëlqyer dhe a e ke ruajtur TI.
+ *
+ * ⚠️  Asnjë gabim nuk del jashtë: një token i skaduar do të thotë "vizitor",
+ *     jo "401". Përndryshe një sesion i vjetër te telefoni do ta linte feed-in
+ *     bosh, ndërsa ai lexohet edhe pa hyrje fare.
+ *
+ * ⚠️  Edhe `secret()` rri brenda `try`-t: ai hedh kur `JWT_SECRET` mungon, dhe
+ *     një konfigurim i paplotë nuk duhet ta rrëzojë leximin publik.
+ */
+async function optionalAuth(req, _res, next) {
+  const header = req.headers.authorization ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return next();
+
+  try {
+    const payload = jwt.verify(token, secret());
+    const user = await one(
+      "SELECT id, email, name, is_admin, is_premium, subscription_end_at, timezone FROM users WHERE id = ?",
+      [payload.sub]
+    );
+    if (user) {
+      req.userId = user.id;
+      req.user = user;
+    }
+  } catch {
+    /* vizitor — vazhdohet pa identitet */
+  }
+  next();
+}
+
 /** Vetëm admin — për shkrimin e përmbajtjes. */
 function requireAdmin(req, res, next) {
   if (!req.user?.is_admin) return res.status(403).json({ error: "Vetëm administratorët." });
@@ -109,6 +143,7 @@ module.exports = {
   verifyPassword,
   signToken,
   requireAuth,
+  optionalAuth,
   requireAdmin,
   hasPremium,
   canAccessAudio,

@@ -109,6 +109,20 @@ export const STORAGE_KEYS = {
   favorites: "favorites",
   /** Meditimet e shkarkuara për dëgjim jashtë linje. */
   downloads: "downloads",
+  /**
+   * Postimet e komunitetit që përdoruesi ka pëlqyer — `{ postId: data }`.
+   *
+   * Vetëm id-të: numri i pëlqimeve vjen nga serveri, ku e mban trigger-i.
+   */
+  postLikes: "post-likes",
+  /**
+   * Postimet e ruajtura, ME përmbajtjen — `{ postId: { at, post } }`.
+   *
+   * ⚠️  Ruhet edhe postimi, jo vetëm id-ja: feed-i kthen 50 të fundit, ndaj një
+   *     postim i ruajtur më parë nuk gjendet dot më atje. Pa përmbajtjen,
+   *     lista e të ruajturave do të kishte rreshta bosh pa asnjë shpjegim.
+   */
+  postSaves: "post-saves",
   /** Ndryshimet e bëra nga paneli i admin-it (klasifikim, pool-e, programe…). */
   admin: "admin",
   /** Llogaria: vetëm email-i. Fjalëkalimi nuk ruhet — shih `services/auth.js`. */

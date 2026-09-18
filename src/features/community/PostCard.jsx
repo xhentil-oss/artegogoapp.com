@@ -16,14 +16,31 @@ import { copyText, shareText } from "../../lib/share.js";
 import { intentMeta } from "../../domain/intent.js";
 import { findMeditation } from "../../services/contentRepository.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
+import { useCommunity } from "../../store/CommunityContext.jsx";
 import { CoverArt } from "../../components/art/CoverArt.jsx";
 
 const EXCERPT_LENGTH = 150;
 
+/**
+ * Adresa e aplikacionit, për tekstin e shpërndarjes.
+ *
+ * `origin`, jo adresa e plotë: e tanishmja mund të mbajë `?reset=…` ose gjurmë
+ * të tjera të sesionit, dhe ato nuk duhen dërguar te të tjerët.
+ */
+const appUrl = () => (typeof window === "undefined" ? "" : window.location.origin);
+
 /** Postim i feed-it. Çdo veprim bën diçka të vërtetë — asnjë buton dekorativ. */
 export function PostCard({ post }) {
-  const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
+  /*
+   * Pëlqimi dhe ruajtja jetojnë te `store/CommunityContext`, jo këtu.
+   *
+   * ⚠️  Më parë ishin dy `useState` te kjo kartelë — pra gjendja e tyre
+   *     zhdukej sapo komponenti çmontohej: një kalim te "Meditime" dhe kthimi
+   *     te feed-i i fshinte të dyja, dhe numri i pëlqimeve kthehej te ai i
+   *     serverit. Tani shkruhen te databaza, ndaj pëlqimi shihet edhe nga
+   *     pajisja tjetër, dhe "Ruaj" mbush listën te profili.
+   */
+  const { isLiked, toggleLike, likeCount, isSaved, toggleSave } = useCommunity();
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [flash, setFlash] = useState(null);
@@ -46,7 +63,10 @@ export function PostCard({ post }) {
   const minuta = bashkangjitur?.dur ?? (post.meditationDuration ? Math.round(post.meditationDuration / 60) : null);
   const isLong = post.text.length > EXCERPT_LENGTH;
   const body = expanded || !isLong ? post.text : post.text.slice(0, EXCERPT_LENGTH).trimEnd();
-  const likes = post.likes + (liked ? 1 : 0);
+
+  const liked = isLiked(post.id);
+  const saved = isSaved(post.id);
+  const likes = likeCount(post);
 
   const { playItems } = usePlayback();
 
@@ -74,13 +94,27 @@ export function PostCard({ post }) {
     setTimeout(() => setFlash(null), 1800);
   };
 
+  /**
+   * Shpërndan postimin.
+   *
+   * ⚠️  Dërgohet edhe adresa e aplikacionit. Pa të, shpërndarja ishte tekst i
+   *     zhveshur: marrësi lexonte citatin dhe nuk kishte ku të shkonte më tej.
+   *     Nuk është link i postimit — ai do të kërkonte një rrugë publike për
+   *     një postim të vetëm, që nuk ekziston ende.
+   *
+   * Te telefoni hapet fleta native (WhatsApp, Instagram, mesazhe); te
+   * kompjuteri, ku ajo shpesh mungon, teksti kopjohet — dhe thuhet me shkrim,
+   * që veprimi të mos dukët i pandodhur.
+   */
   const share = async () => {
     setMenuOpen(false);
     const result = await shareText({
       title: `Arte Gogo · ${post.author}`,
       text: `${post.text}\n\n— ${post.author}, Arte Gogo`,
+      url: appUrl(),
     });
-    if (result === "copied") confirm("Teksti u kopjua");
+    if (result === "shared") confirm("U shpërndau");
+    else if (result === "copied") confirm("Teksti u kopjua");
     else if (result === "failed") confirm("Shpërndarja nuk u krye");
   };
 
@@ -261,7 +295,7 @@ export function PostCard({ post }) {
           icon={<ThumbsUp size={19} fill={liked ? T.info : "none"} color={liked ? T.info : T.sub} />}
           label="Pëlqej"
           active={liked}
-          onClick={() => setLiked(!liked)}
+          onClick={() => toggleLike(post.id)}
         />
         <ActionButton
           icon={<Bookmark size={19} fill={saved ? T.gold : "none"} color={saved ? T.gold : T.sub} />}
@@ -269,8 +303,9 @@ export function PostCard({ post }) {
           active={saved}
           activeColor={T.gold}
           onClick={() => {
-            setSaved(!saved);
-            confirm(saved ? "Hequr nga të ruajturat" : "Ruajtur");
+            /* Mesazhi vjen nga gjendja E RE, që kthen `toggleSave` — jo nga
+               `saved`, i cili te ky render mban ende atë të vjetër. */
+            confirm(toggleSave(post) ? "Ruajtur te profili" : "Hequr nga të ruajturat");
           }}
         />
         <ActionButton icon={<Share2 size={19} color={T.sub} />} label="Shpërndaj" onClick={share} />

@@ -38,6 +38,7 @@ const pushRoutes = optional("./src/routes/push");
 const community = optional("./src/routes/community");
 const users = optional("./src/routes/users");
 const media = optional("./src/routes/media");
+const live = optional("./src/routes/live");
 
 /**
  * API-JA E ARTE GOGO-S
@@ -142,6 +143,9 @@ api.use("/admin", notify.adminRoutes);
 if (community) api.use("/admin", community.adminRoutes);
 if (users) api.use("/admin", users.adminRoutes);
 if (media) api.use("/admin", media.adminRoutes);
+if (live) api.use("/admin", live.adminRoutes);
+/* Kartelat e sesioneve live lexohen nga të gjithë — nën `/content`, si feed-i. */
+if (live) api.use("/content", live.publicRoutes);
 api.use(notify.publicRoutes);
 if (pushRoutes) api.use(pushRoutes.publicRoutes);
 api.use("/audio", audioRoutes);

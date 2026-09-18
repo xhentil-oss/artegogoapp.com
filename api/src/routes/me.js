@@ -1,6 +1,7 @@
 const express = require("express");
 const { pool, query, one } = require("../db");
 const { requireAuth } = require("../auth");
+const { POST_FIELDS, flagsFor, attachMedia } = require("../posts");
 
 const router = express.Router();
 
@@ -228,6 +229,132 @@ router.delete("/downloads/:meditationId", async (req, res, next) => {
     await query("DELETE FROM downloads WHERE user_id = ? AND meditation_id = ?", [
       req.userId,
       req.params.meditationId,
+    ]);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ═══════════════ POSTIMET: PËLQIMET DHE TË RUAJTURAT ═══════════════ */
+
+/*
+ * Pëlqimi dhe ruajtja janë të DY VEPRIME të veçanta mbi të njëjtin postim,
+ * me dy tabela të veçanta (`post_reactions`, `post_saves`) — sepse janë
+ * pyetje të ndryshme: "ma pëlqen" e shohin të gjithë si numër, "e ruajta" e
+ * shoh vetëm unë te lista ime.
+ *
+ * ⚠️  `reaction_count` te postimi NUK shkruhet nga këtu. E përditëson
+ *     trigger-i (`mysql/02_triggers.sql`), duke rinumëruar tabelën — pra numri
+ *     mbetet i saktë edhe nëse dy pëlqime mbërrijnë njëkohësisht, dhe nuk
+ *     devijon kurrë nga rreshtat e vërteta. Një `count = count + 1` i shkruar
+ *     me dorë do të devijonte me kohë, dhe kthimi mbrapsht do të ishte i
+ *     pamundur pa rinumëruar gjithsesi.
+ *
+ * ⚠️  Ekzistenca e postimit kontrollohet PARA shkrimit, për të njëjtën arsye
+ *     si te të preferuarat: `INSERT IGNORE` e zbret shkeljen e çelësit të huaj
+ *     në paralajmërim, ndaj një id e panjohur do të kthente `204` — sukses i
+ *     rremë, pa asnjë rresht të shkruar.
+ */
+async function postExists(id) {
+  const row = await one("SELECT id FROM community_posts WHERE id = ? AND is_published = 1", [id]);
+  return Boolean(row);
+}
+
+/** Vetëm id-të — aplikacioni i mban si `{ postId: data }`. */
+router.get("/post-likes", async (req, res, next) => {
+  try {
+    res.json(
+      await query(
+        `SELECT r.post_id AS id, r.created_at
+           FROM post_reactions r
+           JOIN community_posts p ON p.id = r.post_id AND p.is_published = 1
+          WHERE r.user_id = ?
+          ORDER BY r.created_at DESC`,
+        [req.userId]
+      )
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/post-likes/:postId", async (req, res, next) => {
+  try {
+    if (!(await postExists(req.params.postId))) {
+      return res.status(404).json({ error: "Postimi nuk u gjet." });
+    }
+    const id = (await one("SELECT UUID() AS id")).id;
+    await query(
+      "INSERT IGNORE INTO post_reactions (id, user_id, post_id, reaction_type) VALUES (?, ?, ?, 'like')",
+      [id, req.userId, req.params.postId]
+    );
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/post-likes/:postId", async (req, res, next) => {
+  try {
+    await query("DELETE FROM post_reactions WHERE user_id = ? AND post_id = ?", [
+      req.userId,
+      req.params.postId,
+    ]);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Postimet e ruajtura — TË PLOTA, jo vetëm id-të.
+ *
+ * ⚠️  Ndryshe nga pëlqimet: lista e të ruajturave vizatohet te profili edhe
+ *     kur postimi ka rrëshqitur jashtë feed-it (ai kthen 50 të fundit). Po të
+ *     ktheheshin vetëm id-të, një postim i ruajtur para një muaji do të dukej
+ *     si rresht bosh — ose do të zhdukej pa shpjegim.
+ */
+router.get("/post-saves", async (req, res, next) => {
+  try {
+    const flags = flagsFor(req.userId);
+    const posts = await query(
+      `SELECT ${POST_FIELDS}, s.created_at, ${flags.sql}
+         FROM post_saves s
+         JOIN community_posts p ON p.id = s.post_id
+         LEFT JOIN meditations m ON m.id = p.meditation_id
+        WHERE s.user_id = ? AND p.is_published = 1
+        ORDER BY s.created_at DESC`,
+      [...flags.params, req.userId]
+    );
+    res.json(await attachMedia(posts));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/post-saves/:postId", async (req, res, next) => {
+  try {
+    if (!(await postExists(req.params.postId))) {
+      return res.status(404).json({ error: "Postimi nuk u gjet." });
+    }
+    const id = (await one("SELECT UUID() AS id")).id;
+    await query("INSERT IGNORE INTO post_saves (id, user_id, post_id) VALUES (?, ?, ?)", [
+      id,
+      req.userId,
+      req.params.postId,
+    ]);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/post-saves/:postId", async (req, res, next) => {
+  try {
+    await query("DELETE FROM post_saves WHERE user_id = ? AND post_id = ?", [
+      req.userId,
+      req.params.postId,
     ]);
     res.status(204).end();
   } catch (err) {

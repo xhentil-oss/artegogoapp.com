@@ -1,5 +1,7 @@
 const express = require("express");
 const { query, one } = require("../db");
+const { optionalAuth } = require("../auth");
+const { POST_FIELDS, flagsFor, attachMedia } = require("../posts");
 
 const router = express.Router();
 
@@ -200,59 +202,31 @@ router.get("/programs/:slug/days", async (req, res, next) => {
 });
 
 /* ---------- komuniteti ---------- */
-router.get("/feed", async (req, res, next) => {
+/**
+ * Feed-i i komunitetit.
+ *
+ * ⚠️  `optionalAuth`, jo `requireAuth`: leximi mbetet publik, por kur kërkesa
+ *     mban token, çdo postim kthen edhe `liked` dhe `saved` TË ATIJ përdoruesi.
+ *     Pa to, aplikacioni nuk do ta dinte a është zemra e ndezur — dhe numri i
+ *     pëlqimeve do të numërohej dy herë pas çdo rifreskimi (shih `posts.js`).
+ */
+router.get("/feed", optionalAuth, async (req, res, next) => {
   try {
     const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
     const offset = Math.max(0, Number(req.query.offset) || 0);
+    const flags = flagsFor(req.userId);
 
     const posts = await query(
-      `SELECT p.id, p.author_name, p.author_avatar_url, p.author_role, p.is_verified,
-              p.post_type, p.text_content, p.media_url, p.media_type,
-              p.reaction_count, p.comment_count, p.published_at,
-              m.id AS meditation_id, m.title AS meditation_title, m.duration_sec
+      `SELECT ${POST_FIELDS}, ${flags.sql}
          FROM community_posts p
          LEFT JOIN meditations m ON m.id = p.meditation_id
         WHERE p.is_published = 1
         ORDER BY p.published_at DESC
-        LIMIT ${limit} OFFSET ${offset}`
+        LIMIT ${limit} OFFSET ${offset}`,
+      flags.params
     );
 
-    /*
-     * MEDIA E KARUSELIT — një kërkesë e dytë, jo `JOIN`.
-     *
-     * ⚠️  Me `JOIN`, një postim me katër imazhe do të kthehej katër herë, dhe
-     *     `LIMIT 20` do të numëronte rreshtat e medias, jo postimet: faqja e
-     *     parë do të kishte pesë postime në vend të njëzetës.
-     *
-     * ⚠️  Tabela mund të mos ekzistojë ende (migrimi `14_post_media.sql` nuk
-     *     është rrjedhur). Atëherë feed-i kthehet me median e vjetër, siç
-     *     ishte — një veçori e re nuk duhet ta rrëzojë atë që punonte.
-     */
-    if (posts.length > 0) {
-      const ids = posts.map((p) => p.id);
-      try {
-        const media = await query(
-          `SELECT post_id, media_url, media_type, position
-             FROM community_post_media
-            WHERE post_id IN (${ids.map(() => "?").join(",")})
-            ORDER BY post_id, position`,
-          ids
-        );
-
-        const sipasPostimit = new Map();
-        for (const rresht of media) {
-          if (!sipasPostimit.has(rresht.post_id)) sipasPostimit.set(rresht.post_id, []);
-          sipasPostimit.get(rresht.post_id).push({ url: rresht.media_url, type: rresht.media_type });
-        }
-
-        for (const post of posts) post.media = sipasPostimit.get(post.id) ?? [];
-      } catch (err) {
-        if (err?.code !== "ER_NO_SUCH_TABLE") throw err;
-        console.warn("[artegogo] `community_post_media` mungon — feed-i vazhdon me median e vjetër.");
-      }
-    }
-
-    res.json(posts);
+    res.json(await attachMedia(posts));
   } catch (err) {
     next(err);
   }

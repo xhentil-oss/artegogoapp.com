@@ -4,7 +4,7 @@ import { sx } from "../../theme/styles.js";
 import { listLiveSessions } from "../../services/contentRepository.js";
 import { LiveDot } from "../../components/ui/Badges.jsx";
 
-/** Transmetimet live dhe workshopet. */
+/** Transmetimet live: meditime, mësime e praktika, pyetje dhe përgjigje. */
 export function LiveScreen() {
   return (
     <div style={sx.screen}>
@@ -37,7 +37,9 @@ export function LiveScreen() {
             maxWidth: 360,
           }}
         >
-          Ndiqni sesionet tona live të meditimit, workshopeve dhe seancave të koçingut në kohë reale.
+          {/* Fjalia ndjek tri kartelat poshtë: meditim, mësime e praktika,
+              pyetje e përgjigje. "Koçing" u hoq me kërkesë të klientes. */}
+          Ndiqni sesionet tona live të meditimit, mësimet e praktikat dhe pyetjet e përgjigjet në kohë reale.
         </p>
       </header>
 
@@ -55,6 +57,17 @@ export function LiveScreen() {
 }
 
 function SessionCard({ session }) {
+  /*
+   * "Në ajër" dhe "ka link" janë dy gjëra të ndara.
+   *
+   * ⚠️  Serveri e jep `joinUrl` VETËM kur sesioni është ndezur, ndaj zakonisht
+   *     vijnë bashkë. Por një sesion i ndezur pa adresë mbetet i mundshëm te të
+   *     dhënat e vjetra, dhe atëherë butoni duhet të mbetet i pashtypshëm: një
+   *     "Bashkohu tani" që nuk çon askund është më keq se asnjë buton.
+   */
+  const joinable = Boolean(session.live && session.joinUrl);
+  const Element = joinable ? "a" : "button";
+
   return (
     <div
       className="ag-card"
@@ -92,7 +105,21 @@ function SessionCard({ session }) {
       <div style={{ fontSize: 21, fontWeight: 700, color: T.ink, marginBottom: 8 }}>{session.title}</div>
       <p style={{ fontSize: 14.5, color: T.sub, margin: "0 0 18px", lineHeight: 1.5 }}>{session.sub}</p>
 
-      <button
+      {/*
+          Kur sesioni është në ajër, butoni bëhet LINK i vërtetë.
+
+          ⚠️  Jo një `<button>` me `window.open`: atë e bllokojnë pop-up
+              blocker-at te disa shfletues, dhe nuk jep as "hap në skedë të re"
+              me shtypje të gjatë — pra pikërisht sjelljet që pret dikush që i
+              është dhënë një ftesë takimi.
+
+          ⚠️  `rel="noopener"` është i domosdoshëm: pa të, faqja e hapur merr
+              një referencë te dritarja jonë përmes `window.opener`.
+      */}
+      <Element
+        {...(joinable
+          ? { href: session.joinUrl, target: "_blank", rel: "noopener noreferrer" }
+          : { type: "button" })}
         className="ag-press"
         style={{
           display: "inline-flex",
@@ -106,6 +133,7 @@ function SessionCard({ session }) {
           fontSize: 14.5,
           fontWeight: 700,
           cursor: "pointer",
+          textDecoration: "none",
         }}
       >
         {session.live ? (
@@ -117,7 +145,7 @@ function SessionCard({ session }) {
             <Clock size={15} /> {session.when}
           </>
         )}
-      </button>
+      </Element>
     </div>
   );
 }

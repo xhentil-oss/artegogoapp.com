@@ -13,6 +13,15 @@ const TICK_MS = 55;
 const TICK_PERCENT = 4;
 const SETTLE_MS = 350;
 
+/**
+ * Sa zgjat mbushja e shiritit, nga 0 te 100.
+ *
+ * E nxjerrë nga dy vlerat mbi të, jo e shkruar me dorë: `CreateScreen` ia jep
+ * këtë numër tingullit, dhe nëse ritmi i shiritit ndryshon ndonjëherë, të dyja
+ * mbeten bashkë vetvetiu. Një konstante e dytë do të devijonte që ditën e parë.
+ */
+export const FILL_MS = (100 / TICK_PERCENT) * TICK_MS;
+
 /** Animacion i gjenerimit. Thërret `onDone` kur mbush 100%. */
 export function GenerateProgress({ onDone }) {
   const [pct, setPct] = useState(0);

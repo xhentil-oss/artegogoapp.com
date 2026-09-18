@@ -3,6 +3,7 @@ import { TABS } from "../config/navigation.js";
 import { useNavigation } from "./NavigationContext.jsx";
 import { useProgress } from "./ProgressContext.jsx";
 import { useJourney } from "./JourneyContext.jsx";
+import { zgjoTingujt } from "../lib/sfx.js";
 
 /**
  * Cikli i luajtjes: sekuenca aktive, mini-player-i, ekrani i përmbylljes.
@@ -48,6 +49,12 @@ export function PlayerProvider({ children }) {
   /** Nis një sekuencë të re (e vesh me uid `domain/sequence`). */
   const play = useCallback((sequence, from = "catalog", onFinish = null) => {
     if (!sequence?.length) return;
+    /*
+     * Sistemi i zërit zgjohet KËTU, sepse këtu jemi ende brenda prekjes që nisi
+     * dëgjimin. Tingulli i fundit (ekrani i përmbylljes) vjen kur MBARON seanca
+     * — pa asnjë prekje — dhe iOS-i nuk e lejon një kontekst të ri atëherë.
+     */
+    zgjoTingujt();
     setMinimized(null);
     setSource(from);
     setMarker(onFinish);

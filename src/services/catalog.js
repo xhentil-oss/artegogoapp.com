@@ -1,4 +1,4 @@
-import { api } from "./api.js";
+import { api, onTokenChange } from "./api.js";
 import { PHASES, PHASE_BY_DB, replaceBlocks } from "../data/blocks.js";
 import { replaceCatalog } from "../domain/classification.js";
 import { TECHNIQUE_BY_SLUG, CATEGORY_BY_SLUG, intentForCategory } from "./taxonomy.js";
@@ -236,6 +236,17 @@ function toPost(row) {
     verified: Boolean(row.is_verified),
     likes: Number(row.reaction_count) || 0,
     comments: Number(row.comment_count) || 0,
+    /*
+     * A e pëlqeu / a e ruajti KY përdorues — sipas serverit, në çastin e
+     * leximit.
+     *
+     * ⚠️  `liked` nuk është gjendja që shfaqet (atë e mban
+     *     `store/CommunityContext`); është PIKA E NISJES për numrin:
+     *     `reaction_count` e përmban tashmë pëlqimin tim, ndaj pa këtë flamur
+     *     një "+1" lokal do ta numëronte dy herë sapo faqja rifreskohej.
+     */
+    liked: Boolean(row.liked),
+    saved: Boolean(row.saved),
     text: row.text_content,
     /*
      * Meditimi i bashkangjitur.
@@ -264,17 +275,108 @@ function toPost(row) {
   };
 }
 
+/**
+ * ⚠️  ME TOKEN, kur ai ekziston — ndryshe nga katalogu, që lexohet anonim.
+ *
+ *     Rruga mbetet publike (`optionalAuth` te serveri), por vetëm një kërkesë
+ *     e identifikuar kthen `liked` dhe `saved`. Pa Authorization, zemra do të
+ *     dukej e shuar pas çdo rifreskimi edhe kur pëlqimi rrinte te databaza.
+ */
 async function fetchFeed() {
-  const rows = await api.get("/content/feed?limit=50", { auth: false });
+  const rows = await api.get("/content/feed?limit=50");
   return Array.isArray(rows) ? rows.map(toPost) : null;
 }
 
-/** Rilexon vetëm feed-in — pas botimit ose fshirjes nga paneli. */
-export async function refreshFeed() {
-  const fresh = await fetchFeed().catch(() => null);
-  if (fresh) serverFeed = fresh;
+/** Përkthimi i një postimi të serverit — i njëjti për feed-in dhe të ruajturat. */
+export const postFromServer = toPost;
+
+/*
+ * ═══ SESIONET LIVE ═══
+ *
+ * Kartelat e Zoom-it. Më parë jetonin te `data/catalog.js` dhe te
+ * `localStorage` i admin-it — pra një sesion i planifikuar e shihte vetëm
+ * shfletuesi që e shkroi. Tani vijnë nga databaza, si feed-i.
+ */
+let serverLive = null;
+
+export const liveFromServer = () => serverLive;
+
+function toLive(row) {
+  return {
+    id: row.id,
+    emoji: row.emoji ?? "🧘",
+    title: row.title,
+    sub: row.subtitle ?? "",
+    when: row.schedule_text ?? "Së shpejti",
+    live: Boolean(row.is_live),
+    /* Vjen vetëm kur sesioni është në ajër — shih `api/src/routes/live.js`. */
+    joinUrl: row.join_url ?? null,
+  };
+}
+
+async function fetchLive() {
+  const rows = await api.get("/content/live", { auth: false });
+  return Array.isArray(rows) ? rows.map(toLive) : null;
+}
+
+/** Rilexon sesionet live — pas çdo ndryshimi te paneli. */
+export async function refreshLive() {
+  const fresh = await fetchLive().catch(() => null);
+  if (fresh) {
+    serverLive = fresh;
+    commitCatalog(lastResult);
+  }
   return fresh;
 }
+
+/** Kur u lexua feed-i i fundit — për `refreshFeedIfStale`. */
+let feedReadAt = 0;
+
+/**
+ * Rilexon vetëm feed-in — pas botimit, fshirjes, ose hyrjes/daljes.
+ *
+ * ⚠️  Njofton edhe abonentët (`commitCatalog`): pa këtë, feed-i i ri rrinte te
+ *     dyqani dhe ekrani vazhdonte të vizatonte postimet e vjetra derisa diçka
+ *     tjetër e rivizatonte pemën.
+ */
+export async function refreshFeed() {
+  const fresh = await fetchFeed().catch(() => null);
+  if (fresh) {
+    serverFeed = fresh;
+    feedReadAt = Date.now();
+    commitCatalog(lastResult);
+  }
+  return fresh;
+}
+
+/**
+ * Rilexon feed-in vetëm nëse ka kaluar kohë mjaftueshëm.
+ *
+ * ⚠️  Numri i pëlqimeve është i PËRBASHKËT: kur pëlqen një profil tjetër, ai
+ *     rritet te databaza, por kartela te ky telefon vazhdon të tregojë numrin
+ *     e çastit kur u lexua feed-i. Pa këtë, dy pëlqime nga dy llogari dukeshin
+ *     si një, derisa faqja rifreskohej me dorë.
+ *
+ * ⚠️  Me afat, jo në çdo hapje: skeda "Komunitet" hapet dhjetëra herë në ditë,
+ *     dhe një kërkesë për secilën do të ishte trafik pa kuptim — postimet
+ *     ndryshojnë shumë më ngadalë se sa preket shiriti i poshtëm.
+ */
+export function refreshFeedIfStale(maxAgeMs = 30000) {
+  if (Date.now() - feedReadAt < maxAgeMs) return null;
+  return refreshFeed();
+}
+
+/*
+ * Feed-i rilexohet kur ndryshon identiteti.
+ *
+ * ⚠️  `liked` dhe `saved` varen nga token-i, dhe feed-i lexohet një herë në
+ *     nisje — pra para hyrjes. Pa këtë, kush hynte pa rifreskuar faqen i
+ *     shihte të gjitha postimet si të papëlqyera, dhe pëlqimi i vjetër do të
+ *     rifillonte numërimin nga zero te pamja.
+ */
+onTokenChange(() => {
+  refreshFeed();
+});
 
 /** Merr të gjitha faqet e meditimeve. */
 async function fetchAllMeditations() {
@@ -307,14 +409,17 @@ export async function hydrateCatalog() {
      * Programet merren paralelisht, dhe dështimi i tyre NUK e prish katalogun:
      * pa meditime aplikacioni s'ka çfarë të tregojë, pa programe ka.
      */
-    const [rows, programs, blocks, feed] = await Promise.all([
+    const [rows, programs, blocks, feed, live] = await Promise.all([
       fetchAllMeditations(),
       fetchPrograms().catch(() => null),
       fetchBlocks().catch(() => null),
       fetchFeed().catch(() => null),
+      fetchLive().catch(() => null),
     ]);
     serverPrograms = programs;
     serverFeed = feed;
+    serverLive = live;
+    if (feed) feedReadAt = Date.now();
     if (blocks) replaceBlocks(blocks);
 
     /*

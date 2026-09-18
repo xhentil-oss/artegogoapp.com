@@ -6,7 +6,7 @@ import { dayKey } from "../lib/time.js";
 import { totalMinutes } from "../domain/sequence.js";
 import { bestStreak, currentStreak, medalCounts } from "../domain/medals.js";
 import { isDatabaseId } from "../lib/ids.js";
-import { countOn, dayNumber, fullDays, isRhythmKey, rhythmKey, stepsOn } from "../domain/rhythm.js";
+import { countOn, dayNumber, practiceDays, isRhythmKey, rhythmKey, stepsOn } from "../domain/rhythm.js";
 import { dailySeries } from "../domain/history.js";
 import { api, onTokenChange } from "../services/api.js";
 import { fetchRewards } from "../services/rewards.js";
@@ -294,7 +294,8 @@ export function ProgressProvider({ children }) {
       rhythmToday,
       rhythmCount: countOn(habits.data, today),
       rhythmDay: dayNumber(habits.data, today),
-      rhythmAchievements: fullDays(habits.data).length,
+      /* Ditët me të paktën një hap — shih `practiceDays`. */
+      rhythmAchievements: practiceDays(habits.data).length,
       completeRhythmStep,
       habitCount: HABITS.length,
       habitScore,

@@ -11,7 +11,7 @@ import { SLOT_POOLS } from "../data/slotPools.js";
 import { SERIES, PROGRAMS, SHORTS, SOUNDSCAPES, LIVE_SESSIONS } from "../data/catalog.js";
 import { LIFE_AREAS, ALL_AREAS } from "../data/lifeAreas.js";
 import { adminState } from "./adminStore.js";
-import { feedFromServer, programsFromServer } from "./catalog.js";
+import { feedFromServer, liveFromServer, programsFromServer } from "./catalog.js";
 import {
   MEDITATIONS,
   listTechniques,
@@ -45,16 +45,37 @@ export const listIntentions = () => INTENTIONS;
 export const greetingFor = (part) => GREETINGS[part] ?? GREETINGS[DAY_PARTS.MORNING];
 
 /**
+ * Dita e vitit (1–366), e llogaritur me pjesë LOKALE datash.
+ *
+ * ⚠️  Zbritja bëhet mes dy çastesh UTC të ndërtuara nga viti/muaji/dita
+ *     lokale. Një zbritje e drejtpërdrejtë mes dy `Date`-ve lokale do të jepte
+ *     23 ose 25 orë te ditët kur ndërron ora verore, dhe `Math.floor` do ta
+ *     kthente numrin e ditës një ditë prapa — pikërisht dy herë në vit,
+ *     pa asnjë shenjë.
+ */
+const dayOfYear = (date) => {
+  const fillimi = Date.UTC(date.getFullYear(), 0, 1);
+  const sot = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.round((sot - fillimi) / 86400000);
+};
+
+/**
  * Citati i ditës për një pjesë të ditës.
  *
  * Specifikimi e quan "të rastësishëm", por zgjedhja lidhet me datën, jo me
  * `Math.random()`: përndryshe citati do të ndryshonte në çdo rivizatim të
  * ekranit, dhe dy ekrane që e tregojnë të njëjtin çast do të shfaqnin dy
  * citate të ndryshme njëkohësisht.
+ *
+ * ⚠️  DITA E VITIT, jo dita e muajit. Me `getDate()` numri rinis nga 1 çdo
+ *     muaj: me tri citate përsëritej çdo tri ditë, dhe me tridhjetë do të
+ *     kërcente nga i 31-ti te i pari duke anashkaluar rrotullimin e njëtrajtshëm.
+ *     Me ditën e vitit, lista rrotullohet pa ndërprerje nga 1 janari deri më 31
+ *     dhjetor — pra një muaj i plotë pa përsëritje për çdo pjesë të ditës.
  */
 export const quoteOfDay = (part, date = new Date()) => {
   const { quotes } = greetingFor(part);
-  return quotes[date.getDate() % quotes.length];
+  return quotes[dayOfYear(date) % quotes.length];
 };
 
 /* ---------- mini-meditime ---------- */
@@ -219,7 +240,20 @@ export const listPrograms = () => [
   ...adminState().programs,
   ...(programsFromServer() ?? PROGRAMS),
 ];
-export const listLiveSessions = () => [...adminState().live, ...LIVE_SESSIONS];
+/**
+ * Sesionet live.
+ *
+ * ⚠️  Serveri është burimi kur përgjigjet — edhe kur kthen listë bosh nuk ka
+ *     rëndësi, sepse migrimi `16_live.sql` i mbjell të treja. `LIVE_SESSIONS`
+ *     lokale mbeten fallback vetëm kur serveri nuk lexohet fare; përndryshe
+ *     i njëjti sesion do të dukej dy herë — një herë me id të databazës dhe
+ *     një herë me `l1`, njëri me link e tjetri pa të.
+ */
+export const listLiveSessions = () => {
+  const server = liveFromServer();
+  if (server && server.length > 0) return server;
+  return [...adminState().live, ...LIVE_SESSIONS];
+};
 
 /* ---------- komunitet ---------- */
 /**

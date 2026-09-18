@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bookmark, Check } from "lucide-react";
 import { T, fonts, onDark, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
@@ -12,6 +12,7 @@ import { usePlayer } from "../../store/PlayerContext.jsx";
 import { useProgress } from "../../store/ProgressContext.jsx";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
+import { tingulliFitores } from "../../lib/sfx.js";
 import { StatRow } from "../../components/ui/Charts.jsx";
 
 const CONFETTI_COUNT = 14;
@@ -26,6 +27,24 @@ export function CompletionSheet({ sequence }) {
   const { saveSession } = useCollections();
   const [mood, setMood] = useState(null);
   useBodyScrollLock();
+
+  /*
+   * Tingulli i arritjes, një herë kur hapet fleta.
+   *
+   * ⚠️  Roja me `ref` nuk është zbukurim: nën `StrictMode` React-i i thërret
+   *     efektet dy herë gjatë zhvillimit, dhe fanfara do të binte dyfish mbi
+   *     vetveten — e dëgjueshme si jehonë e shëmtuar.
+   *
+   * ⚠️  Konteksti i zërit është hapur më parë, te `play()`. Këtu nuk ka asnjë
+   *     prekje përdoruesi, ndaj një `AudioContext` i krijuar tani do të mbetej
+   *     i heshtur te iPhone-i.
+   */
+  const rane = useRef(false);
+  useEffect(() => {
+    if (rane.current) return;
+    rane.current = true;
+    tingulliFitores();
+  }, []);
 
   const meta = intentMeta(sequence[0]?.intent ?? "calm");
   const confetti = buildConfetti(meta.g);
