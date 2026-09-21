@@ -15,7 +15,9 @@ export function TechniqueGrid({ techniques, onOpen }) {
   return (
     <div
       className="ag-stagger"
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+      /* `start` — për të njëjtën arsye si te `CategoryList`: pa të, një titull
+         dy-rreshtësh ia zhvendos kapakun fqinjit brenda të njëjtit rresht. */
+      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, alignItems: "start" }}
     >
       {techniques.map((technique) => (
         <TechniquePill key={technique.id} technique={technique} onOpen={() => onOpen(technique)} />
@@ -57,10 +59,13 @@ function TechniquePill({ technique, onOpen }) {
 
       <div
         style={{
-          fontSize: 14,
+          /* E njëjta madhësi si titujt e kapakëve te "Eksploro kategoritë"
+             (`CategoryList`): dy rreshta të njëjtë ekrani nuk duhet të kenë dy
+             madhësi — kërkesë e klientes, 21 shtator 2026. */
+          fontSize: 15,
           fontWeight: 700,
           color: T.ink,
-          marginTop: 9,
+          marginTop: 10,
           lineHeight: 1.3,
           /* emrat e teknikave janë të gjatë — dy rreshta, pastaj pikë */
           display: "-webkit-box",
@@ -71,7 +76,7 @@ function TechniquePill({ technique, onOpen }) {
       >
         {technique.label}
       </div>
-      <div style={{ fontSize: 12, color: T.sub, marginTop: 2 }}>{technique.count} meditime</div>
+      <div style={{ fontSize: 12.5, color: T.sub, marginTop: 3 }}>{technique.count} meditime</div>
     </button>
   );
 }

@@ -1,7 +1,5 @@
 import { storage, STORAGE_KEYS } from "./storage.js";
-import { applyClassificationOverrides } from "../domain/classification.js";
-import { hidePost, publishPost, saveClassification, savePool } from "./adminApi.js";
-import { applyPoolOverrides } from "../domain/dailyPick.js";
+import { hidePost, publishPost } from "./adminApi.js";
 
 /**
  * NDRYSHIMET E ADMIN-IT (seksioni 11).
@@ -20,10 +18,6 @@ import { applyPoolOverrides } from "../domain/dailyPick.js";
  */
 
 const EMPTY = {
-  /** Caktimi teknikë+kategori, sipas nën-grupit: { "col_med/Zemra": {…} } */
-  classification: {},
-  /** Pool-et e njoftimeve; null do të thotë "si te `data/slotPools.js`". */
-  pools: null,
   /** Programe të krijuara nga admin-i. */
   programs: [],
   /** Postime komuniteti, me meditim të bashkangjitur. */
@@ -67,8 +61,6 @@ export function subscribeAdmin(listener) {
 /** Shkruan gjendjen e re, rindërton të dhënat e prekura dhe njofton. */
 function commit(next, persist = true) {
   state = next;
-  applyClassificationOverrides(next.classification);
-  applyPoolOverrides(next.pools);
   version += 1;
   listeners.forEach((listener) => listener());
   if (persist) storage.set(STORAGE_KEYS.admin, next);
@@ -88,58 +80,6 @@ export const updateAdmin = (patch) =>
 export const resetAdmin = () => commit(EMPTY);
 
 /* ---------- veprime të emërtuara ---------- */
-
-/**
- * Cakton teknikën dhe/ose kategorinë e një nën-grupi.
- *
- * ⚠️  Shkruan TE DATABAZA, jo vetëm te pajisja.
- *
- *     Ndryshimi shfaqet menjëherë lokalisht që ekrani të mos ngrijë, por e
- *     vërteta është ajo e serverit: pas suksesit katalogu rilexohet dhe
- *     mbivendosja lokale HIQET. Nëse do të mbetej, do të ekzistonin dy të
- *     vërteta mbi të njëjtin grup, dhe ato do të devijonin pa u vënë re.
- *
- *     Dështimi NUK e zhbën ndryshimin lokal — përdoruesi sapo e bëri zgjedhjen,
- *     dhe zhdukja e saj nën gisht do të ishte më keq. Gabimi shfaqet te paneli.
- */
-export async function setClassification(key, patch) {
-  updateAdmin((prev) => ({
-    classification: { ...prev.classification, [key]: { ...prev.classification[key], ...patch } },
-  }));
-
-  setSync({ busy: true, error: null });
-  const result = await saveClassification(key, patch);
-
-  if (result.ok) {
-    /* Databaza e mban tani — mbivendosja lokale nuk duhet më. */
-    updateAdmin((prev) => {
-      const { [key]: _done, ...rest } = prev.classification;
-      return { classification: rest };
-    });
-    setSync({ busy: false, error: null, saved: `${result.updated} meditime u ruajtën` });
-  } else {
-    setSync({ busy: false, error: result.error, saved: null });
-  }
-  return result;
-}
-
-/** Shton ose heq një nën-grup nga pool-i i një çasti të ditës. */
-export async function togglePoolEntry(slotId, key, defaults) {
-  const pools = state.pools ?? defaults;
-  const current = pools[slotId] ?? [];
-  const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
-
-  updateAdmin({ pools: { ...pools, [slotId]: next } });
-
-  setSync({ busy: true, error: null });
-  const result = await savePool(slotId, next);
-  setSync({
-    busy: false,
-    error: result.ok ? null : result.error,
-    saved: result.ok ? `${result.count} meditime në pool` : null,
-  });
-  return result;
-}
 
 /**
  * Boton një postim te komuniteti — te databaza.

@@ -1,8 +1,9 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { storage, STORAGE_KEYS } from "../services/storage.js";
 import * as auth from "../services/auth.js";
 import * as billing from "../services/billing.js";
 import { defaultReminders } from "../data/reminders.js";
+import { saveReminders, syncReminders } from "../services/reminders.js";
 import { describeSubscription, fromServer } from "../domain/subscription.js";
 import { hasToken } from "../services/api.js";
 
@@ -188,9 +189,10 @@ export function SessionProvider({ children }) {
 
   const completeOnboarding = useCallback(
     ({ name, reminders }) => {
+      const chosen = reminders ?? defaultReminders();
       const record = {
         name: name.trim(),
-        reminders: reminders ?? defaultReminders(),
+        reminders: chosen,
         createdAt: new Date().toISOString(),
         /* Email-i shkruhet bashkë me profilin, që në hyrjen e radhës të dihet
            nëse ky profil i takon vërtet asaj llogarie. */
@@ -198,6 +200,9 @@ export function SessionProvider({ children }) {
       };
       setProfile(record);
       storage.set(STORAGE_KEYS.onboarding, record);
+      /* Trigger-i i regjistrimit i krijon të tria TË FIKURA; pa këtë shkrim,
+         zgjedhja e onboarding-ut nuk do të mbërrinte kurrë te cron-i. */
+      saveReminders(null, chosen);
     },
     [account]
   );
@@ -205,11 +210,47 @@ export function SessionProvider({ children }) {
   const updateReminders = useCallback((reminders) => {
     setProfile((prev) => {
       if (!prev) return prev;
+      /* Serveri merr vetëm çastin që ndryshoi — shih `services/reminders`. */
+      saveReminders(prev.reminders, reminders);
       const next = { ...prev, reminders };
       storage.set(STORAGE_KEYS.onboarding, next);
       return next;
     });
   }, []);
+
+  /**
+   * Pajtimi i kujtesave me serverin — një herë për llogari.
+   *
+   * ⚠️  Një herë, jo sa herë ndryshojnë: çdo ndryshim i përdoruesit shkruhet
+   *     tashmë nga `updateReminders`. Pa këtë kufi, pajtimi do të rrjedhte
+   *     sërish pas çdo shkrimi të vetin dhe do të bënte një cikël kërkesash.
+   *
+   * Është mbërthyer te email-i i llogarisë: dalja dhe hyrja me një llogari
+   * tjetër duhet ta rinisë, përndryshe përdoruesi i dytë do të mbetej me
+   * kujtesat e të parit.
+   */
+  const syncedFor = useRef(undefined);
+
+  useEffect(() => {
+    if (!ready || !account || !profile) return;
+    if (syncedFor.current === account.email) return;
+    syncedFor.current = account.email;
+
+    let cancelled = false;
+    syncReminders(profile.reminders).then((effective) => {
+      if (cancelled || !effective) return;
+      setProfile((prev) => {
+        if (!prev || JSON.stringify(prev.reminders) === JSON.stringify(effective)) return prev;
+        const next = { ...prev, reminders: effective };
+        storage.set(STORAGE_KEYS.onboarding, next);
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, account, profile]);
 
   /* ---------- abonimi ---------- */
 
@@ -286,33 +327,6 @@ export function SessionProvider({ children }) {
     if (result.ok) persistSubscription(fromServer(result.state));
     return result;
   }, [persistSubscription, subscription]);
-
-  /**
-   * VETËM PËR DEMONSTRIM: zhvendos "orën" përpara, që kalimet provë → aktiv
-   * → skaduar të shihen pa pritur ditë të vërteta.
-   */
-  const shiftDemoClock = useCallback(
-    (days) =>
-      persistSubscription(
-        subscription ? { ...subscription, offsetDays: Math.max(0, (subscription.offsetDays ?? 0) + days) } : null
-      ),
-    [persistSubscription, subscription]
-  );
-
-  const resetDemoClock = useCallback(
-    () => persistSubscription(subscription ? { ...subscription, offsetDays: 0 } : null),
-    [persistSubscription, subscription]
-  );
-
-  /**
-   * VETËM PËR DEMONSTRIM: hiq abonimin krejt dhe kthehu te llogaria falas.
-   *
-   * Ndryshe nga anulimi, që e ruan aksesin deri në fund të periudhës së paguar,
-   * kjo e fshin regjistrimin. Nevojitet sepse pa të nuk kishte asnjë rrugë nga
-   * brenda aplikacionit për ta parë sërish pamjen e një përdoruesi falas —
-   * dhe pikërisht ajo pamje duhet parë kur shqyrtohet çfarë është e kyçur.
-   */
-  const resetToFreeDemo = useCallback(() => persistSubscription(null), [persistSubscription]);
 
   /** Pastrim i plotë i pajisjes — llogaria, profili dhe abonimi. */
   const logout = useCallback(async () => {
@@ -423,9 +437,6 @@ export function SessionProvider({ children }) {
       restorePurchases,
       cancelSubscription,
       resumeSubscription,
-      shiftDemoClock,
-      resetDemoClock,
-      resetToFreeDemo,
 
       /** A e ka llogaria të drejtën e admin-it (nga serveri). */
       canAdmin,
@@ -460,9 +471,6 @@ export function SessionProvider({ children }) {
       restorePurchases,
       cancelSubscription,
       resumeSubscription,
-      shiftDemoClock,
-      resetDemoClock,
-      resetToFreeDemo,
       completeOnboarding,
       updateReminders,
       logout,

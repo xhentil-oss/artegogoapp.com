@@ -4,8 +4,9 @@ import { sx } from "../../theme/styles.js";
 import { padTop } from "../../theme/responsive.js";
 import { COMMUNITY_VIEWS, TABS } from "../../config/navigation.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
+import { useUnreadNotifications } from "../../hooks/useUnreadNotifications.js";
 import { PillButton } from "../ui/Controls.jsx";
-import { LiveDot } from "../ui/Badges.jsx";
+import { CountBadge, LiveDot } from "../ui/Badges.jsx";
 
 /**
  * Shiriti i sipërm: nën-tabet e Komunitetit (vetëm aty), kërkim, njoftime.
@@ -16,6 +17,7 @@ import { LiveDot } from "../ui/Badges.jsx";
  */
 export function TopBar() {
   const { openSearch, openNotifications, tab } = useNavigation();
+  const unread = useUnreadNotifications();
   /* Te Komuniteti, vendin e avatarit e zënë "Frymëzim / Live": pamja e
      klientes i kërkon në të njëjtin rresht me kërkimin dhe zilen, jo në një
      rresht të vetin nën hero. Avatari nuk humbet — hero-ja poshtë e ka të
@@ -52,8 +54,14 @@ export function TopBar() {
         </IconButton>
         {/* zilja hap njoftimet ditore (seksioni 9) — më parë çonte te feed-i,
             sepse njoftimet nuk ekzistonin ende si sistem */}
-        <IconButton onClick={openNotifications} label="Njoftime">
+        <IconButton
+          onClick={openNotifications}
+          label={unread > 0 ? `Njoftime · ${unread} të palexuara` : "Njoftime"}
+        >
           <Bell size={24} color={T.ink} />
+          {/* Pulla tregon vetëm të palexuarat: sapo shtypet "Shëno të lexuara"
+              te fleta, numri bie në zero dhe pulla zhduket në çast. */}
+          <CountBadge count={unread} />
         </IconButton>
       </div>
     </div>
@@ -91,7 +99,8 @@ function IconButton({ onClick, label, children }) {
       onClick={onClick}
       aria-label={label}
       className="ag-press"
-      style={{ ...sx.bareButton, ...sx.center, width: 44, height: 44 }}
+      /* `relative` — pika e nisjes për numëruesin mbi ikonë. */
+      style={{ ...sx.bareButton, ...sx.center, width: 44, height: 44, position: "relative" }}
     >
       {children}
     </button>

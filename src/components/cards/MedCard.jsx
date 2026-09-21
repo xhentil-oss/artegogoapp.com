@@ -92,7 +92,7 @@ export function CompactMedCard({ item }) {
   const { openMeditation } = useNavigation();
 
   return (
-    <RowItem width={CARD_WIDTH.compact}>
+    <RowItem width={CARD_WIDTH.folder}>
       <button
         onClick={() => openMeditation(item)}
         className="ag-card"
@@ -103,10 +103,12 @@ export function CompactMedCard({ item }) {
           <AccessBadge {...accessBadge(item)} size={12} />
         </div>
 
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.ink, marginTop: 9, lineHeight: 1.3 }}>
+        {/* Të njëjtat përmasa si titujt te "Eksploro kategoritë" dhe grid-i i
+            praktikave — një madhësi e vetme për të njëjtën gjë. */}
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginTop: 10, lineHeight: 1.3 }}>
           {item.title}
         </div>
-        <div style={{ fontSize: 11.5, color: T.sub, marginTop: 3 }}>{item.dur} min</div>
+        <div style={{ fontSize: 12.5, color: T.sub, marginTop: 3 }}>{item.dur} min</div>
       </button>
     </RowItem>
   );

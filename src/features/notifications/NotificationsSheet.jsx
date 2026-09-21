@@ -5,7 +5,13 @@ import { sx, circle } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
 import { padBottom } from "../../theme/responsive.js";
 import { intentMeta } from "../../domain/intent.js";
-import { dailyNotifications, markAllRead, sentNotifications, trialEndingNotification } from "../../services/notifications.js";
+import {
+  dailyNotifications,
+  deleteNotification,
+  markAllRead,
+  sentNotifications,
+  trialEndingNotification,
+} from "../../services/notifications.js";
 import { relativeTime } from "../../lib/format.js";
 import { formatDate } from "../../domain/subscription.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
@@ -437,6 +443,20 @@ function SentList() {
     setItems((prev) => prev.map((n) => ({ ...n, is_read: 1 })));
   };
 
+  /**
+   * Heq një njoftim nga lista.
+   *
+   * Rreshti zhduket menjëherë, para përgjigjes së serverit: prekja duhet të
+   * ndihet e kryer. Nëse fshirja dështon, kthehet e GJITHË lista e mëparshme
+   * — jo vetëm rreshti — sepse ashtu ruhet edhe vendi ku ishte.
+   */
+  const remove = async (n) => {
+    const before = items;
+    setItems(before.filter((item) => item.id !== n.id));
+    const ok = await deleteNotification(n.id, !n.is_read);
+    if (!ok) setItems(before);
+  };
+
   return (
     <div style={{ marginTop: 18 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
@@ -478,6 +498,24 @@ function SentList() {
             <div style={{ color: T.sub, fontSize: 12, marginTop: 2, lineHeight: 1.5 }}>{n.body}</div>
             <div style={{ color: T.faint, fontSize: 11, marginTop: 4 }}>{relativeTime(n.sent_at)}</div>
           </div>
+
+          {/* Kryqi hiqet një e nga njëra; "Shëno të lexuara" lart mbetet për
+              të gjitha përnjëherë. Zona e prekjes 28px, më e madhe se ikona. */}
+          <button
+            onClick={() => remove(n)}
+            aria-label={`Hiq njoftimin: ${n.title}`}
+            className="ag-press"
+            style={{
+              ...sx.bareButton,
+              ...sx.center,
+              width: 28,
+              height: 28,
+              flexShrink: 0,
+              cursor: "pointer",
+            }}
+          >
+            <X size={14} color={T.faint} />
+          </button>
         </div>
       ))}
     </div>

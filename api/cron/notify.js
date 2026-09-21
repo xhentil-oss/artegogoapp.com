@@ -288,18 +288,61 @@ async function runExpiries() {
 const PROGRAM_HOUR = Number(process.env.PROGRAM_REMINDER_HOUR || 7);
 
 /**
- * Njofton për ditën e radhës të rrugëtimit.
+ * Dita e parë E PAKRYER e një rrugëtimi.
  *
- * ⚠️  Dita e radhës gjendet nga DITËT E PAKRYERA, jo nga `current_day`.
+ * ⚠️  Gjendet nga DITËT E PAKRYERA, jo nga `current_day`.
  *
  *     `current_day` është kursor pamor dhe mund të ngecë: dikush që kërcen te
  *     dita 5 pa e mbyllur të 3-tën do të merrte kujtesë për një ditë që e ka
  *     bërë. Mungesa e rreshtit te `user_program_day_completions` është e vetmja
  *     e dhënë që thotë me siguri se çfarë mbetet.
+ */
+function nextUnfinishedDay(userId, programId) {
+  return one(
+    `SELECT d.day_number, d.title,
+            (SELECT pdm.meditation_id
+               FROM program_day_meditations pdm
+              WHERE pdm.program_day_id = d.id
+              ORDER BY pdm.order_in_day
+              LIMIT 1) AS meditation_id
+       FROM program_days d
+      WHERE d.program_id = ?
+        AND NOT EXISTS (
+              SELECT 1 FROM user_program_day_completions c
+               WHERE c.user_id = ? AND c.program_id = d.program_id
+                 AND c.day_number = d.day_number)
+      ORDER BY d.day_number
+      LIMIT 1`,
+    [programId, userId]
+  );
+}
+
+/** Rreshti që përmend rrugëtimet e tjera, ose asgjë kur nuk ka. */
+function otherJourneys(count) {
+  if (count < 1) return null;
+  return count === 1
+    ? "Edhe një rrugëtim tjetër të pret."
+    : `Edhe ${count} rrugëtime të tjera të presin.`;
+}
+
+/**
+ * Njofton për ditën e radhës të rrugëtimit — NJË NJOFTIM NË DITË.
  *
- * ⚠️  Kush e ka kryer ditën e sotme nuk merr asgjë — pikërisht sepse dita e
- *     parë e pakryer bëhet ajo e nesërmja, dhe `dedupe_key` mban një njoftim
- *     për ditë kalendarike. Pa këtë, aplikacioni do t'i kujtonte punë të bërë.
+ * ⚠️  Grupohet sipas PËRDORUESIT, jo sipas programit (kërkesë e klientes,
+ *     21 shtator 2026).
+ *
+ *     Më parë çdo rrugëtim i hapur dërgonte të vetin: kush ndiqte tre
+ *     programe merrte tre njoftime në të njëjtin minut, me të njëjtin trup
+ *     ("Dita jote e radhës të pret") — të padallueshme nga njëri-tjetri dhe
+ *     të tre bashkë më pak të dobishme se një i vetëm. Tani krye të njoftimit
+ *     bëhet rrugëtimi i prekur së fundmi, dhe të tjerët përmenden me një rresht.
+ *
+ *     `dedupe_key` u bë `program:<datë>` — pa id-në e programit brenda, sepse
+ *     tani çelësi duhet të thotë "njoftimi i rrugëtimit për këtë ditë", një
+ *     i vetëm, pavarësisht sa rrugëtime ka hapur përdoruesi.
+ *
+ * ⚠️  Kush i ka kryer të gjitha ditët nuk merr asgjë: dita e parë e pakryer
+ *     bëhet ajo e nesërmja, dhe njoftimi do të kujtonte punë të bërë.
  */
 async function runProgramReminders() {
   const rows = await query(
@@ -307,63 +350,62 @@ async function runProgramReminders() {
        FROM user_program_progress p
        JOIN users u  ON u.id = p.user_id
        JOIN programs pr ON pr.id = p.program_id
-      WHERE p.completed_at IS NULL`
+      WHERE p.completed_at IS NULL
+      ORDER BY p.user_id, COALESCE(p.last_activity_at, p.started_at) DESC`
   );
 
-  let made = 0;
+  /* Radha e `ORDER BY` mbahet brenda çdo grupi: i pari është rrugëtimi i
+     prekur së fundmi, pra ai që përdoruesi e njeh më mirë sot. */
+  const byUser = new Map();
   for (const row of rows) {
-    const { date, minutes } = localParts(row.timezone);
+    if (!byUser.has(row.user_id)) byUser.set(row.user_id, []);
+    byUser.get(row.user_id).push(row);
+  }
+
+  let made = 0;
+  for (const [userId, programs] of byUser) {
+    const { date, minutes } = localParts(programs[0].timezone);
     const due = PROGRAM_HOUR * 60;
     if (due > minutes || minutes - due > WINDOW_MIN) continue;
 
-    const next = await one(
-      `SELECT d.day_number, d.title,
-              (SELECT pdm.meditation_id
-                 FROM program_day_meditations pdm
-                WHERE pdm.program_day_id = d.id
-                ORDER BY pdm.order_in_day
-                LIMIT 1) AS meditation_id
-         FROM program_days d
-        WHERE d.program_id = ?
-          AND NOT EXISTS (
-                SELECT 1 FROM user_program_day_completions c
-                 WHERE c.user_id = ? AND c.program_id = d.program_id
-                   AND c.day_number = d.day_number)
-        ORDER BY d.day_number
-        LIMIT 1`,
-      [row.program_id, row.user_id]
-    );
+    const pending = [];
+    for (const program of programs) {
+      const next = await nextUnfinishedDay(userId, program.program_id);
+      if (next) pending.push({ program, next });
+    }
+    if (pending.length === 0) continue;
 
-    /* Rrugëtimi u mbarua — asgjë për të kujtuar. */
-    if (!next) continue;
+    const [lead, ...rest] = pending;
+    const title = `${lead.program.program_title} · Dita ${lead.next.day_number}`;
+    const body = [lead.next.title || "Dita jote e radhës të pret.", otherJourneys(rest.length)]
+      .filter(Boolean)
+      .join(" · ");
 
-    const title = `${row.program_title} · Dita ${next.day_number}`;
-    const body = next.title || "Dita jote e radhës të pret.";
-
+    const dedupeKey = `program:${date}`;
     const created = await createNotification({
-      userId: row.user_id,
+      userId,
       title,
       body,
       type: "program_update",
       /* Meditimi, jo programi: prekja e njoftimit duhet të hapë atë që
          dëgjohet, jo një listë ku duhet kërkuar sërish. */
-      relatedId: next.meditation_id ?? null,
-      dedupeKey: `program:${row.program_id}:${date}`,
+      relatedId: lead.next.meditation_id ?? null,
+      dedupeKey,
     });
 
     if (created) {
       made += 1;
-      const result = await sendPush(row.user_id, {
+      const result = await sendPush(userId, {
         title,
         body,
         tag: "program",
-        meditationId: next.meditation_id ?? null,
+        meditationId: lead.next.meditation_id ?? null,
       });
       await query(
         `UPDATE notifications SET push_sent_at = NOW(), push_result = ?
           WHERE user_id = ? AND dedupe_key = ?`,
         [result.sent > 0 ? `dërguar te ${result.sent}` : (result.reason ?? "dështoi"),
-         row.user_id, `program:${row.program_id}:${date}`]
+         userId, dedupeKey]
       );
     }
   }

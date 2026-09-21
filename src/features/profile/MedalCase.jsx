@@ -66,66 +66,6 @@ export function MedalCase() {
   );
 }
 
-/**
- * Kontrolle demo — vetëm në modalitetin admin.
- *
- * Pa to, medalja e artë do të shihej vetëm pas 21 ditësh praktike të vërtetë;
- * klienti duhet ta shohë sistemin duke punuar sot.
- */
-export function MedalDemoControls() {
-  const { streak, medals, seedStreakDemo, clearHistoryDemo } = useProgress();
-
-  return (
-    <section style={{ ...sx.panel, borderRadius: radii.lg, padding: 16, marginBottom: 12 }}>
-      <div style={{ color: T.ink, fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
-        Simulo ditët rresht (demo)
-      </div>
-      <div style={{ color: T.sub, fontSize: 12.5, marginBottom: 12 }}>
-        Tani: <strong>{streak} ditë</strong> · {medals.bronze} bronz, {medals.silver} argjend,{" "}
-        {medals.gold} ar
-      </div>
-
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {[3, 7, 21, 45].map((days) => (
-          <button
-            key={days}
-            onClick={() => seedStreakDemo(days)}
-            className="ag-press"
-            style={{
-              background: T.bg,
-              border: `1px solid ${T.line}`,
-              borderRadius: radii.pill,
-              padding: "9px 14px",
-              cursor: "pointer",
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: T.ink,
-            }}
-          >
-            {days} ditë
-          </button>
-        ))}
-        <button
-          onClick={clearHistoryDemo}
-          className="ag-press"
-          style={{
-            background: T.ink,
-            border: "none",
-            borderRadius: radii.pill,
-            padding: "9px 14px",
-            cursor: "pointer",
-            fontSize: 12.5,
-            fontWeight: 700,
-            color: "#fff",
-          }}
-        >
-          Pastro
-        </button>
-      </div>
-    </section>
-  );
-}
-
 function Tier({ tier, count }) {
   const colors = TIER_COLORS[tier.id];
   const owned = count > 0;

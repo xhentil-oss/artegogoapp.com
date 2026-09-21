@@ -143,6 +143,33 @@ me.put("/notifications/:id/read", async (req, res, next) => {
   }
 });
 
+/**
+ * Fshin një njoftim të vetëm.
+ *
+ * ⚠️  `user_id` te kushti, si te shënimi si i lexuar: pa të, një id e marrë
+ *     me hamendje do të fshinte njoftimin e një tjetri.
+ *
+ * Fshirje e vërtetë, jo flamur "i fshehur": rreshti i njoftimit nuk mban asgjë
+ * që duhet ruajtur pasi përdoruesi e heq — çfarë u dërgua dhe kur, e mban
+ * `dedupe_key` derisa dita të mbarojë.
+ *
+ * ⚠️  Pasojë që duhet ditur: me `dedupe_key` të fshirë bashkë me rreshtin,
+ *     cron-i i radhës mund ta rikrijojë të njëjtin njoftim brenda së njëjtës
+ *     ditë, nëse ora e kujtesës është ende brenda dritares. Pas asaj dritareje
+ *     — pra pak minuta — nuk kthehet më.
+ */
+me.delete("/notifications/:id", async (req, res, next) => {
+  try {
+    await query("DELETE FROM notifications WHERE id = ? AND user_id = ?", [
+      req.params.id,
+      req.userId,
+    ]);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
 me.put("/notifications/read-all", async (req, res, next) => {
   try {
     await query("UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0", [

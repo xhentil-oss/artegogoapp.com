@@ -94,9 +94,49 @@ router.post("/sessions", async (req, res, next) => {
 
 /* ═══════════════ STREAK DHE MEDALJE ═══════════════ */
 
+/**
+ * A është ende i gjallë vargu që mbyllet te `lastDate`?
+ *
+ * Sot ose dje: dita e sotme mund të jetë ende pa u medituar, ndaj streak-u
+ * nuk këputet në mesnatë — këputet kur kalon një ditë e tërë pa meditim.
+ * I njëjti rregull si te `src/domain/medals.js` (`currentStreak`), që
+ * llogaritja lokale dhe ajo e serverit të mos tregojnë dy numra të ndryshëm.
+ */
+function streakAlive(lastDate, todayKey) {
+  if (!lastDate) return false;
+  const last = String(lastDate).slice(0, 10);
+  const yesterday = new Date(`${todayKey}T00:00:00Z`);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  return last === todayKey || last === yesterday.toISOString().slice(0, 10);
+}
+
+/**
+ * Streak-u i tanishëm.
+ *
+ * ⚠️  `current_streak` te databaza është vlerë E NGRIRË: e shkruan trigger-i
+ *     `trg_session_streak` kur ruhet një seancë, dhe asgjë nuk e prek kur
+ *     ditët kalojnë pa meditim — nuk ka trigger që niset nga kalimi i kohës.
+ *     Pra rreshti mbetet "2" edhe javë pasi përdoruesi ka ndaluar, dhe profili
+ *     tregonte përgjithmonë "2 ditë rresht" pa u medituar asnjë ditë.
+ *
+ *     Vjetrimi llogaritet KËTU, në lexim, jo me një `UPDATE` të natës: një
+ *     cron do të duhej ta dinte mesnatën e secilit përdorues në zonën e vet
+ *     kohore, ndërsa `last_meditation_date` e mban të vërtetën vetë. Rreshti
+ *     nuk preket: `best_streak` dhe medaljet mbeten, dhe trigger-i e rinis
+ *     vargun nga 1 sapo vjen seanca e radhës.
+ */
 router.get("/streak", async (req, res, next) => {
   try {
-    res.json(await one("SELECT * FROM streaks WHERE user_id = ?", [req.userId]));
+    const row = await one("SELECT * FROM streaks WHERE user_id = ?", [req.userId]);
+    if (!row) return res.json(null);
+
+    const tz = req.user.timezone || "Europe/Tirane";
+    const today = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date());
+
+    res.json({
+      ...row,
+      current_streak: streakAlive(row.last_meditation_date, today) ? row.current_streak : 0,
+    });
   } catch (err) {
     next(err);
   }

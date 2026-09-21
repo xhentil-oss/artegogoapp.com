@@ -1,12 +1,10 @@
 import { useState } from "react";
 import {
   ArrowLeft,
-  Bell,
   CalendarDays,
   MessageCircle,
   Radio,
   RotateCcw,
-  Tags,
   Upload,
   Users,
 } from "lucide-react";
@@ -18,28 +16,36 @@ import { resetAdmin } from "../../services/adminStore.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { MediaTab } from "./tabs/MediaTab.jsx";
-import { ClassificationTab } from "./tabs/ClassificationTab.jsx";
-import { PoolsTab } from "./tabs/PoolsTab.jsx";
 import { ProgramsTab } from "./tabs/ProgramsTab.jsx";
 import { CommunityTab } from "./tabs/CommunityTab.jsx";
 import { LiveTab } from "./tabs/LiveTab.jsx";
 import { UsersTab } from "./tabs/UsersTab.jsx";
 
 /**
- * Tabet e panelit — gjashtë të seksionit 11, plus "Përdoruesit".
+ * Tabet e panelit.
  *
- * Ai i fundit nuk është te specifikimi: u shtua sepse lista e llogarive
- * shihej vetëm nga phpMyAdmin. Rri në fund që rendi i gjashtë origjinalëve
- * të mbetet i njëjti.
+ * ⚠️  RENDI DHE PËRBËRJA NUK JANË TË SPECIFIKIMIT (vendime të klientes,
+ *     21 shtator 2026).
+ *
+ *     "Përdoruesit", "Komuniteti" dhe "Live" u ngritën në krye sepse janë
+ *     ato që hapen përditësisht; media dhe programet preken rrallë. Rendi i
+ *     parë ndiqte specifikimin, jo përdorimin — dhe tab-i më i shpeshtë
+ *     rrinte i fundit, jashtë pamjes, duke kërkuar rrëshqitje çdo herë.
+ *
+ *     U HOQËN dy taba të seksionit 11: "Njoftimet" (pool-et e çasteve të
+ *     ditës) dhe "Klasifikimi" (teknika+kategoria sipas nën-grupit). Të dy
+ *     kishin bërë punën e tyre: pool-et jetojnë te databaza dhe caktimi i
+ *     meditimeve mbetet ai që është. Nëse ndonjëherë duhen sërish, gjenden
+ *     te historiku i git-it — me gjithë rrugët e tyre te `adminApi`.
+ *
+ *     I pari është edhe ai që hapet kur paneli çelet pa një tab të kërkuar.
  */
 const PANEL_TABS = [
-  { id: "media", label: "Media", icon: Upload, Component: MediaTab },
-  { id: "classification", label: "Klasifikimi", icon: Tags, Component: ClassificationTab },
-  { id: "pools", label: "Njoftimet", icon: Bell, Component: PoolsTab },
-  { id: "programs", label: "Programet", icon: CalendarDays, Component: ProgramsTab },
+  { id: "users", label: "Përdoruesit", icon: Users, Component: UsersTab },
   { id: "community", label: "Komuniteti", icon: MessageCircle, Component: CommunityTab },
   { id: "live", label: "Live", icon: Radio, Component: LiveTab },
-  { id: "users", label: "Përdoruesit", icon: Users, Component: UsersTab },
+  { id: "media", label: "Media", icon: Upload, Component: MediaTab },
+  { id: "programs", label: "Programet", icon: CalendarDays, Component: ProgramsTab },
 ];
 
 /**
@@ -57,7 +63,7 @@ export function AdminPanel() {
   const { closeAdmin, adminTab } = useNavigation();
   /* Tab-i fillestar vjen nga kush e hapi panelin — p.sh. butoni "Posto" te
      feed-i e çon drejt te "Komuniteti". */
-  const [tab, setTab] = useState(adminTab ?? "media");
+  const [tab, setTab] = useState(adminTab ?? PANEL_TABS[0].id);
   useBodyScrollLock();
 
   const active = PANEL_TABS.find((t) => t.id === tab) ?? PANEL_TABS[0];

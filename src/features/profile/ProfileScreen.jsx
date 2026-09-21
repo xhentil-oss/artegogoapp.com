@@ -8,10 +8,10 @@ import { useProgress } from "../../store/ProgressContext.jsx";
 import { StatRow } from "../../components/ui/Charts.jsx";
 import { ToggleSwitch } from "../../components/ui/Controls.jsx";
 import { STATUS_LABEL } from "../../domain/subscription.js";
-import { SubscriptionCard, SubscriptionDemoControls } from "../premium/SubscriptionCard.jsx";
+import { SubscriptionCard } from "../premium/SubscriptionCard.jsx";
 import { UserCollections } from "./UserCollections.jsx";
 import { SavedPosts } from "../community/SavedPosts.jsx";
-import { MedalCase, MedalDemoControls } from "./MedalCase.jsx";
+import { MedalCase } from "./MedalCase.jsx";
 import { DailyRhythm } from "./DailyRhythm.jsx";
 import { MoodTracker } from "./MoodTracker.jsx";
 import { HabitTracker } from "./HabitTracker.jsx";
@@ -125,9 +125,6 @@ export function ProfileScreen() {
           <ToggleSwitch checked={isAdmin} onChange={setIsAdmin} label="Modaliteti Admin" />
         </div>
       )}
-
-      {isAdmin && <SubscriptionDemoControls />}
-      {isAdmin && <MedalDemoControls />}
 
       {isAdmin && (
         <button

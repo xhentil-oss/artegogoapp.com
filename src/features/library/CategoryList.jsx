@@ -1,5 +1,5 @@
 import { ChevronRight } from "lucide-react";
-import { T, layout, radii, shadows } from "../../theme/tokens.js";
+import { T, layout } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { categoryFolder } from "../../services/contentRepository.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
@@ -12,13 +12,20 @@ import { CoverArt } from "../../components/art/CoverArt.jsx";
  * një rresht horizontal kapakësh ku duken **2.5** — gjysma e kapakut të tretë
  * është ftesa për rrëshqitje, sinjali që ka më shumë përmbajtje anash.
  *
+ * ⚠️  PA KUTI TË BARDHË (kërkesë e klientes, 21 shtator 2026). Më parë çdo
+ *     kategori rrinte brenda një karte me kufi e hije. Kartat brenda kartave i
+ *     ngushtonin kapakët me 28px dhe e bënin faqen të ngarkuar; tani kapakët
+ *     rrinë drejtpërdrejt mbi sfond, si te pamja që solli klientja, dhe e
+ *     gjithë gjerësia shkon te vetë përmbajtja.
+ *
  * @param {{ categories: object[], onOpen: (category) => void }} props
  */
 export function CategoryList({ categories, onOpen }) {
   return (
     <div
       className="ag-stagger"
-      style={{ display: "flex", flexDirection: "column", gap: 14, padding: `0 ${layout.gutter}px` }}
+      /* Hapësira mes kategorive u rrit: pa kufi, vetëm bardhësia i ndan. */
+      style={{ display: "flex", flexDirection: "column", gap: 26, padding: `0 ${layout.gutter}px` }}
     >
       {categories.map((category) => (
         <CategoryBox key={category.id} category={category} onOpen={() => onOpen(category)} />
@@ -51,15 +58,7 @@ function CategoryBox({ category, onOpen }) {
     .slice(0, PREVIEW_COUNT);
 
   return (
-    <section
-      style={{
-        background: T.bg,
-        border: `1px solid ${T.line}`,
-        borderRadius: radii.xl,
-        boxShadow: shadows.soft,
-        overflow: "hidden",
-      }}
-    >
+    <section>
       <button
         onClick={onOpen}
         className="ag-press"
@@ -68,7 +67,9 @@ function CategoryBox({ category, onOpen }) {
           display: "flex",
           alignItems: "center",
           gap: 12,
-          padding: "12px 14px",
+          /* Pa padding anësor: rreshtimi vjen nga gutter-i i faqes, dhe kapakët
+             nisin saktësisht aty ku nis titulli. */
+          padding: "0 0 12px",
           textAlign: "left",
         }}
       >
@@ -105,11 +106,23 @@ function CategoryBox({ category, onOpen }) {
         className="ag-scroll-x"
         style={{
           display: "flex",
+          /*
+           * ⚠️  `flex-start`, jo shtrirja e parazgjedhur.
+           *
+           *     Me `stretch` të gjithë butonat marrin lartësinë e më të lartët
+           *     — pra të atij me titull dy-rreshtësh — dhe një `<button>` e
+           *     QENDRËZON vetë përmbajtjen kur i jepet lartësi e tepërt. Rezultati
+           *     ishte kapakë të zhvendosur lart e poshtë brenda të njëjtit rresht,
+           *     sipas gjatësisë së titullit.
+           *
+           *     Tani secili buton mban lartësinë e vet: kapakët rreshtohen saktë
+           *     në krye, dhe titulli dy-rreshtësh zbret poshtë — ashtu si duhet.
+           */
+          alignItems: "flex-start",
           gap: COVER_GAP,
           overflowX: "auto",
-          padding: "0 14px 14px",
+          paddingBottom: 2,
           scrollSnapType: "x mandatory",
-          scrollPaddingLeft: 14,
         }}
       >
         {preview.map((item) => (
@@ -131,7 +144,7 @@ function CategoryBox({ category, onOpen }) {
               style={{
                 width: "100%",
                 aspectRatio: "1 / 1",
-                borderRadius: 14,
+                borderRadius: 18,
                 overflow: "hidden",
                 position: "relative",
               }}
@@ -147,10 +160,10 @@ function CategoryBox({ category, onOpen }) {
             <div
               style={{
                 color: T.ink,
-                fontSize: 13,
+                fontSize: 15,
                 fontWeight: 700,
                 lineHeight: 1.3,
-                marginTop: 8,
+                marginTop: 10,
                 display: "-webkit-box",
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: "vertical",
@@ -159,7 +172,7 @@ function CategoryBox({ category, onOpen }) {
             >
               {item.title}
             </div>
-            <div style={{ color: T.sub, fontSize: 11.5, marginTop: 2 }}>{item.dur} min</div>
+            <div style={{ color: T.sub, fontSize: 12.5, marginTop: 3 }}>{item.dur} min</div>
           </button>
         ))}
       </div>

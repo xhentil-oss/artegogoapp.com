@@ -29,8 +29,21 @@ export const CARD_WIDTH = {
   square: fluidWidth(200, 62),
   /** Meditim me kapak të shtypur. */
   wide: fluidWidth(220, 69),
-  /** Kartelë e ngushtë brenda folderave dhe të shkurtrave. */
+  /** Kartelë e ngushtë — klipet e shkurtra. */
   compact: fluidWidth(150, 47),
+  /**
+   * Kartelë meditimi brenda një folderi.
+   *
+   * ⚠️  U nda nga `compact` (21 shtator 2026): klientja i kërkoi kapakët e
+   *     folderit më të mëdhenj, ndërsa klipet e shkurtra mbeten si ishin.
+   *     Kufiri 150px i mbante te 150 edhe brenda kornizës 480px, ku ka vend
+   *     për më shumë — dhe dilnin më të vegjël se kapakët e "Eksploro
+   *     kategoritë" (~172px) në të njëjtin aplikacion.
+   *
+   *     Përqindja mbetet e ulët me qëllim: në telefon të ngushtë fiton ajo, dhe
+   *     kartela e dytë mbetet e dukshme si ftesë për rrëshqitje.
+   */
+  folder: fluidWidth(180, 52),
   /** Rreth peizazhi tingullor. */
   sound: fluidWidth(170, 52),
   /** Kartelë programi në trend. */
