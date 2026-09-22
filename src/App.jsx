@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { sx } from "./theme/styles.js";
 import { TABS } from "./config/navigation.js";
 
@@ -123,6 +124,22 @@ function Root() {
  */
 function ActiveTab() {
   const { tab, category } = useNavigation();
+
+  /**
+   * Çdo skedë e re nis NGA KRYE.
+   *
+   * ⚠️  Faqja rrëshqet te dritarja (`.ag-viewport` ka vetëm `min-height`),
+   *     ndaj pozicioni i rrëshqitjes është i përbashkët për të pesta skedat.
+   *     Pa këtë, kalimi nga fundi i një liste te një skedë tjetër e nxirrte
+   *     atë të hapur në mes — me titullin dhe hero-n e saj të mbetura sipër.
+   *
+   *     Pa animacion me qëllim: rrëshqitja e butë do të rridhte në të njëjtën
+   *     kohë me hyrjen e faqes (`ag-page`) dhe të dyja bashkë duken si një
+   *     kërcim.
+   */
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [tab, category]);
 
   return (
     <div key={`${tab}-${category ?? ""}`} className="ag-page" style={sx.page}>
