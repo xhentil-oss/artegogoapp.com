@@ -3,7 +3,7 @@ import { AlertCircle, Bell, Check, CreditCard, Crown, Unlock } from "lucide-reac
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
-import { PLANS, TRIAL_DAYS, planNote, trialTimeline } from "../../domain/subscription.js";
+import { PLANS, TRIAL_DAYS, planById, planNote, trialTimeline } from "../../domain/subscription.js";
 import { cancelPath } from "../../services/billing.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
@@ -26,7 +26,16 @@ export function UpsellSheet() {
   const [busy, setBusy] = useState(null);
   const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
-  const { subscribe, restorePurchases, subscription } = useSession();
+  const { subscribe, purchasePlan, restorePurchases, subscription } = useSession();
+
+  /**
+   * A është përdorur tashmë prova?
+   *
+   * ⚠️  Serveri e refuzon provën e dytë me 409 (`trial_used_at`). Pa këtë
+   *     dallim, një përdorues që e ka mbaruar provën shihte si të vetmin buton
+   *     "Fillo provën falas" — dhe shtypja e tij kthente një gabim pa dalje.
+   */
+  const provaEPerdorur = Boolean(subscription?.trialUsed);
   useBodyScrollLock();
 
   /*
@@ -46,6 +55,25 @@ export function UpsellSheet() {
 
     if (result?.ok) closeUpsell();
     else setNotice(result?.error ?? "Blerja nuk përfundoi. Provo sërish.");
+  };
+
+  /**
+   * Blerja e drejtpërdrejtë, pa kaluar nga prova.
+   *
+   * ⚠️  Te versioni web kjo NUK merr para dhe nuk pretendon se merr:
+   *     `services/billing.purchase` kthen "pagesat kalojnë përmes App Store /
+   *     Google Play", dhe ai mesazh shfaqet këtu. Butoni ekziston sepse rruga
+   *     duhet të jetë e dukshme — jo sepse pagesa është gati.
+   */
+  const paguaj = async () => {
+    if (busy) return;
+    setBusy("buy");
+    setNotice(null);
+    const result = await purchasePlan(plan);
+    setBusy(null);
+
+    if (result?.ok) closeUpsell();
+    else setNotice(result?.error ?? "Pagesa nuk përfundoi. Provo sërish.");
   };
 
   const restore = async () => {
@@ -130,13 +158,48 @@ export function UpsellSheet() {
           </div>
         )}
 
+        {/*
+          DY RRUGË, jo një (kërkesë e klientes, 8 tetor 2026).
+
+          Kur prova nuk është përdorur, ajo mbetet veprimi kryesor dhe pagesa e
+          drejtpërdrejtë rri poshtë saj. Kur është përdorur, pagesa bëhet
+          kryesorja dhe prova nuk shfaqet fare — një buton që serveri do ta
+          refuzonte me 409 nuk duhet të ftojë askënd.
+        */}
         <button
-          onClick={confirm}
+          onClick={provaEPerdorur ? paguaj : confirm}
           disabled={Boolean(busy)}
           style={{ ...goldButton, padding: 15, fontSize: 15, opacity: busy ? 0.6 : 1 }}
         >
-          {busy === "buy" ? "Duke u lidhur me dyqanin…" : `Fillo provën ${TRIAL_DAYS}-ditore falas`}
+          {busy === "buy"
+            ? "Duke u lidhur me dyqanin…"
+            : provaEPerdorur
+              ? `Paguaj tani · ${planById(plan).price}`
+              : `Fillo provën ${TRIAL_DAYS}-ditore falas`}
         </button>
+
+        {!provaEPerdorur && (
+          <button
+            onClick={paguaj}
+            disabled={Boolean(busy)}
+            style={{
+              ...sx.bareButton,
+              width: "100%",
+              marginTop: 12,
+              padding: 13,
+              borderRadius: radii.pill,
+              border: `1px solid ${T.line}`,
+              background: T.bg,
+              color: T.ink,
+              fontSize: 14.5,
+              fontWeight: 700,
+              cursor: busy ? "default" : "pointer",
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            Paguaj tani · {planById(plan).price}
+          </button>
+        )}
 
         {/* Kërkesë e Apple-it dhe e Google-it: kushtet duhen thënë pranë butonit,
             jo të fshehura pas një lidhjeje. */}
