@@ -71,7 +71,15 @@ export function ProfileScreen() {
         />
       </div>
 
-      {/* Medaljet para listave: progresi vjen i pari, koleksionet pas tij. */}
+      {/*
+        Ritmi ditor i PARI, para medaljeve (kërkesë e klientes, 8 tetor 2026).
+
+        Ai është i vetmi bllok këtu me një veprim për sot: tre hapat që mund
+        të shtypen tani. Medaljet janë përmbledhje e asaj që është bërë, dhe
+        përmbledhja rri pas veprimit, jo para tij.
+      */}
+      <DailyRhythm />
+
       <MedalCase />
 
       <UserCollections />
@@ -80,7 +88,6 @@ export function ProfileScreen() {
           "të mijat", dhe "Ruaj" te feed-i e ka premtuar pikërisht këtë vend. */}
       <SavedPosts />
 
-      <DailyRhythm />
       <MoodTracker />
       <HabitTracker />
 

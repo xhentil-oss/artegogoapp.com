@@ -3,17 +3,12 @@ import { sx } from "../../theme/styles.js";
 import {
   listCategories,
   listTechniques,
-  listSeries,
-  popularBlocks,
   techniqueFolder,
   categoryFolder,
   totalMeditations,
 } from "../../services/contentRepository.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
-import { Row } from "../../components/ui/Row.jsx";
 import { SectionHead } from "../../components/ui/SectionHead.jsx";
-import { MedCard } from "../../components/cards/MedCard.jsx";
-import { SeriesCard } from "../../components/cards/ShowcaseCards.jsx";
 import { TechniqueGrid } from "./TechniqueGrid.jsx";
 import { CategoryList } from "./CategoryList.jsx";
 
@@ -26,7 +21,7 @@ import { CategoryList } from "./CategoryList.jsx";
  * I njëjti meditim shfaqet në të dyja; nuk kopjohet askund.
  */
 export function LibraryScreen() {
-  const { openCategory, openFolder } = useNavigation();
+  const { openFolder } = useNavigation();
 
   const techniques = listTechniques();
   const categories = listCategories();
@@ -56,19 +51,13 @@ export function LibraryScreen() {
       <SectionHead title="Eksploro" accent="kategoritë" hint="për çfarë qëllimi" />
       <CategoryList categories={categories} onOpen={(c) => openFolder(categoryFolder(c.id))} />
 
-      <SectionHead title="Seri të kuruara" hint={`${listSeries().length}`} />
-      <Row>
-        {listSeries().map((series) => (
-          <SeriesCard key={series.id} series={series} onOpen={() => openCategory(series.intent)} />
-        ))}
-      </Row>
-
-      <SectionHead title="Zgjedhjet popullore" />
-      <Row>
-        {popularBlocks().map((block, i) => (
-          <MedCard key={block.id} block={block} index={i} square />
-        ))}
-      </Row>
+      {/*
+        ⚠️  "Seri të kuruara" dhe "Zgjedhjet popullore" u hoqën nga këtu
+            (kërkesë e klientes, 8 tetor 2026). Biblioteka mban tani vetëm dy
+            pamjet e klasifikimit — praktikat dhe kategoritë — pra një rrugë të
+            vetme hyrjeje, jo katër. Seritë e kuruara jetojnë te skeda
+            "Programe", si "Meditime të kuruara".
+      */}
     </div>
   );
 }

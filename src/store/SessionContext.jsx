@@ -5,7 +5,7 @@ import * as billing from "../services/billing.js";
 import { defaultReminders } from "../data/reminders.js";
 import { saveReminders, syncReminders } from "../services/reminders.js";
 import { describeSubscription, fromServer } from "../domain/subscription.js";
-import { hasToken } from "../services/api.js";
+import { hasToken, onSessionEnded } from "../services/api.js";
 
 /**
  * Sesioni i përdoruesit: identiteti, kujtesat, abonimi, të drejtat.
@@ -36,6 +36,14 @@ export function SessionProvider({ children }) {
    *     ishte aty, dhe kërkesa e seksionit 6.6 është "VETËM admini poston".
    */
   const [adminView, setAdminView] = useState(false);
+  /**
+   * Arsyeja e daljes së detyruar — shfaqet te ekrani i hyrjes.
+   *
+   * Pa të, përdoruesi do të gjendej papritur para formës së hyrjes pa ditur
+   * pse: "a dola vetë? a u prish?" — dhe arsyeja është pikërisht ajo që e
+   * bën rregullin të kuptueshëm.
+   */
+  const [sessionNotice, setSessionNotice] = useState(null);
 
 
   useEffect(() => {
@@ -155,6 +163,23 @@ export function SessionProvider({ children }) {
     await auth.signOut();
     setAccount(null);
     setAdminView(false);
+  }, []);
+
+  /**
+   * NJË LLOGARI — NJË PAJISJE.
+   *
+   * Serveri e refuzon token-in e vjetër sapo llogaria hapet diku tjetër
+   * (`session_replaced`). Këtu ajo përgjigje kthehet në dalje të plotë: pa
+   * këtë, aplikacioni do të mbetej i hapur në pamje, me çdo kërkesë që
+   * dështon në heshtje — më keq se një dalje e qartë.
+   */
+  useEffect(() => {
+    return onSessionEnded((reason) => {
+      setSessionNotice(reason ?? "Llogaria u hap në një pajisje tjetër.");
+      setAccount(null);
+      setAdminView(false);
+      storage.remove(STORAGE_KEYS.account);
+    });
   }, []);
 
   /** Shkruan abonimin njëherësh në gjendje dhe në ruajtje. */
@@ -377,21 +402,31 @@ export function SessionProvider({ children }) {
   /**
    * Gjendja rillogaritet nga regjistrimi — asnjë kopje e dyfishtë.
    *
-   * ⚠️  Kur regjistrimi vjen nga serveri, VENDIMI I TIJ për aksesin fiton mbi
-   *     llogaritjen lokale. Të dyja duhet të japin të njëjtën gjë; nëse jo,
-   *     e vërteta është ajo e serverit — ai e ka orën e vet dhe të dhënat e
-   *     vërteta, ndërsa ora e pajisjes mund të jetë zhvendosur me dorë.
+   * ⚠️  SERVERI FITON, EDHE TE EMRI I GJENDJES, jo vetëm te aksesi.
    *
-   *     Ora demo (`offsetDays`) mbetet përjashtim i qëllimshëm: ajo ekziston
-   *     pikërisht për të parë kalimet provë → aktiv → skaduar pa pritur ditë,
-   *     ndaj kur është ndezur, llogaritja lokale mbetet ajo që shfaqet.
+   *     Më parë mbishkruhej vetëm `isPremium`, dhe `status` mbetej ai i
+   *     llogaritur lokalisht. Por `describeSubscription` nuk e di kurrë se një
+   *     abonim ka mbaruar: pa një anulim të shënuar, ai e quan "active" çdo
+   *     regjistrim pasi prova mbaron — sepse supozon se faturimi vazhdon.
+   *
+   *     Pasoja u pa te prodhimi (8 tetor 2026): profili shkruante "Premium
+   *     aktiv" për një llogari që serveri e kishte `expired` që prej 14
+   *     shtatorit, dhe meditimi i parë që prekej kthente 402. Dy numra për të
+   *     njëjtën gjë, dhe ai që lexohej ishte i gabuari.
+   *
+   *     Tani kur serveri ka folur, merret EDHE statusi i tij. Llogaritja
+   *     lokale mbetet vetëm për pamjen (ditët e mbetura, data e rinovimit) dhe
+   *     për rastin kur serveri nuk është arritur ende.
    */
   const status = useMemo(() => {
     const local = describeSubscription(subscription);
-    const demoClock = (subscription?.offsetDays ?? 0) !== 0;
+    if (typeof subscription?.serverIsPremium !== "boolean") return local;
 
-    if (demoClock || typeof subscription?.serverIsPremium !== "boolean") return local;
-    return { ...local, isPremium: subscription.serverIsPremium };
+    return {
+      ...local,
+      isPremium: subscription.serverIsPremium,
+      status: subscription.serverStatus ?? local.status,
+    };
   }, [subscription]);
 
   const value = useMemo(
@@ -407,6 +442,7 @@ export function SessionProvider({ children }) {
       hasAccount: account !== null,
       isOnboarded: profile !== null,
 
+      sessionNotice,
       signIn,
       signUp,
       completeReset,
@@ -459,6 +495,7 @@ export function SessionProvider({ children }) {
       account,
       profile,
       ready,
+      sessionNotice,
       signIn,
       signUp,
       completeReset,

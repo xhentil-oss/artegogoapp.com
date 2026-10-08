@@ -1,4 +1,4 @@
-import { Clock, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { listLiveSessions } from "../../services/contentRepository.js";
@@ -6,24 +6,40 @@ import { LiveDot } from "../../components/ui/Badges.jsx";
 
 /** Transmetimet live: meditime, mësime e praktika, pyetje dhe përgjigje. */
 export function LiveScreen() {
+  const sessions = listLiveSessions();
+  /**
+   * A është në ajër ndonjëri tani?
+   *
+   * ⚠️  Pulla "LIVE" lart shfaqet VETËM atëherë (kërkesë e klientes, 8 tetor
+   *     2026). Më parë rrinte gjithmonë, me pikën e kuqe që pulson — pra
+   *     ekrani thoshte "tani" edhe kur asgjë nuk ishte ndezur, dhe kush e
+   *     hapte priste të gjente diçka duke ndodhur.
+   *
+   *     Kartelat poshtë mbeten gjithmonë: ato tregojnë ÇFARË ka, jo se çfarë
+   *     po ndodh.
+   */
+  const dikushNeAjer = sessions.some((session) => session.live);
+
   return (
     <div style={sx.screen}>
       <header style={{ textAlign: "center", padding: "30px 24px 24px" }}>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: "#FFE5E9",
-            border: "1px solid #FFC2CC",
-            borderRadius: 24,
-            padding: "8px 18px",
-            marginBottom: 22,
-          }}
-        >
-          <LiveDot size={9} />
-          <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, color: T.ink }}>LIVE</span>
-        </div>
+        {dikushNeAjer && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "#FFE5E9",
+              border: "1px solid #FFC2CC",
+              borderRadius: 24,
+              padding: "8px 18px",
+              marginBottom: 22,
+            }}
+          >
+            <LiveDot size={9} />
+            <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: 2, color: T.ink }}>LIVE</span>
+          </div>
+        )}
 
         <h2 style={{ fontSize: 28, fontWeight: 700, color: T.ink, margin: "0 0 12px", letterSpacing: -0.3 }}>
           Transmetimet <span style={{ color: T.sub }}>Live</span>
@@ -47,7 +63,7 @@ export function LiveScreen() {
         className="ag-stagger"
         style={{ display: "flex", flexDirection: "column", gap: 16, padding: `0 ${layout.gutter}px 8px` }}
       >
-        {listLiveSessions().map((session) => (
+        {sessions.map((session) => (
           <SessionCard key={session.id} session={session} />
         ))}
       </div>
@@ -116,35 +132,41 @@ function SessionCard({ session }) {
           ⚠️  `rel="noopener"` është i domosdoshëm: pa të, faqja e hapur merr
               një referencë te dritarja jonë përmes `window.opener`.
       */}
+      {/*
+          NJË ETIKETË E VETME: "Bashkohu tani" (kërkesë e klientes, 8 tetor 2026).
+
+          ⚠️  Oraret ("E mërkurë dhe e premte · 19:00") u hoqën nga butoni. Ato
+              ishin premtim i shkruar me dorë te të dhënat, ndërsa e vërteta
+              është te serveri: sesioni hapet kur admini e ndez, jo kur e thotë
+              një tekst. Një orar që nuk përputhet me realitetin është më keq se
+              asnjë orar.
+
+          ⚠️  Kur nuk ka link, butoni mbetet I PASHTYPSHËM dhe i zbehtë — jo i
+              fshehur. Etiketa thotë ku shkohet; ngjyra thotë nëse mund të
+              shkohet tani. Një buton i gjallë që nuk çon askund do të ishte
+              gabim; një buton që zhduket do ta linte kartelën pa fund.
+      */}
       <Element
         {...(joinable
           ? { href: session.joinUrl, target: "_blank", rel: "noopener noreferrer" }
-          : { type: "button" })}
-        className="ag-press"
+          : { type: "button", disabled: true })}
+        className={joinable ? "ag-press" : undefined}
         style={{
           display: "inline-flex",
           alignItems: "center",
           gap: 8,
-          background: session.live ? "linear-gradient(135deg, #FF7A8E, #E0455E)" : T.bg2,
-          color: session.live ? "#fff" : T.ink,
-          border: session.live ? "none" : `1px solid ${T.line}`,
+          background: joinable ? "linear-gradient(135deg, #FF7A8E, #E0455E)" : T.bg2,
+          color: joinable ? "#fff" : T.faint,
+          border: joinable ? "none" : `1px solid ${T.line}`,
           borderRadius: 26,
           padding: "12px 24px",
           fontSize: 14.5,
           fontWeight: 700,
-          cursor: "pointer",
+          cursor: joinable ? "pointer" : "default",
           textDecoration: "none",
         }}
       >
-        {session.live ? (
-          <>
-            <Play size={16} /> Bashkohu tani
-          </>
-        ) : (
-          <>
-            <Clock size={15} /> {session.when}
-          </>
-        )}
+        <Play size={16} /> Bashkohu tani
       </Element>
     </div>
   );

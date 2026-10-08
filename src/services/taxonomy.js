@@ -27,6 +27,8 @@ export const TECHNIQUE_BY_SLUG = {
   hipnoterapi: "t_hypno",
   vizualizim: "t_visual",
   afirmime: "t_affirm",
+  "kenge-motivuese": "t_songs",
+  "muzike-meditimi": "t_music",
 };
 
 export const CATEGORY_BY_SLUG = {

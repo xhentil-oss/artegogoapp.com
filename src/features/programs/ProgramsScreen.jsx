@@ -6,12 +6,13 @@ import { tile, rayTexture } from "../../theme/gradients.js";
 import { CARD_WIDTH } from "../../theme/responsive.js";
 import { ALL_AREAS } from "../../data/lifeAreas.js";
 import { intentMeta } from "../../domain/intent.js";
-import { programsByLifeArea } from "../../services/contentRepository.js";
+import { listSeries, programsByLifeArea } from "../../services/contentRepository.js";
 import { useJourney } from "../../store/JourneyContext.jsx";
+import { useNavigation } from "../../store/NavigationContext.jsx";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { Row, RowItem } from "../../components/ui/Row.jsx";
 import { SectionHead } from "../../components/ui/SectionHead.jsx";
-import { DurationTag } from "../../components/cards/ShowcaseCards.jsx";
+import { DurationTag, SeriesCard } from "../../components/cards/ShowcaseCards.jsx";
 import { CoverArt } from "../../components/art/CoverArt.jsx";
 import { JourneyMap } from "./JourneyMap.jsx";
 
@@ -57,9 +58,41 @@ export function ProgramsScreen() {
       {showJourney ? (
         <JourneyMap onChangeProgram={() => setShowJourney(false)} />
       ) : (
-        <ProgramsList programs={programs} onStarted={() => setShowJourney(true)} />
+        <>
+          <ProgramsList programs={programs} onStarted={() => setShowJourney(true)} />
+          <CuratedMeditations />
+        </>
       )}
     </div>
+  );
+}
+
+/**
+ * "Meditime të kuruara" — seritë, në fund të skedës "Programe".
+ *
+ * ⚠️  Erdhën nga biblioteka (kërkesë e klientes, 8 tetor 2026). Atje rrinin
+ *     poshtë dy pamjeve të klasifikimit dhe shtonin një rrugë të tretë hyrjeje
+ *     te e njëjta përmbajtje; këtu rrinë pranë programeve, ku përdoruesi
+ *     kërkon diçka të gatshme për të ndjekur.
+ *
+ * Nuk vizatohet fare kur nuk ka seri — një kokë seksioni mbi hapësirë bosh
+ * duket si defekt.
+ */
+function CuratedMeditations() {
+  const { openCategory } = useNavigation();
+  const series = listSeries();
+
+  if (series.length === 0) return null;
+
+  return (
+    <>
+      <SectionHead title="Meditime të" accent="kuruara" hint={`${series.length}`} />
+      <Row>
+        {series.map((item) => (
+          <SeriesCard key={item.id} series={item} onOpen={() => openCategory(item.intent)} />
+        ))}
+      </Row>
+    </>
   );
 }
 

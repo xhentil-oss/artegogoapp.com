@@ -1,38 +1,48 @@
-import { useState } from "react";
-import { Bookmark } from "lucide-react";
+import { Bookmark, ChevronRight } from "lucide-react";
 import { T, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { useCommunity } from "../../store/CommunityContext.jsx";
-import { SectionHead } from "../../components/ui/SectionHead.jsx";
-import { PostCard } from "./PostCard.jsx";
-
-/** Sa postime tregohen pa u kërkuar — profili nuk duhet të bëhet feed i dytë. */
-const PREVIEW = 2;
+import { useNavigation } from "../../store/NavigationContext.jsx";
 
 /**
- * "Të ruajturat" — postimet që përdoruesi ka shënuar me "Ruaj" te feed-i.
+ * "Të ruajturat" te profili — vetëm hyrja, jo përmbajtja.
  *
- * ⚠️  Vizatohen me TË NJËJTIN `PostCard` si te feed-i, jo me rreshta të
- *     thjeshtuar. Kështu postimi mbetet i plotë — foto, karusel, meditimi i
- *     bashkangjitur — dhe të tre veprimet vazhdojnë të punojnë: "Ruaj" e heq
- *     nga kjo listë vetvetiu, sepse e lexon të njëjtën gjendje.
+ * ⚠️  Më parë këtu vizatoheshin vetë postimet: dy të plota dhe të tjerat pas
+ *     një butoni "Shih më shumë". Por një postim është kartelë e plotë — foto,
+ *     karusel, meditim i bashkangjitur — dhe disa prej tyre e ngarkonin
+ *     profilin aq sa ai pushonte së qeni ekran përmbledhës. Me kërkesë të
+ *     klientes (8 tetor 2026) përmbajtja kaloi te një faqe më vete
+ *     (`SavedPostsSheet`), dhe këtu mbeti një rresht i vetëm.
  *
- * Përmbajtja vjen nga `store/CommunityContext`, që e mban bashkë me id-në
- * (shih `services/userData.js`): feed-i kthen 50 postimet e fundit, ndaj një
- * postim i ruajtur më parë nuk gjendet dot më atje.
+ *     Fitimi nuk është vetëm pamor: kartelat nuk vizatohen fare derisa faqja
+ *     të hapet, ndaj profili nuk paguan më për to.
+ *
+ * Kur nuk ka asnjë, rreshti nuk hapet — shpjegimi zë vendin e shigjetës,
+ * sepse një faqe bosh nuk i thotë asgjë kujt nuk e ka provuar ende "Ruaj".
  */
 export function SavedPosts() {
   const { savedPosts } = useCommunity();
-  const [allOpen, setAllOpen] = useState(false);
+  const { openSaved } = useNavigation();
 
-  if (savedPosts.length === 0) {
+  const bosh = savedPosts.length === 0;
+
+  const header = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <Bookmark size={17} color={T.gold} />
+      <span style={{ color: T.ink, fontSize: 16, fontWeight: 800, flex: 1, textAlign: "left" }}>
+        Postimet e ruajtura
+      </span>
+      <span style={{ color: bosh ? T.faint : T.sub, fontSize: 13.5, fontWeight: 700 }}>
+        {savedPosts.length}
+      </span>
+      {!bosh && <ChevronRight size={18} color={T.sub} />}
+    </div>
+  );
+
+  if (bosh) {
     return (
       <section style={{ ...sx.panel, borderRadius: radii.lg, marginBottom: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Bookmark size={17} color={T.gold} />
-          <span style={{ color: T.ink, fontSize: 16, fontWeight: 800 }}>Postimet e ruajtura</span>
-          <span style={{ color: T.faint, fontSize: 13.5 }}>· 0</span>
-        </div>
+        {header}
         <p
           style={{
             color: T.faint,
@@ -48,39 +58,23 @@ export function SavedPosts() {
     );
   }
 
-  const shown = allOpen ? savedPosts : savedPosts.slice(0, PREVIEW);
-  const mbeten = savedPosts.length - shown.length;
-
   return (
-    <>
-      <SectionHead flush title="Postimet e" accent="ruajtura" hint={`${savedPosts.length}`} />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 16 }}>
-        {shown.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
-
-        {/* Hapet vetëm në kërkesë: pesëmbëdhjetë postime të plota njëri pas
-            tjetrit do t'i zinin profilit tërë faqen. */}
-        {mbeten > 0 && (
-          <button
-            onClick={() => setAllOpen(true)}
-            className="ag-press"
-            style={{
-              background: "none",
-              border: `1px solid ${T.line}`,
-              borderRadius: 14,
-              padding: 12,
-              cursor: "pointer",
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: T.sub,
-            }}
-          >
-            Shih {mbeten} {mbeten === 1 ? "postim tjetër" : "postime të tjera"}
-          </button>
-        )}
-      </div>
-    </>
+    <button
+      onClick={openSaved}
+      className="ag-press"
+      aria-label={`Hap postimet e ruajtura · ${savedPosts.length}`}
+      /* `panel` PAS `cardButton`: i dyti i vendos `padding: 0` dhe sfond të
+         tejdukshëm, dhe në rendin e kundërt rreshti do të dilte pa kuti. */
+      style={{
+        ...sx.cardButton,
+        ...sx.panel,
+        borderRadius: radii.lg,
+        marginBottom: 16,
+        cursor: "pointer",
+        width: "100%",
+      }}
+    >
+      {header}
+    </button>
   );
 }

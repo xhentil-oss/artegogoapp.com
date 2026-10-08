@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { one } = require("./db");
+const { one, query } = require("./db");
 
 /**
  * VËRTETIMI
@@ -41,7 +41,33 @@ function secret() {
 const hashPassword = (plain) => bcrypt.hash(plain, ROUNDS);
 const verifyPassword = (plain, hash) => bcrypt.compare(plain, hash ?? "");
 
-const signToken = (userId) => jwt.sign({ sub: userId }, secret(), { expiresIn: TOKEN_TTL });
+const signToken = (userId, sessionId) =>
+  jwt.sign({ sub: userId, sid: sessionId }, secret(), { expiresIn: TOKEN_TTL });
+
+/**
+ * NJË LLOGARI — NJË PAJISJE.
+ *
+ * Çdo hyrje shkruan një `session_id` të ri te `users` dhe e fut brenda
+ * token-it. `requireAuth` i krahason: token-i i pajisjes së mëparshme mban
+ * një `sid` që nuk përputhet më, ndaj bie te kërkesa e parë.
+ *
+ * ⚠️  Fuqia e kësaj qëndron te databaza, jo te aplikacioni. Një kontroll te
+ *     klienti do të anashkalohej duke mos e thënë fare; këtu token-i i vjetër
+ *     thjesht nuk vlen më, kudo që të përdoret.
+ *
+ * ⚠️  Token-at e lëshuar PARA këtij ndryshimi nuk kanë `sid`, dhe llogaritë
+ *     e vjetra e kanë `session_id` bosh. Atëherë kontrolli nuk zbatohet — pra
+ *     askush nuk nxirret jashtë nga vetë vendosja; rregulli nis të vlerë nga
+ *     hyrja e radhës.
+ *
+ * @returns {Promise<string>} token-i i ri
+ */
+async function startSession(userId) {
+  const row = await one("SELECT UUID() AS id");
+  const sessionId = row.id;
+  await query("UPDATE users SET session_id = ? WHERE id = ?", [sessionId, userId]);
+  return signToken(userId, sessionId);
+}
 
 /**
  * Kërkon një token të vlefshëm dhe vendos `req.userId`.
@@ -59,10 +85,25 @@ async function requireAuth(req, res, next) {
   try {
     const payload = jwt.verify(token, secret());
     const user = await one(
-      "SELECT id, email, name, is_admin, is_premium, subscription_end_at, timezone FROM users WHERE id = ?",
+      `SELECT id, email, name, is_admin, is_premium, subscription_end_at, timezone, session_id
+         FROM users WHERE id = ?`,
       [payload.sub]
     );
     if (!user) return res.status(401).json({ error: "Llogaria nuk ekziston më." });
+
+    /*
+     * Sesioni i zhvendosur te një pajisje tjetër.
+     *
+     * `code` shënohet veçëmas: aplikacioni duhet ta dallojë këtë nga një
+     * token i skaduar, për të treguar arsyen e vërtetë në vend të një
+     * "hyr sërish" pa shpjegim.
+     */
+    if (user.session_id && payload.sid !== user.session_id) {
+      return res.status(401).json({
+        error: "Llogaria u hap në një pajisje tjetër.",
+        code: "session_replaced",
+      });
+    }
 
     req.userId = user.id;
     req.user = user;
@@ -142,6 +183,7 @@ module.exports = {
   hashPassword,
   verifyPassword,
   signToken,
+  startSession,
   requireAuth,
   optionalAuth,
   requireAdmin,

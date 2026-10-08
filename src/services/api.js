@@ -84,6 +84,33 @@ export async function clearToken() {
 
 export const hasToken = () => Boolean(token);
 
+/* ─────────────── sesioni i zhvendosur ─────────────── */
+
+/**
+ * Serveri e njoftoi se llogaria u hap diku tjetër.
+ *
+ * ⚠️  I ndarë nga `onTokenChange`: heqja e token-it ndodh për çdo 401,
+ *     përfshirë një të skaduar pas tridhjetë ditësh. Vetëm ky sinjal thotë
+ *     PSE — dhe pa atë arsye, ekrani do të kërkonte hyrje pa shpjeguar asgjë.
+ */
+const sessionEndedListeners = new Set();
+
+/** @returns {() => void} funksioni që e heq dëgjuesin */
+export function onSessionEnded(listener) {
+  sessionEndedListeners.add(listener);
+  return () => sessionEndedListeners.delete(listener);
+}
+
+function announceSessionEnded(reason) {
+  for (const listener of sessionEndedListeners) {
+    try {
+      listener(reason);
+    } catch {
+      /* Një dëgjues i prishur nuk duhet t'i ndalë të tjerët. */
+    }
+  }
+}
+
 /**
  * Gabim me kod statusi — që thirrësi të dallojë "pa abonim" (402) nga
  * "sesioni skadoi" (401) pa lexuar tekstin e mesazhit.
@@ -142,6 +169,12 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
     payload = await response.json();
   } catch {
     /* Përgjigje pa JSON — p.sh. faqja e gabimit e Passenger-it. */
+  }
+
+  /* Arsyeja lexohet VETËM pasi trupi është zbërthyer — heqja e token-it më
+     lart ndodh para tij, sepse ajo nuk varet nga përmbajtja. */
+  if (response.status === 401 && payload?.code === "session_replaced") {
+    announceSessionEnded(payload.error);
   }
 
   if (!response.ok) {

@@ -47,10 +47,17 @@ function noteAt(ac, dalja, frekuenca, fillimi, gjatesia, forca) {
 }
 
 /**
- * "Ting" i shkurtër kur diçka shtohet — dy nota që ngjiten (La5 → Mi6).
+ * "Flluska" — kur një bllok shtohet te seanca.
  *
- * Intervali i kuintës tingëllon i plotësuar, jo alarmues; e njëjta arsye pse
- * lojërat e përdorin kur diçka mbyllet me sukses.
+ * ⚠️  Më parë ishin dy nota që ngjiteshin (La5 → Mi6), pra një "ting"
+ *     kambane. Klientja kërkoi tingullin e Pinterest-it kur ruhet një foto
+ *     (8 tetor 2026): ai nuk është kambanë, është flluskë — i shkurtër, i
+ *     rrumbullakët, pa bisht.
+ *
+ * Dallimi është i tëri te NGJITJA E LARTËSISË brenda vetë tingullit: një
+ * sinus që kalon 380 → 1150 Hz për 75 ms dëgjohet si një flluskë që çahet,
+ * ndërsa i njëjti sinus me lartësi të ngurtë dëgjohet si bip. Zarfi mbaron për
+ * 130 ms — sa për ta ndier, jo sa për ta dëgjuar dy herë kur shtyp shpejt.
  */
 export function tingulliShtimit() {
   try {
@@ -60,12 +67,35 @@ export function tingulliShtimit() {
     if (ac.state === "suspended") ac.resume();
 
     const master = ac.createGain();
-    master.gain.value = 0.16;
+    master.gain.value = 0.2;
     master.connect(ac.destination);
 
     const t = ac.currentTime;
-    noteAt(ac, master, 880, t, 0.18, 0.9);
-    noteAt(ac, master, 1318.51, t + 0.065, 0.24, 0.7);
+
+    /** Një sinus që ngjitet shpejt dhe shuhet menjëherë — trupi i flluskës. */
+    const flluske = (nga, te, forca, gjatesia) => {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(nga, t);
+      osc.frequency.exponentialRampToValueAtTime(te, t + 0.075);
+
+      /* Sulm 6 ms: më i shpejtë dëgjohet si kërcitje, më i ngadaltë si fryrje. */
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(forca, t + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + gjatesia);
+
+      osc.connect(gain);
+      gain.connect(master);
+      osc.start(t);
+      osc.stop(t + gjatesia + 0.02);
+    };
+
+    flluske(380, 1150, 0.95, 0.13);
+    /* Shtresa e dytë, një oktavë sipër dhe shumë më e qetë: pa të tingulli
+       del i thatë, me të merr atë "lëng" që e bën të këndshëm. */
+    flluske(760, 2300, 0.22, 0.09);
   } catch {
     /* Tingulli është shtesë: nëse shfletuesi e ndalon, ndërfaqja vazhdon. */
   }

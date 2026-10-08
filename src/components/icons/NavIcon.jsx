@@ -49,15 +49,34 @@ export function NavIcon({ icon, active }) {
       );
 
     case "community":
+      /*
+       * Logoja e brand-it: katër forma në një rrjet 2×2 — trekëndësh rozë dhe
+       * zemër e verdhë sipër, rreth cian dhe katror rozë poshtë.
+       *
+       * ⚠️  RRJETI ËSHTË I RREGULLT, dhe këtu qëndron e gjitha (rivizatuar më
+       *     8 tetor 2026, sipas logos origjinale që solli klientja).
+       *
+       *     Çdo formë zë një kuadrat 8.5×8.5, me 2 njësi hapësirë mes tyre:
+       *         kolonat  x 2.5–11  dhe  13–21.5
+       *         rreshtat y 2.5–11  dhe  13–21.5
+       *
+       *     Versioni i mëparshëm i kishte format me përmasa të ndryshme dhe
+       *     zemërën pesë njësi më poshtë se trekëndëshi, me majën mbi katrorin.
+       *     Në 28px ajo lexohej si një zemër e shtrembër, edhe pse forma në
+       *     vetvete ishte e rregullt.
+       *
+       *     Kurbat e zemrës janë pasqyrë e saktë rreth x = 17.25. Po e preke
+       *     njërën anë, preke edhe tjetrën — syri e kap menjëherë.
+       */
       return (
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-          <path d="M6.2 3.4 L9.6 9.2 H2.8 Z" fill={c(nav.pink)} />
+          <path d="M6.75 2.6 L11 11 H2.5 Z" fill={c(nav.pink)} />
           <path
-            d="M17.8 9.4c-1.1-1-2.6-.6-3.1.5-.5-1.1-2-1.5-3.1-.5-1.2 1.1-.7 2.8 3.1 5.1 3.8-2.3 4.3-4 3.1-5.1z"
+            d="M17.25 10.7C13 7.9 13 5.3 14.45 4.2c1.2-.95 2.4-.45 2.8.5.4-.95 1.6-1.45 2.8-.5 1.45 1.1 1.45 3.7-2.8 6.5z"
             fill={c(nav.yellow)}
           />
-          <circle cx="6.2" cy="17.6" r="3.5" fill={c(nav.blue)} />
-          <rect x="13.8" y="14.1" width="7" height="7" rx="1.4" fill={c(nav.pink)} />
+          <circle cx="6.75" cy="17.25" r="4.25" fill={c(nav.blue)} />
+          <rect x="13" y="13" width="8.5" height="8.5" rx="2.4" fill={c(nav.pink)} />
         </svg>
       );
 

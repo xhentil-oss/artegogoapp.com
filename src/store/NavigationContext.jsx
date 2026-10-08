@@ -22,6 +22,8 @@ export function NavigationProvider({ children }) {
     upsell: false,
     admin: false,
     notifications: false,
+    /* Postimet e ruajtura — faqe më vete, jo seksion te profili. */
+    saved: false,
   });
   /* nën-pamja e skedës "Komunitet" — e mbajtur këtu, që avatari dhe zilja
      te shiriti i sipërm të mund të çojnë direkt në profil ose në feed */
@@ -94,6 +96,8 @@ export function NavigationProvider({ children }) {
       closeAdmin: () => setOverlayFlag("admin", false),
       openNotifications: () => setOverlayFlag("notifications", true),
       closeNotifications: () => setOverlayFlag("notifications", false),
+      openSaved: () => setOverlayFlag("saved", true),
+      closeSaved: () => setOverlayFlag("saved", false),
     }),
     [
       tab, category, folder, meditation, overlay, communityView,

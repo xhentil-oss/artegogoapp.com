@@ -4,9 +4,11 @@ import {
   Eye,
   Footprints,
   Hand,
+  Headphones,
   Heart,
   HeartPulse,
   Moon,
+  Music,
   Quote,
   RefreshCw,
   Sparkles,
@@ -40,4 +42,14 @@ export const TECHNIQUES = [
   { id: "t_hypno",    label: "Hipnoterapi",           icon: Moon,       intent: "sleep" },
   { id: "t_visual",   label: "Vizualizim",            icon: Eye,        intent: "abundance" },
   { id: "t_affirm",   label: "Afirmime",              icon: Quote,      intent: "selflove" },
+  /*
+   * Dy praktikat e fundit u shtuan më 8 tetor 2026 me kërkesë të klientes.
+   *
+   * ⚠️  Nuk shfaqen derisa të kenë përmbajtje: `listTechniques` i heq
+   *     praktikat bosh, sepse një pllakë që hap një folder të zbrazët është më
+   *     keq se asnjë pllakë. Dalin vetvetiu sapo meditimi i parë të marrë
+   *     slug-un përkatës te databaza — pa asnjë ndryshim kodi.
+   */
+  { id: "t_songs",    label: "Këngë motivuese",       icon: Music,      intent: "energy" },
+  { id: "t_music",    label: "Muzikë meditimi",       icon: Headphones, intent: "calm" },
 ];

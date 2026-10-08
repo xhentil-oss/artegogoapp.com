@@ -39,7 +39,7 @@ const MODES = {
  *     anashkalohej nga kushdo që hap DevTools, ndaj do të ishte mashtrim.
  */
 export function AuthScreen() {
-  const { signIn, signUp, completeReset } = useSession();
+  const { signIn, signUp, completeReset, sessionNotice } = useSession();
 
   /*
    * Token-i lexohet një herë, në montim.
@@ -50,7 +50,9 @@ export function AuthScreen() {
    */
   const [resetToken] = useState(() => resetTokenFromUrl());
   const [mode, setMode] = useState(() => (resetTokenFromUrl() ? "reset" : "in"));
-  const [notice, setNotice] = useState(null);
+  /* Mesazhi i daljes së detyruar vjen nga sesioni dhe shfaqet si çdo njoftim
+     tjetër i këtij ekrani — shih `sessionNotice` te `SessionContext`. */
+  const [notice, setNotice] = useState(() => sessionNotice ?? null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);

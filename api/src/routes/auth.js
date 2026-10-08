@@ -2,7 +2,7 @@ const express = require("express");
 const crypto = require("node:crypto");
 const mailer = require("../mailer");
 const { query, one } = require("../db");
-const { hashPassword, verifyPassword, signToken, requireAuth } = require("../auth");
+const { hashPassword, verifyPassword, startSession, requireAuth } = require("../auth");
 
 const router = express.Router();
 
@@ -46,7 +46,7 @@ router.post("/register", async (req, res, next) => {
     );
 
     const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [id]);
-    res.status(201).json({ token: signToken(id), user });
+    res.status(201).json({ token: await startSession(id), user });
   } catch (err) {
     next(err);
   }
@@ -74,7 +74,7 @@ router.post("/login", async (req, res, next) => {
     if (!okPassword) return res.status(401).json({ error: "Email ose fjalëkalim i pasaktë." });
 
     const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [row.id]);
-    res.json({ token: signToken(row.id), user });
+    res.json({ token: await startSession(row.id), user });
   } catch (err) {
     next(err);
   }
@@ -311,7 +311,7 @@ router.post("/reset", async (req, res, next) => {
     const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [row.user_id]);
     /* Hyrja bëhet menjëherë: përdoruesi sapo provoi identitetin e vet përmes
        email-it, dhe një ekran hyrjeje pas kësaj është hap i kotë. */
-    res.json({ token: signToken(row.user_id), user });
+    res.json({ token: await startSession(row.user_id), user });
   } catch (err) {
     next(err);
   }

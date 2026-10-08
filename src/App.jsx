@@ -30,6 +30,7 @@ import { PlayerSheet } from "./features/player/PlayerSheet.jsx";
 import { MiniPlayer } from "./features/player/MiniPlayer.jsx";
 import { CompletionSheet } from "./features/player/CompletionSheet.jsx";
 import { NotificationsSheet } from "./features/notifications/NotificationsSheet.jsx";
+import { SavedPostsSheet } from "./features/community/SavedPostsSheet.jsx";
 import { useAdminVersion } from "./hooks/useAdmin.js";
 import { useCatalogVersion } from "./hooks/useCatalog.js";
 import { CatalogNotice } from "./components/CatalogNotice.jsx";
@@ -155,7 +156,8 @@ function ActiveTab() {
 
 /**
  * Shtresat mbi ekran, të renditura sipas z-index-it:
- * mini-player (45) → folder (55) → meditimi (58) → kërkim (60) → player (60)
+ * mini-player (45) → folder (55) → të ruajturat (56) → meditimi (58)
+ * → kërkim (60) → player (60)
  * → përmbyllje / admin (65) → upsell (70)
  */
 function Overlays() {
@@ -171,6 +173,7 @@ function Overlays() {
       {active && <PlayerSheet sequence={active} />}
       {completed && <CompletionSheet sequence={completed} />}
       {overlay.admin && <AdminPanel />}
+      {overlay.saved && <SavedPostsSheet />}
       {overlay.notifications && <NotificationsSheet />}
       {overlay.upsell && <UpsellSheet />}
     </>
