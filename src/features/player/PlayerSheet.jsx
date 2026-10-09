@@ -18,12 +18,14 @@ import { fmt } from "../../lib/format.js";
 import { shareText } from "../../lib/share.js";
 import { downloadAudio, REASON, REASON_TEXT } from "../../services/audio.js";
 import { intentMeta } from "../../domain/intent.js";
+import { breathStateAt, breathingFor } from "../../domain/breathing.js";
 import { usePlayer } from "../../store/PlayerContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { useState } from "react";
 import { usePlayerEngine } from "./usePlayerEngine.js";
+import { BreathBox, BreathSteps } from "./BreathBox.jsx";
 
 /**
  * Player-i imersiv. E gjithë kohëmatja jeton në `usePlayerEngine`;
@@ -54,6 +56,16 @@ export function PlayerSheet({ sequence }) {
   const [kopertinaDeshtoi, setKopertinaDeshtoi] = useState(null);
   const kopertina =
     engine.current?.cover && kopertinaDeshtoi !== currentId ? engine.current.cover : null;
+
+  /**
+   * UDHËZUESI I FRYMËMARRJES — vetëm për meditimet që e kërkojnë.
+   *
+   * Koha vjen nga `blockElapsed`, pra nga pozicioni i vërtetë i skedarit:
+   * ndalimi, kthimi 15 sekonda prapa dhe nisja e vonuar e ndjekin vetvetiu.
+   * Shih `domain/breathing.js`.
+   */
+  const ritmi = breathingFor(engine.current);
+  const fryma = ritmi ? breathStateAt(ritmi, engine.blockElapsed) : null;
 
   const close = () => {
     engine.detach();
@@ -255,7 +267,10 @@ export function PlayerSheet({ sequence }) {
                 emër i shkruar gabim nuk duhet të lërë katror bosh. I njëjti
                 rregull si te `CoverArt`.
         */}
-        {kopertina ? (
+        {ritmi ? (
+          /* Katrori zë vendin e kopertinës: ushtrimi është vetë përmbajtja. */
+          <BreathBox pattern={ritmi} elapsed={engine.blockElapsed} playing={engine.playing} />
+        ) : kopertina ? (
           <>
             <img
               src={kopertina}
@@ -321,31 +336,56 @@ export function PlayerSheet({ sequence }) {
       >
         {engine.current?.title}
       </h2>
-      <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
-        <div style={circle(24, tile(meta.g))}>
-          {/* Logoja e hyrjes — e njëjta si te "Krijo" dhe te postimet: e zezë
-              mbi sfond të tejdukshëm, ndaj kthehet e bardhë me filtër. */}
-          <img
-            src="/transparent-logo-2.png"
-            alt=""
-            aria-hidden="true"
-            style={{ height: 14, width: "auto", filter: "brightness(0) invert(1)" }}
-          />
-        </div>
-        <span style={{ color: onDark.primary, fontSize: 15 }}>Arte Gogo · {meta.label}</span>
-      </div>
-      <p
-        style={{
-          color: "rgba(255,255,255,0.65)",
-          fontSize: 13.5,
-          maxWidth: 360,
-          textAlign: "center",
-          lineHeight: 1.6,
-          margin: "10px 0 0",
-        }}
-      >
-        {engine.current?.desc}
-      </p>
+      {/*
+        Firma dhe përshkrimi — VETËM kur nuk ka udhëzues frymëmarrjeje.
+
+        ⚠️  Te një ushtrim, poshtë titullit vijnë menjëherë katër hapat, dhe ata
+            janë e vetmja gjë që duhet lexuar atje. Një paragraf që përshkruan
+            me fjalë të njëjtin ritëm që figura e tregon me lëvizje e zgjat
+            ekranin dhe e shpërqendëron — pikërisht atë që ushtrimi mundohet të
+            mbledhë. (Kërkesë e klientes, 9 tetor 2026.)
+
+            Te meditimet e tjera mbetet si ishte: aty përshkrimi është e vetmja
+            gjë që thotë çfarë do të dëgjosh.
+      */}
+      {!ritmi && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
+            <div style={circle(24, tile(meta.g))}>
+              {/* Logoja e hyrjes — e njëjta si te "Krijo" dhe te postimet: e zezë
+                  mbi sfond të tejdukshëm, ndaj kthehet e bardhë me filtër. */}
+              <img
+                src="/transparent-logo-2.png"
+                alt=""
+                aria-hidden="true"
+                style={{ height: 14, width: "auto", filter: "brightness(0) invert(1)" }}
+              />
+            </div>
+            <span style={{ color: onDark.primary, fontSize: 15 }}>Arte Gogo · {meta.label}</span>
+          </div>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.65)",
+              fontSize: 13.5,
+              maxWidth: 360,
+              textAlign: "center",
+              lineHeight: 1.6,
+              margin: "10px 0 0",
+            }}
+          >
+            {engine.current?.desc}
+          </p>
+        </>
+      )}
+
+      {/*
+        Hapat e ushtrimit — vetëm për meditimet me ritëm të matur.
+
+        Rri jashtë diskut sepse figura është katror dhe lista është e gjatë:
+        brenda saj do të duhej shkronja aq e vogël sa nuk lexohet me sy
+        gjysmë të mbyllur — pikërisht gjendja për të cilën është bërë.
+      */}
+      {ritmi && <BreathSteps pattern={ritmi} activeIndex={fryma?.done ? -1 : fryma?.index} />}
 
       {/* ---------- kontrollet ---------- */}
       <div style={{ display: "flex", alignItems: "center", gap: "clamp(18px, 7vw, 30px)", margin: "36px 0 28px" }}>
