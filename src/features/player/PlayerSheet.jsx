@@ -233,24 +233,43 @@ export function PlayerSheet({ sequence }) {
 
       {/* ---------- disku ---------- */}
       {/* përmasa relative ndaj fletës: 240px kur ka hapësirë, 74% kur ngushtohet */}
+      {/*
+        Te një ushtrim, disku NUK vizatohet si kartë (kërkesë e klientes, 12
+        tetor 2026).
+
+        ⚠️  Korniza, hija dhe sfondi me gradient ekzistojnë për të mbajtur një
+            KOPERTINË — një foto ka nevojë për buzë që të ndahet nga faqja.
+            Udhëzuesi i frymëmarrjes nuk është foto: është vizatim i hapur, dhe
+            brenda një katrori të mbyllur duket si figurë e ngujuar.
+
+            Bie edhe pulsimi `breathe`: figura ka lëvizjen e vet, dhe dy ritme
+            të pavarura mbi të njëjtin element e prishin njëri-tjetrin.
+
+            Pa kartë, hapësira lirohet — ndaj zë pak më shumë gjerësi, që
+            numrat dhe etiketat të lexohen me një shikim.
+      */}
       <div
         style={{
-          width: FLUID.playerDisc,
+          width: ritmi ? "min(300px, 88%)" : FLUID.playerDisc,
           maxWidth: layout.sheetMaxWidth,
           aspectRatio: "1 / 1",
-          borderRadius: 28,
           marginTop: 14,
           marginBottom: 28,
           flexShrink: 0,
-          background: tile(meta.g),
           ...sx.center,
           position: "relative",
-          boxShadow: engine.playing
-            ? `${shadows.immersive}, 0 0 80px ${meta.g[0]}99`
-            : shadows.immersive,
-          overflow: "hidden",
-          animation: engine.playing ? "breathe 6s ease-in-out infinite" : "none",
-          transition: "box-shadow .6s ease",
+          ...(ritmi
+            ? {}
+            : {
+                borderRadius: 28,
+                background: tile(meta.g),
+                boxShadow: engine.playing
+                  ? `${shadows.immersive}, 0 0 80px ${meta.g[0]}99`
+                  : shadows.immersive,
+                overflow: "hidden",
+                animation: engine.playing ? "breathe 6s ease-in-out infinite" : "none",
+                transition: "box-shadow .6s ease",
+              }),
         }}
       >
         {/*
@@ -410,6 +429,20 @@ export function PlayerSheet({ sequence }) {
       </div>
 
       {/* ---------- shënim mbi audion ---------- */}
+      {/*
+        SHFAQET VETËM KUR KA DIÇKA PËR TË THËNË (kërkesë e klientes, 12 tetor
+        2026).
+
+        ⚠️  "Audio e plotë" nuk informon askënd: zëri dëgjohet, dhe shiriti
+            thjesht e përsërit atë që veshi e di. Por kur audioja nuk luhet —
+            e pangarkuar, e kyçur pas abonimit, ose ende duke u hapur — ky
+            është i vetmi vend që e thotë. Nga 250 meditime, vetëm pak kanë
+            skedar; pa këtë rresht, të tjerët do të luanin tinguj demo pa asnjë
+            shpjegim dhe do të dukeshin të prishur.
+
+            Pra hiqet pikërisht rasti i panevojshëm, jo vetë sinjali.
+      */}
+      {!engine.realAudio && (
       <div
         style={{
           width: "100%",
@@ -441,17 +474,16 @@ export function PlayerSheet({ sequence }) {
                     gjendja vjen nga motori, ndaj nuk gënjen dot: nëse thotë
                     demo, demo është.
             */}
-            {engine.realAudio
-              ? "Audio e plotë"
-              : engine.audioStatus === "loading"
-                ? "Po hapet audioja…"
-                : (REASON_TEXT[engine.audioReason] ?? "Tinguj demo")}
+            {engine.audioStatus === "loading"
+              ? "Po hapet audioja…"
+              : (REASON_TEXT[engine.audioReason] ?? "Tinguj demo")}
           </span>
         </div>
         <div style={circle(50, onDark.fill)}>
           <Info size={19} color={onDark.secondary} />
         </div>
       </div>
+      )}
 
       {/* ---------- progresi ---------- */}
       <div style={{ width: "100%", maxWidth: layout.sheetMaxWidth }}>

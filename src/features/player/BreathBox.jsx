@@ -93,9 +93,27 @@ function useSmoothElapsed(elapsed, playing) {
   return playing ? smooth : elapsed;
 }
 
+/**
+ * Zgjedhësi i formës.
+ *
+ * ⚠️  Forma nuk është stil — është strukturë e ushtrimit. Katër faza të
+ *     barabarta kërkojnë një katror (katër brinjë të njëjta); dy faza të
+ *     pabarabarta kërkojnë një rreth, ku harqet mund të jenë të ndryshëm pa
+ *     u dukur e gabuar. Shih `shape` te `domain/breathing.js`.
+ */
 export function BreathBox({ pattern, elapsed, playing }) {
   const koha = useSmoothElapsed(elapsed, playing);
-  const { phase, progress, remaining, round, done } = breathStateAt(pattern, koha);
+  const state = breathStateAt(pattern, koha);
+
+  return pattern.shape === "circle" ? (
+    <BreathCircle pattern={pattern} state={state} />
+  ) : (
+    <BreathSquare pattern={pattern} state={state} />
+  );
+}
+
+function BreathSquare({ pattern, state }) {
+  const { phase, progress, remaining, round, done } = state;
   const dot = dotAt(phase.side, progress);
 
   /** Faza që i takon kësaj brinje — nga ajo merret ngjyra dhe etiketa. */
@@ -254,6 +272,158 @@ export function BreathBox({ pattern, elapsed, playing }) {
   );
 }
 
+/* ─────────────── forma e dytë: rrethi ─────────────── */
+
+/**
+ * Rrezja e rrethit, në të njëjtat njësi si `viewBox`-i 0–100.
+ *
+ * ⚠️  26, jo 30: etiketat MERR dhe NXIRR rrinë në lartësinë e mesit, pra
+ *     pikërisht aty ku rrethi është më i gjerë. Me rreze më të madhe fjala
+ *     binte mbi unazë — dhe pika, duke kaluar andej, i hipte sipër.
+ */
+const R = 26;
+
+/**
+ * Pika mbi rreth për një fraksion 0→1 të ciklit.
+ *
+ * ⚠️  Nis nga POSHTË dhe shkon nga e majta lart. Kështu gjysma e ngjitjes
+ *     bie te e majta, ku rri etiketa MERR, dhe zbritja te e djathta, ku rri
+ *     NXIRR — pra forma e përsërit atë që thotë teksti. Nisja nga maja do ta
+ *     kthente ushtrimin përmbys.
+ */
+function pointAt(fraction) {
+  const a = 2 * Math.PI * fraction;
+  return [50 - R * Math.sin(a), 50 + R * Math.cos(a)];
+}
+
+/** Harku nga një fraksion te një tjetër, si `d` i një `path`. */
+function arcPath(from, to) {
+  const [x0, y0] = pointAt(from);
+  const [x1, y1] = pointAt(to);
+  const large = to - from > 0.5 ? 1 : 0;
+  /* `sweep = 1`: në SVG, me boshtin y poshtë, ai është drejtimi orar — i
+     njëjti që ndjek `pointAt` kur fraksioni rritet. */
+  return `M ${x0} ${y0} A ${R} ${R} 0 ${large} 1 ${x1} ${y1}`;
+}
+
+function BreathCircle({ pattern, state }) {
+  const { phase, cycleProgress, phaseStart, remaining, round, done } = state;
+  const [dx, dy] = pointAt(cycleProgress);
+  const [sx0, sy0] = pointAt(phaseStart);
+
+  return (
+    <div style={{ ...sx.absoluteFill, ...sx.center }}>
+      <svg viewBox="0 0 100 100" style={{ ...sx.absoluteFill, width: "100%", height: "100%" }}>
+        {/* Rrethi i qetë — rruga e plotë, gjithmonë e dukshme. */}
+        <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.16)" strokeWidth="1.4" />
+        {/* Dy unaza të zbehta brenda — thellësi, si te pamja e klientes. */}
+        <circle cx="50" cy="50" r={R - 6} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1" />
+        <circle cx="50" cy="50" r={R - 12} fill="rgba(255,255,255,0.06)" />
+
+        {/* Harku i fazës, nga fillimi i saj deri te pika. */}
+        {!done && cycleProgress > phaseStart + 0.001 && (
+          <path
+            d={arcPath(phaseStart, cycleProgress)}
+            fill="none"
+            stroke={phase.color}
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+        )}
+
+        {/* Ku nisi faza — një pikë e vogël, që të matet sa është bërë. */}
+        {!done && <circle cx={sx0} cy={sy0} r="1.5" fill={phase.color} opacity="0.8" />}
+
+        {/* Pika që udëton: një unazë e zbehtë me ngjyrën e fazës dhe berthama e bardhë. */}
+        {!done && (
+          <>
+            <circle cx={dx} cy={dy} r="4.6" fill={phase.color} opacity="0.35" />
+            <circle cx={dx} cy={dy} r="2.3" fill="#fff" />
+          </>
+        )}
+      </svg>
+
+      {/* Etiketat: MERR majtas, NXIRR djathtas — jashtë rrethit. */}
+      {pattern.phases.map((p) => (
+        <span
+          key={p.id}
+          style={{
+            position: "absolute",
+            /*
+             * Tri vende të mundshme: majtas, lart, djathtas — në rendin në të
+             * cilin vijnë fazat. Ushtrimet me dy faza përdorin vetëm anët;
+             * ai me tri e mbush edhe kryen, mes tyre.
+             *
+             * Poshtë nuk vihet kurrë asgjë: aty rri rreshti "RAUNDI N NGA M".
+             */
+            left: p.side === "left" ? "3%" : p.side === "top" ? "50%" : undefined,
+            right: p.side === "right" ? "3%" : undefined,
+            top: p.side === "top" ? "4%" : "50%",
+            transform: p.side === "top" ? "translateX(-50%)" : "translateY(-50%)",
+            fontSize: 10.5,
+            fontWeight: 800,
+            letterSpacing: 2,
+            whiteSpace: "nowrap",
+            color: p.id === phase.id && !done ? p.color : "rgba(255,255,255,0.38)",
+            transition: "color .3s ease",
+          }}
+        >
+          {p.corner}
+        </span>
+      ))}
+
+      {/* Qendra: sekondat që zbresin dhe emri i fazës. */}
+      <div style={{ ...sx.center, flexDirection: "column", gap: 4, position: "relative" }}>
+        {done ? (
+          <>
+            <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", lineHeight: 1 }}>✓</div>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: 2, color: "#fff" }}>
+              U KRYE
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              style={{
+                fontSize: "clamp(38px, 15vw, 54px)",
+                fontWeight: 800,
+                color: "rgba(255,255,255,0.92)",
+                lineHeight: 1,
+              }}
+            >
+              {remaining}
+            </div>
+            <div
+              style={{
+                fontSize: 10.5,
+                fontWeight: 800,
+                letterSpacing: 2,
+                whiteSpace: "nowrap",
+                color: phase.color,
+              }}
+            >
+              {phase.title}
+            </div>
+          </>
+        )}
+      </div>
+
+      <span
+        style={{
+          position: "absolute",
+          bottom: "2%",
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: 1.4,
+          color: "rgba(255,255,255,0.45)",
+        }}
+      >
+        {done ? "MBARUAR" : `RAUNDI ${round} NGA ${pattern.rounds}`}
+      </span>
+    </div>
+  );
+}
+
 /**
  * Katër hapat e ushtrimit, nën figurë — i njëjti rend dhe të njëjtat ngjyra.
  *
@@ -312,18 +482,59 @@ export function BreathSteps({ pattern, activeIndex }) {
             </div>
           );
         })}
+
+        {/*
+          Rreshti i fundit, kur ushtrimi e kërkon: "Përsërite 6 herë…".
+          Nuk është fazë — nuk ndizet kurrë — por rri në të njëjtën listë,
+          sepse për kë e lexon është hapi i tretë i të njëjtit udhëzim.
+        */}
+        {pattern.extraStep && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 14px",
+              borderRadius: radii.pill,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid transparent",
+            }}
+          >
+            <span
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: "50%",
+                flexShrink: 0,
+                background: pattern.extraStep.color,
+                color: "#0E0E12",
+                fontSize: 12.5,
+                fontWeight: 800,
+                ...sx.center,
+                opacity: 0.75,
+              }}
+            >
+              {pattern.phases.length + 1}
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 13.5, lineHeight: 1.4 }}>
+              {pattern.extraStep.text}
+            </span>
+          </div>
+        )}
       </div>
 
-      <p
-        style={{
-          color: "rgba(255,255,255,0.55)",
-          fontSize: 12,
-          textAlign: "center",
-          margin: "14px 0 0",
-        }}
-      >
-        Përsërite {pattern.rounds} herë (≈{minuta} minutë) dhe vëre ndryshimin
-      </p>
+      {!pattern.extraStep && (
+        <p
+          style={{
+            color: "rgba(255,255,255,0.55)",
+            fontSize: 12,
+            textAlign: "center",
+            margin: "14px 0 0",
+          }}
+        >
+          Përsërite {pattern.rounds} herë (≈{minuta} minutë) dhe vëre ndryshimin
+        </p>
+      )}
     </div>
   );
 }

@@ -48,8 +48,25 @@ export function CoverArt({ intent, title, sub, big = false, image = null }) {
            * kartat kanë tre forma (1:1, 22:15). Pa të, fotoja do të shtypej.
            * `loading="lazy"`: një folder me dhjetëra karta nuk duhet t'i
            * shkarkojë të gjitha para se përdoruesi të rrëshqasë.
+           *
+           * ⚠️  `objectPosition: top` — jo qendra, që është parazgjedhja.
+           *
+           *     Kopertinat e Arte Gogo-s e mbajnë TITULLIN NË KRYE të fotos.
+           *     Kur një katror 1024×1024 pritet për një kapak 480×300, qendra
+           *     heq 90 pikselë lart — pra pikërisht rreshtin e parë të titullit.
+           *     Me `top`, prerja merret e tëra nga poshtë, ku zakonisht ka
+           *     sfond, dhe titulli mbetet i plotë.
+           *
+           *     Nuk prek kartat katrore: aty foto dhe kuti kanë të njëjtin
+           *     përpjesëtim, ndaj nuk pritet asgjë.
            */
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center top",
+            display: "block",
+          }}
           loading="lazy"
           decoding="async"
         />

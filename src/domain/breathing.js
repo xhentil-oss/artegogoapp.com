@@ -37,6 +37,8 @@
  */
 const BOX_4X4 = {
   id: "box-4x4",
+  /* Katror: katër faza, një për brinjë. */
+  shape: "square",
   rounds: 4,
   phases: [
     {
@@ -79,6 +81,186 @@ const BOX_4X4 = {
 };
 
 /**
+ * Frymëmarrje ritmike 4×6 — dy faza, gjashtë raunde, mbi një RRETH.
+ *
+ * ⚠️  Forma ndryshon sepse ndryshon vetë ushtrimi. Box breathing ka katër
+ *     faza të barabarta — katër brinjë të njëjta, pra katror. Këtu janë dy
+ *     faza të pabarabarta (4 dhe 6), dhe një rreth i ndan natyrshëm: pika
+ *     ngjitet nga poshtë majtas kur merr frymë, dhe zbret nga e djathta kur e
+ *     nxjerr. Pikërisht për këtë etiketat janë MERR majtas dhe NXIRR djathtas.
+ *
+ * Audioja zgjat 62.2 s, ndërsa ushtrimi 60 s (6 × 10). Dallimi rri në fund
+ * si bisht: figura e mbyll ciklin dhe tregon "MBARUAR" ndërsa zëri shuhet.
+ */
+const RITMIKE_4X6 = {
+  id: "ritmike-4x6",
+  shape: "circle",
+  rounds: 6,
+  /* Rreshti i fundit te lista — udhëzim, jo fazë. Shih `BreathSteps`. */
+  extraStep: {
+    text: "Përsërite 6 herë (≈1 minutë) dhe vëre ndryshimin",
+    color: "#C9A0C8",
+  },
+  phases: [
+    {
+      id: "in",
+      corner: "MERR",
+      title: "MERR FRYMË",
+      text: "Merr frymë ngadalë nga hunda — 4 sekonda",
+      seconds: 4,
+      side: "left",
+      color: "#F2D34B",
+    },
+    {
+      id: "out",
+      corner: "NXIRR",
+      title: "NXIRR FRYMË",
+      text: "Nxirre butësisht — 6 sekonda",
+      seconds: 6,
+      side: "right",
+      color: "#3FD0C9",
+    },
+  ],
+};
+
+/**
+ * Koherenca e zemrës 5×5 — dy faza të barabarta, gjashtë raunde, mbi rreth.
+ *
+ * I njëjti mekanizëm si 4×6; ndryshojnë vetëm sekondat dhe ngjyrat. Pikërisht
+ * për këtë forma u shkrua si të dhëna dhe jo si komponent më vete: ushtrimi i
+ * tretë nuk shtoi asnjë rresht pamjeje.
+ *
+ * Audioja zgjat 61.6 s, ushtrimi 60 (6 × 10) — bishti mbetet në fund.
+ */
+const KOHERENCA_5X5 = {
+  id: "koherenca-5x5",
+  shape: "circle",
+  rounds: 6,
+  extraStep: {
+    text: "Përsërite 6 herë (≈1 minutë) dhe vëre ndryshimin",
+    color: "#8FD3C4",
+  },
+  phases: [
+    {
+      id: "in",
+      corner: "MERR",
+      title: "MERR FRYMË",
+      text: "Merr frymë ngadalë nga hunda — 5 sekonda",
+      seconds: 5,
+      side: "left",
+      color: "#F2D34B",
+    },
+    {
+      id: "out",
+      corner: "NXIRR",
+      title: "NXIRR FRYMË",
+      text: "Nxirre butësisht — 5 sekonda",
+      seconds: 5,
+      side: "right",
+      color: "#FF8FB8",
+    },
+  ],
+};
+
+/**
+ * Relaksim i thellë 4×8 — nxjerrja dyfish sa marrja, pesë raunde, mbi rreth.
+ *
+ * Nxjerrja e gjatë është vetë qëllimi i ushtrimit, dhe rrethi e tregon pa
+ * fjalë: harku i dytë është dy herë më i gjatë se i pari. Pikërisht këtu
+ * forma rrethore paguan — një katror do të kërkonte brinjë të pabarabarta.
+ *
+ * Audioja zgjat 61.2 s, ushtrimi 60 (5 × 12).
+ *
+ * ⚠️  Faza e dytë është LEJLA, jo rozë si te 5×5. Sfondi i këtij meditimi
+ *     është magenta — ngjyra e qëllimit "Stres" — dhe mbi të harku rozë
+ *     zhdukej: dy ngjyra të të njëjtës famille, njëra mbi tjetrën. Lejla e
+ *     zbehtë ndahet me ndryësim ndriçimi, jo vetëm nuance, ndaj lexohet edhe
+ *     aty. Ngjyrat e ushtrimeve të tjera mbeten — sfondet e tyre janë të
+ *     gjelbër e blu, ku roza dallohet mirë.
+ */
+const RELAKSIM_4X8 = {
+  id: "relaksim-4x8",
+  shape: "circle",
+  rounds: 5,
+  extraStep: {
+    text: "Përsërite 5 herë (≈1 minutë) dhe vëre ndryshimin",
+    color: "#8FD3C4",
+  },
+  phases: [
+    {
+      id: "in",
+      corner: "MERR",
+      title: "MERR FRYMË",
+      text: "Merr frymë ngadalë nga hunda — 4 sekonda",
+      seconds: 4,
+      side: "left",
+      color: "#F2D34B",
+    },
+    {
+      id: "out",
+      corner: "NXIRR",
+      title: "NXIRR FRYMË",
+      text: "Nxirre ngadalë e butësisht — 8 sekonda",
+      seconds: 8,
+      side: "right",
+      color: "#D9C6FF",
+    },
+  ],
+};
+
+/**
+ * 4-7-8 para gjumit — TRI faza mbi rreth, katër raunde.
+ *
+ * Cikli 19 sekonda: 4 brenda, 7 mbajtje, 8 jashtë. Audioja zgjat 78 s, pra
+ * 76 të ushtrimit (4 × 19) plus dy sekonda bisht.
+ *
+ * ⚠️  Mbajtja zë brinjën e sipërme të rrethit (`side: "top"`), ndërmjet
+ *     ngjitjes nga e majta dhe zbritjes nga e djathta — pra rendi i etiketave
+ *     rreth figurës ndjek rendin e fazave në kohë.
+ *
+ * ⚠️  Asnjë ngjyrë rozë: sfondi i këtij meditimi është magenta (qëllimi
+ *     "Stres"), dhe roza mbi të zhduket — shih shënimin te `RELAKSIM_4X8`.
+ */
+const PARA_GJUMIT_478 = {
+  id: "para-gjumit-4-7-8",
+  shape: "circle",
+  rounds: 4,
+  extraStep: {
+    text: "Përsërite 4 herë (≈1 minutë) dhe vëre ndryshimin",
+    color: "#8FD3C4",
+  },
+  phases: [
+    {
+      id: "in",
+      corner: "MERR",
+      title: "MERR FRYMË",
+      text: "Merr frymë ngadalë nga hunda — 4 sekonda",
+      seconds: 4,
+      side: "left",
+      color: "#F2D34B",
+    },
+    {
+      id: "hold",
+      corner: "MBAJE",
+      title: "MBAJE",
+      text: "Mbaje frymën — 7 sekonda",
+      seconds: 7,
+      side: "top",
+      color: "#D9C6FF",
+    },
+    {
+      id: "out",
+      corner: "NXIRR",
+      title: "NXIRR FRYMË",
+      text: "Nxirre ngadalë e butësisht — 8 sekonda",
+      seconds: 8,
+      side: "right",
+      color: "#7FD3F2",
+    },
+  ],
+};
+
+/**
  * Cilat meditime e kanë udhëzuesin.
  *
  * ⚠️  Çelësi është id-ja e databazës, dhe titulli mbetet si rrugë e dytë.
@@ -89,10 +271,18 @@ const BOX_4X4 = {
  */
 const BY_ID = {
   "5ecc1a98-a510-11f1-b99e-107c614af9b1": BOX_4X4,
+  "5ecc1612-a510-11f1-b99e-107c614af9b1": RITMIKE_4X6,
+  "5ecc1a59-a510-11f1-b99e-107c614af9b1": KOHERENCA_5X5,
+  "5ecc158c-a510-11f1-b99e-107c614af9b1": RELAKSIM_4X8,
+  "5ecc15d3-a510-11f1-b99e-107c614af9b1": PARA_GJUMIT_478,
 };
 
 const BY_TITLE = {
   "box breathing": BOX_4X4,
+  "frymëmarrje ritmike 4x6 për lirim nga stresi": RITMIKE_4X6,
+  "rikthe koherencën e zemrës me frymëmarrje 5x5": KOHERENCA_5X5,
+  "relaksim i thellë me frymëmarrje 4x8": RELAKSIM_4X8,
+  "frymëmarrje ritmike 4x7x8 para gjumit për qetësim": PARA_GJUMIT_478,
 };
 
 /** Ritmi i këtij meditimi, ose `null` kur nuk ka. */
@@ -138,9 +328,21 @@ export function breathStateAt(pattern, elapsed) {
   }
 
   const phase = pattern.phases[index];
+
+  /* Sa pjesë e ciklit ka kaluar para kësaj faze — i duhet rrethit, që harku
+     i fazës të nisë aty ku mbaroi i mëparshmi. */
+  const before = pattern.phases
+    .slice(0, index)
+    .reduce((sum, p) => sum + p.seconds, 0);
+
   return {
     index,
     phase,
+    /** Fraksioni 0→1 i të gjithë ciklit — pozicioni mbi rreth. */
+    cycleProgress: (before + within) / cycle,
+    /** Ku nis dhe ku mbaron faza, si fraksion i ciklit. */
+    phaseStart: before / cycle,
+    phaseEnd: (before + phase.seconds) / cycle,
     progress: Math.min(1, within / phase.seconds),
     /* Numërimi zbret: 4 në fillim të fazës, 1 në sekondën e fundit. */
     remaining: Math.max(1, Math.ceil(phase.seconds - within)),
