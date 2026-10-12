@@ -49,24 +49,18 @@ export function CoverArt({ intent, title, sub, big = false, image = null }) {
            * `loading="lazy"`: një folder me dhjetëra karta nuk duhet t'i
            * shkarkojë të gjitha para se përdoruesi të rrëshqasë.
            *
-           * ⚠️  `objectPosition: top` — jo qendra, që është parazgjedhja.
+           * ⚠️  `objectPosition: center` — parazgjedhja, dhe e zgjedhur me vetëdije.
            *
-           *     Kopertinat e Arte Gogo-s e mbajnë TITULLIN NË KRYE të fotos.
-           *     Kur një katror 1024×1024 pritet për një kapak 480×300, qendra
-           *     heq 90 pikselë lart — pra pikërisht rreshtin e parë të titullit.
-           *     Me `top`, prerja merret e tëra nga poshtë, ku zakonisht ka
-           *     sfond, dhe titulli mbetet i plotë.
+           *     Për pak kohë qëndroi `top`, që titulli i kopertinave të mos
+           *     pritej lart. Por atë herë prerja binte e tëra poshtë dhe fotot
+           *     me subjektin në mes dilnin të zhvendosura. Kërkesa e klientes
+           *     (12 tetor 2026) është e prerë: fotoja rri në QENDËR, dhe
+           *     lartësia e kapakut nuk ndryshon për t'i ardhur asaj përshtat.
            *
-           *     Nuk prek kartat katrore: aty foto dhe kuti kanë të njëjtin
-           *     përpjesëtim, ndaj nuk pritet asgjë.
+           *     Pra kompozimi i kopertinës duhet ta mbajë të rëndësishmen në
+           *     mes — ajo është zona që shihet gjithmonë, në çdo formë kuti.
            */
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center top",
-            display: "block",
-          }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           loading="lazy"
           decoding="async"
         />

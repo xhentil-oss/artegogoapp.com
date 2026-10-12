@@ -59,7 +59,7 @@ export function SessionProvider({ children }) {
         setAccount(savedAccount);
         /* E drejta e admin-it vjen bashkë me llogarinë, nga serveri. */
         setAdminView(Boolean(savedAccount.isAdmin));
-      } else if (savedProfile?.name) {
+      } else if (savedProfile?.name && !savedProfile.email) {
         /*
          * Pajisje që e kishte aplikacionin PARA se të shtohej llogaria.
          *
@@ -67,6 +67,19 @@ export function SessionProvider({ children }) {
          * te ekrani i hyrjes, si përdorues i panjohur. Llogaria ndërtohet nga
          * profili dhe shënohet `migrated`, që të dallohet nga një hyrje e
          * vërtetë kur të vijë backend-i.
+         *
+         * ⚠️  VETËM kur profili NUK mban email (12 tetor 2026).
+         *
+         *     Profilet e krijuara pas llogarive e ruajnë email-in brenda tyre.
+         *     Pa këtë kusht, sa herë që llogaria hiqej — p.sh. kur sesioni
+         *     zhvendosej te një pajisje tjetër — hapja e radhës e ringjallte
+         *     nga profili si një llogari fantazmë: pa email, pa token dhe **pa
+         *     të drejtat e admin-it**. Ekrani tregonte emrin dhe statistikat e
+         *     ruajtura, por kurora zhdukej dhe abonimi dukej i skaduar, sepse
+         *     asgjë nuk vinte më nga serveri.
+         *
+         *     Me email-in te profili, e vetmja rrugë është hyrja e vërtetë —
+         *     dhe ajo e kthen llogarinë me të drejtat e saj.
          */
         const migrated = {
           email: null,
@@ -179,6 +192,11 @@ export function SessionProvider({ children }) {
       setAccount(null);
       setAdminView(false);
       storage.remove(STORAGE_KEYS.account);
+      /* Edhe abonimi: përndryshe gjendja e vjetër do të mbetej në ekran pa
+         asnjë server që ta mbishkruajë. (`setSubscription` drejtpërdrejt —
+         `persistSubscription` deklarohet më poshtë se ky efekt.) */
+      setSubscription(null);
+      storage.remove(STORAGE_KEYS.subscription);
     });
   }, []);
 

@@ -333,7 +333,14 @@ function PostVideo({ src, label }) {
         controls
         playsInline
         preload="metadata"
-        style={{ width: "100%", height: 260, objectFit: "cover", display: "block" }}
+        /* I njëjti rregull si te fotot: pa prerje, me një kufi lartësie. */
+        style={{
+          width: "100%",
+          height: "auto",
+          maxHeight: 520,
+          objectFit: "contain",
+          display: "block",
+        }}
       />
 
       {label && (
@@ -382,8 +389,22 @@ function PostImages({ images, label }) {
       <div
         className="ag-scroll-x"
         onScroll={vetem ? undefined : onScroll}
+        /*
+          ⚠️  PA LARTËSI TË FIKSUAR (kërkesë e klientes, 12 tetor 2026).
+
+              Më parë çdo foto shtypej në 260px me `cover`, pra pritej lart e
+              poshtë. Te kopertinat e Arte Gogo-s, ku titulli rri në krye, ajo
+              prerje hante pikërisht fjalën e parë. Tani lartësia ndjek vetë
+              foton dhe asgjë nuk pritet; vetëm një kufi i sipërm e ndal një
+              portret shumë të gjatë të zëë gjysmën e feed-it.
+
+              `alignItems: center` i mban sllajdet e karuselit në një vijë kur
+              fotot kanë përpjesëtime të ndryshme.
+        */
         style={{
           display: "flex",
+          alignItems: "center",
+          background: "#0E0E12",
           overflowX: vetem ? "hidden" : "auto",
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",
@@ -399,8 +420,11 @@ function PostImages({ images, label }) {
             style={{
               flex: "0 0 100%",
               width: "100%",
-              height: 260,
-              objectFit: "cover",
+              height: "auto",
+              maxHeight: 520,
+              /* `contain` vepron vetëm kur `maxHeight` e shkurton kutinën — pra
+                 te portretet shumë të gjatë. Aty fotoja zvogëlohet, nuk pritet. */
+              objectFit: "contain",
               display: "block",
               scrollSnapAlign: "start",
             }}

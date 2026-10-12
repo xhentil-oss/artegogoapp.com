@@ -23,7 +23,14 @@
          `preconnect` plus një fletë stili para render-it të parë. Emrat e
          fonteve rrinë vetëm te `theme/tokens.js`. -->
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Ikona e skedës: e njëjta e aplikacionit, jo një shenjë më vete.
+
+         ⚠️  `favicon.svg` u hoq nga lista. Shfletuesit e PREFEROJNË SVG-në kur
+             është aty, pavarësisht rendit, ndaj sa kohë ai rresht ekzistonte
+             ikona PNG nuk shfaqej kurrë. Skedari mbetet te `public/` për këdo
+             që e kërkon me emër. -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
