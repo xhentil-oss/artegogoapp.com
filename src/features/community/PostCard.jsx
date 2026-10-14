@@ -404,7 +404,17 @@ function PostImages({ images, label }) {
         style={{
           display: "flex",
           alignItems: "center",
-          background: "#0E0E12",
+          /*
+           * Sfond gri, jo i zi dhe jo i bardhë.
+           *
+           * ⚠️  Me lartësi që ndjek foton, hapësira rezervohet sapo shfletuesi
+           *     mëson përmasat — por fotoja vetë mbërrin pak më vonë (170–280 KB
+           *     secila). Në atë çast kutia duhet të lexohet si "po vjen", jo si
+           *     vrimë e bardhë në mes të feed-it. Gri-ja e skeletit është e
+           *     njëjta që përdor i gjithë aplikacioni për përmbajtje që ngarkohet.
+           */
+          background: T.bgSkeleton,
+          minHeight: 160,
           overflowX: vetem ? "hidden" : "auto",
           scrollSnapType: "x mandatory",
           scrollbarWidth: "none",
