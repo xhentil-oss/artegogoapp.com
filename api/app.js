@@ -61,15 +61,29 @@ app.disable("x-powered-by");
 app.use(express.json({ limit: "256kb" }));
 
 /*
- * CORS i kufizuar te origjina e aplikacionit.
+ * CORS i kufizuar te origjinat e aplikacionit.
  *
  * `*` do të lejonte çdo faqe në internet të thërriste këtë API me token-in e
  * përdoruesit. Vendose `APP_ORIGIN` te variablat e mjedisit, p.sh.
- * `https://artegogo.al`.
+ * `https://app.drartegogo.com`.
+ *
+ * ⚠️  PRANON MË SHUMË SE NJË, të ndara me presje (22 tetor 2026).
+ *
+ *     Aplikacioni nativ për Android nuk hapet nga domeni: Capacitor-i e
+ *     shërben pakon lokale nga `https://localhost`, dhe ajo është origjina që
+ *     niset me çdo kërkesë. Pa të në listë, i gjithë API-ja bie te telefoni
+ *     — hyrja, katalogu, audio — me gabime CORS që nuk duken te serveri.
+ *
+ *     Lista mbetet e mbyllur: shtohen origjina të emëruara, kurrë `*`.
  */
+const origjinat = (process.env.APP_ORIGIN || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: process.env.APP_ORIGIN || false,
+    origin: origjinat.length > 0 ? origjinat : false,
     credentials: false,
   })
 );

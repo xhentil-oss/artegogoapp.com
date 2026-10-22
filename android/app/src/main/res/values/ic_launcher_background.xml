@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sfondi i ikonës adaptive — vjollca e brand-it, jo e bardha e parazgjedhur.
+
+  Te Android-i, ikona ndahet në dy shtresa: sfondi dhe figura mbi të. Sistemi
+  e pret vetë formën (rreth, katror i rrumbullakosur, sipas telefonit), ndaj
+  sfondi duhet të mbulojë gjithë kanavacën. Me të bardhën, logoja e bardhë
+  zhdukej fare te ekranet që e presin ikonën si rreth.
+-->
+<resources>
+    <color name="ic_launcher_background">#6A4CD6</color>
+</resources>

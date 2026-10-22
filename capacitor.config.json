@@ -1,0 +1,8 @@
+{
+  "appId": "com.drartegogo.artegogo",
+  "appName": "Arte Gogo",
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#5B3FA8"
+  }
+}
