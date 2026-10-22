@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Politika e Privatësisë — Arte Gogo</title>
+<meta name="description" content="Si i mbledh, i përdor dhe i mbron Arte Gogo të dhënat e përdoruesve.">
+<link rel="icon" href="/icon-192.png">
+<style>
+  :root{
+    --vjollce:#5B3FA8; --teksti:#1d1b24; --dytesor:#5a5570;
+    --sfondi:#faf9fc; --karta:#ffffff; --vija:#e7e3f0; --theks:#f3eefc;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --teksti:#f0eef6; --dytesor:#b3adc6; --sfondi:#151320;
+           --karta:#1e1b2b; --vija:#2e2a3f; --theks:#262137; }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--sfondi); color:var(--teksti);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .mbeshtjellesi{max-width:760px; margin:0 auto; padding:32px 20px 72px}
+  header{text-align:center; padding:16px 0 28px; border-bottom:1px solid var(--vija); margin-bottom:28px}
+  header img{width:72px; height:72px; border-radius:20px; display:block; margin:0 auto 14px}
+  h1{font-size:26px; line-height:1.25; margin:0 0 8px; letter-spacing:-.01em}
+  .data{color:var(--dytesor); font-size:14px; margin:0}
+  h2{font-size:19px; margin:34px 0 10px; letter-spacing:-.01em}
+  h3{font-size:16px; margin:22px 0 6px}
+  p,li,td{overflow-wrap:break-word}
+  p,li{color:var(--teksti)}
+  ul{padding-left:20px; margin:8px 0}
+  li{margin:4px 0}
+  a{color:var(--vjollce)}
+  img{max-width:100%}
+  .karta{background:var(--karta); border:1px solid var(--vija); border-radius:14px; padding:16px 18px; margin:16px 0}
+  .theksuar{background:var(--theks); border:1px solid var(--vija); border-radius:14px; padding:16px 18px; margin:16px 0}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:15px; table-layout:fixed}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--vija); vertical-align:top}
+  th{color:var(--dytesor); font-weight:600; font-size:13px; text-transform:uppercase; letter-spacing:.04em}
+
+  /*
+   * ⚠️  Te telefoni tabela shpaloset si kartela.
+   *
+   *     Tri kolona te një ekran 390px e zgjeronin faqen përtej dritares dhe
+   *     teksti pritej djathtas — u pa te pamja e parë e nxjerrë. `overflow-x`
+   *     nuk mjaftoi: askush nuk e rrëshqet dot anash një politikë privatësie.
+   */
+  @media (max-width:620px){
+    table,tbody,tr,td{display:block; width:auto}
+    thead{display:none}
+    tr{background:var(--karta); border:1px solid var(--vija); border-radius:14px;
+       padding:12px 16px; margin:12px 0}
+    td{border:0; padding:3px 0}
+    td:first-child{font-weight:700; font-size:16px; margin-bottom:4px}
+    td:last-child{color:var(--dytesor); font-size:14px; margin-top:4px}
+    td:last-child::before{content:"Pse: "; font-weight:600}
+  }
+  .plotso{background:#ffe9a8; color:#4a3700; padding:1px 6px; border-radius:5px; font-weight:600}
+  footer{margin-top:48px; padding-top:20px; border-top:1px solid var(--vija); color:var(--dytesor); font-size:14px}
+  .en{margin-top:40px; padding-top:28px; border-top:1px solid var(--vija)}
+  .en h2{font-size:17px}
+</style>
+</head>
+<body>
+<div class="mbeshtjellesi">
+
+<header>
+  <img src="/icon-192.png" alt="Arte Gogo">
+  <h1>Politika e Privatësisë</h1>
+  <p class="data">Arte Gogo &middot; në fuqi nga 22 tetor 2026</p>
+</header>
+
+<p>Arte Gogo është një aplikacion meditimi në shqip. Kjo faqe shpjegon saktësisht
+cilat të dhëna mbledh aplikacioni, pse i mbledh, me kë ndahen dhe si mund t'i
+fshish. Është shkruar sipas asaj që bën vërtet kodi i aplikacionit, jo sipas një
+modeli të përgjithshëm.</p>
+
+<div class="theksuar">
+  <strong>E shkurtër:</strong> Arte Gogo nuk ka reklama, nuk ka gjurmues dhe nuk
+  ka asnjë mjet analitike të palëve të treta. Të dhënat e tua nuk shiten dhe nuk
+  u jepen reklamuesve — kurrë. Llogarinë mund ta fshish vetë brenda aplikacionit
+  dhe bashkë me të fshihet çdo gjurmë e saj.
+</div>
+
+<h2>1. Kush është përgjegjës për të dhënat</h2>
+<p>Kontrollues i të dhënave është <span class="plotso">[PLOTËSO: emri ligjor i
+pronarit ose i biznesit]</span>, me seli në <span class="plotso">[PLOTËSO:
+adresa]</span>, Shqipëri.</p>
+<p>Për çdo pyetje ose kërkesë mbi të dhënat, shkruaj te
+<a href="mailto:kontakt@drartegogo.com">kontakt@drartegogo.com</a>
+<span class="plotso">[PLOTËSO: zëvendëso me adresën e vërtetë]</span>.</p>
+
+<h2>2. Çfarë të dhënash mbledhim</h2>
+<table>
+  <thead>
+  <tr><th>Kategoria</th><th>Të dhënat</th><th>Pse</th></tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>Llogaria</td>
+    <td>Adresa e email-it, emri, fjalëkalimi (i ruajtur vetëm i koduar me hash,
+        kurrë si tekst), numri i telefonit nëse e jep vetë, fotoja e profilit
+        nëse e vendos, zona kohore e pajisjes</td>
+    <td>Për të krijuar llogarinë, për të të futur brenda dhe për të llogaritur
+        ditët sipas orës sate lokale</td>
+  </tr>
+  <tr>
+    <td>Përdorimi i aplikacionit</td>
+    <td>Cilat meditime dëgjon dhe sa kohë, meditimet e përfunduara, programet dhe
+        ditët e kryera, të preferuarat, vlerësimet, zakonet, vargu i ditëve
+        rresht dhe medaljet, meditimet që krijon vetë</td>
+    <td>Për të ruajtur ecurinë tënde dhe për të të treguar historikun</td>
+  </tr>
+  <tr>
+    <td>Gjendja shpirtërore</td>
+    <td>Humori që zgjedh para dhe pas një meditimi, humori ditor, niveli i
+        energjisë dhe shënimet që shkruan vetë</td>
+    <td>Për ditarin tënd personal brenda aplikacionit. I sheh vetëm ti.</td>
+  </tr>
+  <tr>
+    <td>Njoftimet</td>
+    <td>Orët e kujtesave që vendos, dhe — nëse i lejon njoftimet — adresa teknike
+        e pajisjes te shërbimi i njoftimeve, dy çelësat e saj të enkriptimit,
+        lloji i platformës dhe emri i shfletuesit</td>
+    <td>Për të dërguar kujtesat e meditimit dhe njoftimin ditor të programit</td>
+  </tr>
+  <tr>
+    <td>Abonimi</td>
+    <td>Statusi i abonimit, plani, çmimi dhe datat e tij</td>
+    <td>Për të ditur çfarë përmbajtjeje ke të drejtë të dëgjosh</td>
+  </tr>
+  <tr>
+    <td>Komuniteti</td>
+    <td>Pëlqimet, postimet që ruan dhe komentet që shkruan</td>
+    <td>Për të shfaqur reagimet dhe listën tënde të të ruajturave</td>
+  </tr>
+  </tbody>
+</table>
+
+<div class="karta">
+  <h3>Çfarë NUK mbledhim</h3>
+  <ul>
+    <li>Asnjë analitikë ose gjurmues të palëve të treta — pa Google Analytics, pa
+        Facebook, pa Firebase, pa asnjë tjetër.</li>
+    <li>Asnjë reklamë dhe asnjë identifikues reklamimi.</li>
+    <li>Vendndodhjen tënde. Aplikacioni kërkon vetëm lejen e internetit; nuk
+        kërkon GPS, kamerë, mikrofon, kontakte apo skedarët e telefonit.</li>
+    <li>Audion tënde. Meditimet luhen te pajisja; asgjë nuk regjistrohet.</li>
+  </ul>
+</div>
+
+<h2>3. Pagesat</h2>
+<p>Aktualisht aplikacioni nuk përpunon pagesa dhe nuk mbledh asnjë të dhënë
+karte: prova falas regjistrohet vetëm si status brenda llogarisë.</p>
+<p>Kur abonimet me pagesë të aktivizohen, ato do të kalojnë nëpër sistemin e
+pagesave të Google Play. Numrin e kartës dhe të dhënat financiare i merr dhe i
+ruan Google, jo ne; ne marrim vetëm konfirmimin nëse abonimi është aktiv apo jo.</p>
+
+<h2>4. Mbi çfarë baze ligjore i përpunojmë</h2>
+<ul>
+  <li><strong>Përmbushja e kontratës</strong> — të dhënat e llogarisë, ecuria dhe
+      abonimi janë të domosdoshme që aplikacioni të funksionojë.</li>
+  <li><strong>Pëlqimi yt</strong> — njoftimet dërgohen vetëm pasi i lejon vetë,
+      dhe mund t'i çaktivizosh kurdo nga cilësimet e aplikacionit ose të
+      telefonit.</li>
+  <li><strong>Interesi legjitim</strong> — mbajtja e sigurisë së llogarive dhe
+      parandalimi i keqpërdorimit.</li>
+</ul>
+
+<h2>5. Me kë ndahen të dhënat</h2>
+<p>Të dhënat nuk u shiten dhe nuk u jepen palëve të treta për reklama ose
+marketing. Ato u besohen vetëm dy llojeve shërbimesh, dhe vetëm aq sa duhet:</p>
+<ul>
+  <li><strong>Kompania e pritjes së serverit.</strong> Baza e të dhënave dhe
+      skedarët e aplikacionit ndodhen në serverë në Helsinki të Finlandës, brenda
+      Bashkimit Evropian, mbi infrastrukturën e Hetzner Online GmbH.</li>
+  <li><strong>Shërbimet e njoftimeve</strong> të Google, Apple ose Mozilla-s,
+      sipas pajisjes që përdor. Atyre u kalon vetëm adresa teknike e pajisjes dhe
+      teksti i njoftimit — asnjë e dhënë tjetër e llogarisë.</li>
+</ul>
+<p>Mund t'i japim të dhënat edhe nëse na detyron ligji ose një urdhër gjykate.</p>
+
+<h2>6. Sa kohë i mbajmë</h2>
+<p>Të dhënat e llogarisë mbahen për aq kohë sa llogaria ekziston. Sapo e fshin
+llogarinë, fshihet njëkohësisht çdo gjë e lidhur me të: seancat, humori,
+shënimet, të preferuarat, medaljet, kujtesat dhe abonimet e njoftimeve. Fshirja
+është e menjëhershme dhe e pakthyeshme — nuk mbahet asnjë kopje e «fjetur».</p>
+
+<h2>7. Si ta fshish llogarinë</h2>
+<div class="karta">
+  <p>Brenda aplikacionit: <strong>Profili → Fshi llogarinë</strong>. Të kërkohet
+  fjalëkalimi si konfirmim, dhe pastaj gjithçka fshihet.</p>
+  <p style="margin-bottom:0">Nëse nuk hyn dot në llogari, shkruaj te
+  <a href="mailto:kontakt@drartegogo.com">kontakt@drartegogo.com</a> nga adresa
+  me të cilën u regjistrove dhe e fshijmë ne brenda 30 ditësh.</p>
+</div>
+<p><strong>Kujdes:</strong> nëse ke një abonim aktiv, anuloje më parë te Google
+Play. Fshirja e llogarisë nuk e ndalon vetvetiu faturimin te dyqani.</p>
+
+<h2>8. Të drejtat e tua</h2>
+<p>Ke të drejtë të kërkosh qasje te të dhënat e tua, korrigjimin e tyre, fshirjen
+e tyre, kufizimin ose kundërshtimin e përpunimit, dhe një kopje të tyre në
+format të lexueshëm. Shumicën e tyre i kryen vetë brenda aplikacionit; për të
+tjerat shkruaj te adresa më lart dhe përgjigjemi brenda 30 ditësh. Nëse mendon se
+të dhënat janë keqpërdorur, mund të ankohesh te autoriteti mbikëqyrës për
+mbrojtjen e të dhënave personale.</p>
+
+<h2>9. Siguria</h2>
+<ul>
+  <li>Çdo komunikim mes aplikacionit dhe serverit kalon i enkriptuar me HTTPS.</li>
+  <li>Fjalëkalimet ruhen vetëm si hash kriptografik; as ne nuk mund t'i lexojmë.</li>
+  <li>Një llogari përdoret në një pajisje në të njëjtën kohë; hyrja nga një
+      pajisje tjetër e mbyll sesionin e mëparshëm.</li>
+</ul>
+<p>Asnjë sistem nuk është i pacenueshëm, por këto masa i mbajmë të përditësuara.</p>
+
+<h2>10. Fëmijët</h2>
+<p>Aplikacioni nuk u drejtohet fëmijëve nën 16 vjeç dhe nuk mbledh me vetëdije të
+dhëna prej tyre. Nëse zbulojmë një llogari të tillë, e fshijmë.</p>
+
+<h2>11. Ndryshimet</h2>
+<p>Nëse kjo politikë ndryshon, data lart përditësohet dhe ndryshimet e
+rëndësishme njoftohen brenda aplikacionit përpara se të hyjnë në fuqi.</p>
+
+<div class="en">
+  <h2>English summary</h2>
+  <p>Arte Gogo is an Albanian-language meditation app. We collect only what the
+  app needs to work: your account details (email, name, hashed password, optional
+  phone and photo, time zone), your meditation activity and progress, the moods
+  and notes you record yourself, your reminder settings and — with your
+  permission — a push notification token, plus your subscription status.</p>
+  <p>We use <strong>no advertising, no third-party analytics and no trackers</strong>,
+  and we request no device permission other than internet access. We never sell
+  your data. It is shared only with our hosting provider and, for notifications,
+  with the push service of your device's platform.</p>
+  <p>Payments are not processed at this time; when paid subscriptions launch they
+  will go through Google Play, which handles all card data — we never see it.</p>
+  <p>You can delete your account and all associated data at any time from
+  <strong>Profile → Delete account</strong> inside the app, or by writing to
+  <a href="mailto:kontakt@drartegogo.com">kontakt@drartegogo.com</a>. Deletion is
+  immediate and permanent. You may also request access to, correction of, or a
+  copy of your data at the same address; we reply within 30 days.</p>
+</div>
+
+<footer>
+  Arte Gogo &middot; <a href="https://app.drartegogo.com">app.drartegogo.com</a><br>
+  Përditësuar më 22 tetor 2026
+</footer>
+
+</div>
+</body>
+</html>
