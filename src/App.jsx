@@ -31,6 +31,7 @@ import { MiniPlayer } from "./features/player/MiniPlayer.jsx";
 import { CompletionSheet } from "./features/player/CompletionSheet.jsx";
 import { NotificationsSheet } from "./features/notifications/NotificationsSheet.jsx";
 import { SavedPostsSheet } from "./features/community/SavedPostsSheet.jsx";
+import { PrivacySheet } from "./features/profile/PrivacySheet.jsx";
 import { useAdminVersion } from "./hooks/useAdmin.js";
 import { useCatalogVersion } from "./hooks/useCatalog.js";
 import { CatalogNotice } from "./components/CatalogNotice.jsx";
@@ -174,6 +175,7 @@ function Overlays() {
       {completed && <CompletionSheet sequence={completed} />}
       {overlay.admin && <AdminPanel />}
       {overlay.saved && <SavedPostsSheet />}
+      {overlay.privacy && <PrivacySheet />}
       {overlay.notifications && <NotificationsSheet />}
       {overlay.upsell && <UpsellSheet />}
     </>

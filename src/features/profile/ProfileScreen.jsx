@@ -20,22 +20,11 @@ import { DeleteAccount } from "./DeleteAccount.jsx";
 /** Avatari mban çiftin Violet të paletës. */
 const AVATAR_GRADIENT = brandPair;
 
-/*
- * Politika e privatësisë — faqe statike te `public/`, jo rrugë e SPA-së.
- *
- * ⚠️  Adresa e plotë, jo `/privatesia.html`.
- *
- *     Te aplikacioni vendas Capacitor-i e shërben pakon nga `https://localhost`,
- *     ndaj një rrugë relative do të kërkonte një skedar brenda vetë paketës dhe
- *     do të jepte faqe bosh. Me adresën e plotë dhe `target="_blank"`, Android-i
- *     e hap te shfletuesi i telefonit — ashtu siç e pret edhe shqyrtuesi i Play-it.
- */
-const PRIVATESIA_URL = "https://app.drartegogo.com/privatesia.html";
 
 /** Profili: identiteti, statistikat, trackerat, historiku, opsioni admin. */
 export function ProfileScreen() {
   const { name, email, isPremium, isAdmin, setIsAdmin, subscriptionStatus, signOut, canAdmin } = useSession();
-  const { openAdmin } = useNavigation();
+  const { openAdmin, openPrivacy } = useNavigation();
   const { history, streak } = useProgress();
 
   const totalMinutes = history.reduce((sum, entry) => sum + entry.min, 0);
@@ -194,25 +183,27 @@ export function ProfileScreen() {
           përdoruesi kërkon vërtet. */}
       <DeleteAccount />
 
-      {/* Lidhja rri e fundit dhe e qetë: nuk kërkohet shpesh, por duhet gjetur
-          pa pyetur askënd — Play-i e pret të jetë brenda aplikacionit, jo
-          vetëm te faqja e dyqanit. */}
-      <a
-        href={PRIVATESIA_URL}
-        target="_blank"
-        rel="noopener noreferrer"
+      {/* Rri e fundit dhe e qetë: kërkohet rrallë, por duhet gjetur pa pyetur
+          askënd — Play-i e pret brenda aplikacionit, jo vetëm te dyqani.
+          Hapet si faqe e brendshme, që klienti të mos dalë te shfletuesi. */}
+      <button
+        onClick={openPrivacy}
+        className="ag-press"
         style={{
-          display: "block",
-          textAlign: "center",
-          marginTop: 18,
-          padding: 8,
+          width: "100%",
+          background: "none",
+          border: "none",
+          marginTop: 14,
+          padding: 10,
+          cursor: "pointer",
           color: T.faint,
           fontSize: 12.5,
+          fontWeight: 600,
           textDecoration: "underline",
         }}
       >
         Politika e Privatësisë
-      </a>
+      </button>
     </div>
   );
 }
