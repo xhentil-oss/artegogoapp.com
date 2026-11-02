@@ -24,8 +24,14 @@
 --      madhe te Linux-i është skedar tjetër — të dyja japin 404 në heshtje.
 --
 --  ⚠️  EKZEKUTOHET PASI SKEDARËT TË JENË NGARKUAR:
---        audio     → /home2/appdrartegogo/audio/meditime/meditime-per-zemren/
+--        audio     → public_html/meditime/meditime-per-zemren/
 --        kopertina → public_html/kopertina/
+--
+--      Jo te `/home2/appdrartegogo/audio/`, siç e parashikon `audio/audio.php`:
+--      ajo mbrojtje me link të nënshkruar rri te repo-ja dhe NUK është vendosur
+--      te serveri. U mat më 2 nëntor 2026: `/audio/…` kthen 404, ndërsa
+--      `/meditime/meditime-per-trupin/fli-shpejt.mp3` kthen 200 me audio/mpeg.
+--      Dosja `meditime-per-zemren` nuk ekziston ende dhe duhet krijuar.
 
 UPDATE meditations
    SET audio_url    = 'meditime/meditime-per-zemren/fal-veten.mp3',
