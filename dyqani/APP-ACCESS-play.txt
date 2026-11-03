@@ -1,0 +1,109 @@
+═══════════════════════════════════════════════════════════════
+  PLAY CONSOLE → App access
+  Çfarë të zgjedhësh dhe çfarë të shkruash, fjalë për fjalë
+═══════════════════════════════════════════════════════════════
+
+Teksti për Google është në ANGLISHT me qëllim: shqyrtuesit e lexojnë në
+anglisht, dhe një shënim në shqip rrezikon të mos kuptohet.
+
+
+───────────────────────────────────────────────────────────────
+ HAPI 1 — zgjedhja te faqja "App access"
+───────────────────────────────────────────────────────────────
+
+  Zgjidh:  "All or some functionality is restricted"
+
+  JO "All functionality is available without special access" —
+  aplikacioni nuk hapet pa llogari dhe asnjë meditim nuk luan pa abonim.
+
+
+───────────────────────────────────────────────────────────────
+ HAPI 2 — tri hyrje, jo një  ("Add new instructions" tri herë)
+───────────────────────────────────────────────────────────────
+
+  Hyrja 1   Name: Reviewer account 1
+            Username: play1@drartegogo.com
+            Password: <fjalëkalimi që zgjodhe>
+
+  Hyrja 2   Name: Reviewer account 2
+            Username: play2@drartegogo.com
+            Password: <fjalëkalimi që zgjodhe>
+
+  Hyrja 3   Name: Reviewer account 3
+            Username: play3@drartegogo.com
+            Password: <fjalëkalimi që zgjodhe>
+
+  PSE TRI: aplikacioni lejon vetëm një pajisje për llogari. Hyrja e dytë e
+  nxjerr të parën jashtë. Shqyrtuesit e Google-it provojnë në disa pajisje
+  njëkohësisht; me një llogari të vetme do të nxirrnin vetë njëri-tjetrin dhe
+  shqyrtimi do të mbyllej me "nuk arritëm të hyjmë".
+
+
+───────────────────────────────────────────────────────────────
+ HAPI 3 — teksti te fusha "Any other information"
+───────────────────────────────────────────────────────────────
+
+Kopjoje nga këtu poshtë, i gjithi:
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+The app requires an account. There is no guest mode, and the whole
+meditation library is behind a subscription, so a newly registered account
+would only show the paywall. Three demo accounts with permanent full access
+have been prepared for the review, listed in the fields above.
+
+PLEASE USE A DIFFERENT ACCOUNT ON EACH DEVICE.
+The app allows only one active session per account: signing in on a second
+device signs the first one out, with the message "Llogaria u hap ne nje
+pajisje tjeter." ("The account was opened on another device."). This is an
+intentional product rule, not a bug. That is why three separate accounts are
+provided.
+
+No other access restriction applies:
+- No 2-step verification and no one-time codes.
+- No email or phone confirmation is needed to sign in.
+- No biometric login (no fingerprint, no face recognition).
+- No QR codes or barcodes.
+- No location, membership or IP restriction.
+- The only permission the app requests is internet access.
+
+How to sign in:
+1. Open the app. The sign-in screen is the first screen ("Mire se u ktheve").
+2. Enter the email in the first field and the password in the second.
+3. Tap the purple button "Hyr" (= Sign in).
+4. A short 3-step setup follows: a welcome screen, a name field (any name is
+   fine) and reminder times. Tap "Vazhdo" (= Continue) through all three.
+5. The full library then opens, with no payment required on these accounts.
+
+The app interface is in Albanian. Useful words: "Hyr" = sign in,
+"Regjistrohu" = register, "Fjalekalimi" = password, "Vazhdo" = continue.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+───────────────────────────────────────────────────────────────
+ PARA SE TA DËRGOSH — çfarë duhet bërë
+───────────────────────────────────────────────────────────────
+
+  1. Hap tri llogaritë nga vetë aplikacioni (butoni "Nuk ke llogari? Krijo
+     një"), me këto email-e:
+         play1@drartegogo.com
+         play2@drartegogo.com
+         play3@drartegogo.com
+     Email-et nuk verifikohen, ndaj nuk ka nevojë të ekzistojnë si kuti
+     postare. Zgjidh tre fjalëkalime të thjeshtë, pa shkronja të çuditshme.
+
+  2. Ekzekuto `mysql/35_llogari_demo.sql` te phpMyAdmin. Ai u jep të trave
+     abonim të plotë deri më 2035 — pa të, shqyrtuesi gjen vetëm paywall-in.
+     Kontrolli në fund duhet të kthejë tri rreshta, të tre 'active'.
+
+  3. Provo vetë njërën llogari para se ta dërgosh. Nëse nuk hyn dot ti, nuk
+     hyn dot as shqyrtuesi.
+
+  ⚠️  Fjalëkalimet shkruhen VETËM te Play Console. Mos i vendos te skedarët e
+      projektit dhe mos i dërgo me email.
+
+  ⚠️  Kjo faqe nuk e zgjidh pengesën e vërtetë: abonimet nuk kalojnë ende
+      nëpër Google Play Billing. Nëse paketa dërgohet te Production, Play-i e
+      refuzon për atë arsye, sado i saktë të jetë ky seksion. Deri atëherë
+      dërgoje si Internal testing.
