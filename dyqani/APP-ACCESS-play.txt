@@ -21,17 +21,19 @@ anglisht, dhe një shënim në shqip rrezikon të mos kuptohet.
  HAPI 2 — tri hyrje, jo një  ("Add new instructions" tri herë)
 ───────────────────────────────────────────────────────────────
 
-  Hyrja 1   Name: Reviewer account 1
-            Username: play1@drartegogo.com
-            Password: <fjalëkalimi që zgjodhe>
+  Hyrja 1   Name  → Reviewer account 1
+            Email → play1@drartegogo.com
 
-  Hyrja 2   Name: Reviewer account 2
-            Username: play2@drartegogo.com
-            Password: <fjalëkalimi që zgjodhe>
+  Hyrja 2   Name  → Reviewer account 2
+            Email → play2@drartegogo.com
 
-  Hyrja 3   Name: Reviewer account 3
-            Username: play3@drartegogo.com
-            Password: <fjalëkalimi që zgjodhe>
+  Hyrja 3   Name  → Reviewer account 3
+            Email → play3@drartegogo.com
+
+  Fjalëkalimin e secilës shkruaje drejtpërdrejt te fusha e vet te Play
+  Console-i. Nuk shkruhet këtu, dhe as si vend bosh për t'u plotësuar: ky
+  skedar ndodhet te GitHub-i, dhe çdo rresht që duket si çift kredencialesh
+  i ndez skanerët e sigurisë — edhe kur vlera është e trilluar.
 
   PSE TRI: aplikacioni lejon vetëm një pajisje për llogari. Hyrja e dytë e
   nxjerr të parën jashtë. Shqyrtuesit e Google-it provojnë në disa pajisje
