@@ -1,0 +1,157 @@
+═══════════════════════════════════════════════════════════════
+ ARTE GOGO — IKONA DHE TEKSTET E DYQANIT
+ Përgatitur më 3 nëntor 2026
+═══════════════════════════════════════════════════════════════
+
+Çdo tekst më poshtë është brenda kufirit të karaktereve. Numri në kllapa
+është gjatësia e tekstit, jo kufiri.
+
+
+───────────────────────────────────────────────────────────────
+ 1. IKONAT
+───────────────────────────────────────────────────────────────
+
+  ikona-1024-apple.png   1024×1024  — App Store Connect
+  ikona-512-play.png      512×512   — Google Play Console
+
+Të dyja pa tejdukshmëri (pa kanal alfa) dhe katrore, pa qoshe të
+rrumbullakosura. Të dy dyqanet e vendosin vetë maskën e qosheve; një ikonë
+e rrumbullakosur që më parë del me qoshe të dyfishta. Apple-i e refuzon
+ngarkimin nëse imazhi ka tejdukshmëri.
+
+Burimi ishte `public/icon-512.png` — 512 piksel, më i madhi që ka projekti.
+Prandaj varianti 1024 është zmadhim, jo origjinal. Figura u zmadhua, u zbut
+dhe iu ritheksua skaji, ndaj del e pastër; por nëse dizajneri e ka logon si
+vektor (.ai, .svg, .pdf), është më mirë të dalë prej andej.
+
+
+───────────────────────────────────────────────────────────────
+ 2. EMRI I APLIKACIONIT  (kufiri: 30 karaktere)
+───────────────────────────────────────────────────────────────
+
+Arte Gogo: Meditim në shqip                                        (27)
+
+Alternativë më e shkurtër:
+Arte Gogo                                                           (9)
+
+
+───────────────────────────────────────────────────────────────
+ 3. PËRSHKRIMI I SHKURTËR  (Play: 80 karaktere)
+───────────────────────────────────────────────────────────────
+
+Meditime të udhëhequra në shqip: qetësi, gjumë, fokus dhe frymëmarrje. (70)
+
+
+───────────────────────────────────────────────────────────────
+ 4. NËNTITULLI  (Apple "Subtitle": 30 karaktere)
+───────────────────────────────────────────────────────────────
+
+Meditim dhe frymëmarrje                                            (23)
+
+
+───────────────────────────────────────────────────────────────
+ 5. FJALËT KYÇE  (vetëm Apple: 100 karaktere, të ndara me presje)
+───────────────────────────────────────────────────────────────
+
+meditim,meditime,shqip,frymëmarrje,gjumë,ankth,stres,relaksim,mindfulness,qetësi
+                                                                   (80)
+
+
+───────────────────────────────────────────────────────────────
+ 6. PËRSHKRIMI I PLOTË  (të dy dyqanet: 4000 karaktere)
+───────────────────────────────────────────────────────────────
+
+Arte Gogo është meditimi në gjuhën tënde. Çdo praktikë është krijuar në
+shqip dhe udhëhequr me zërin e Arte Gogos — jo e përkthyer nga një gjuhë
+tjetër.
+
+NISE NGA AJO QË NDJEN
+Nuk të duhet të dish se cila teknikë të duhet. Nise nga ajo që po kalon:
+ankth, pagjumësi, zemërim, mungesë fokusi, lodhje, tension. Aplikacioni të
+çon te praktika që i përgjigjet asaj gjendjeje.
+
+ÇFARË GJEN BRENDA
+
+• Meditime të udhëhequra, të renditura në 28 kategori sipas qëllimit — nga
+  gjumi dhe ankthi te vetëbesimi, marrëdhëniet, puna dhe energjia.
+
+• 14 teknika: meditime për trupin, për zemrën dhe për trurin, frymëmarrje,
+  EFT / tapping, teknika somatike dhe energjitike, hipnoterapi, vizualizim,
+  afirmime dhe meditim në ecje.
+
+• Frymëmarrje e drejtuar me ritëm pamor — box breathing, 4-7-8, koherencë
+  5-5 e të tjera. Ndjek rrethin që zgjerohet dhe merr frymë bashkë me të.
+
+• Ndërto seancën tënde: zgjidh qëllimin dhe aplikacioni e ngre praktikën
+  bllok pas blloku.
+
+• Rituali i mëngjesit dhe citati i ditës, që ndryshojnë sipas orës.
+
+• Ruaji praktikat që të bëjnë mirë në dosjet e tua dhe ktheju kur të duash.
+
+• Një kujtesë e vetme ditore, në orën që zgjedh ti — ose asnjë.
+
+• Postimet, videot dhe mesazhet e reja nga Arte Gogo, në një vend.
+
+I BËRË PËR T'U PËRDORUR, JO PËR T'U SHFLETUAR
+Ekran i qetë, pa reklama. Hap, luaj, mbyll.
+
+ABONIMI
+3 ditë provë falas, një herë për çdo llogari. Më pas 9.99 €/muaj ose
+59.99 €/vit. Abonimi rinovohet vetvetiu derisa ta anulosh, dhe anulohet në
+çdo kohë nga llogaria jote te dyqani.
+
+E RËNDËSISHME
+Arte Gogo është mjet për qetësi dhe mirëqenie. Nuk zëvendëson mjekun,
+psikologun ose psikoterapinë, nuk diagnostikon dhe nuk trajton asnjë
+gjendje shëndetësore. Nëse po kalon një krizë, kërko ndihmë profesionale.
+
+Politika e privatësisë: https://app.drartegogo.com/privatesia.html
+Kontakt: kontakt@drartegogo.com
+
+                                                      (rreth 1 850 karaktere)
+
+
+───────────────────────────────────────────────────────────────
+ 7. TEKST PROMOCIONAL  (vetëm Apple: 170 karaktere, ndryshohet pa rishikim)
+───────────────────────────────────────────────────────────────
+
+Meditime të reja çdo javë, në shqip. Nise me 3 ditë provë falas dhe gjej
+praktikën që i përgjigjet asaj që po kalon sot.                     (131)
+
+  ⚠️  "Meditime të reja çdo javë" është premtim. Hiqe nëse nuk do të mbahet.
+
+
+═══════════════════════════════════════════════════════════════
+ 8. ÇFARË NUK U SHKRUA, DHE PSE  — lexoje këtë para se ta dërgosh
+═══════════════════════════════════════════════════════════════
+
+a) NUK ka numër praktikash.
+   Baza ka 244 meditime të katalogizuara, por vetëm 14 prej tyre kanë audio
+   të ngarkuar deri më sot. Nëse përshkrimi thotë "mbi 240 meditime",
+   përdoruesi që paguan 9.99 € gjen 14 — dhe ajo është ankesë, vlerësim me
+   një yll, dhe shkak i mjaftueshëm që dyqani ta heqë aplikacionin.
+   Kur biblioteka të mbushet, shtoje një rresht:
+     "Mbi 200 praktika të udhëhequra, me të reja çdo muaj."
+
+b) NUK përmenden programet disaditore.
+   Të katër programet (7, 10, 14 dhe 21 ditë) ekzistojnë si guaska: ditët
+   janë krijuar, por asnjë meditim nuk është lidhur me asnjë ditë
+   (`program_day_meditations` është bosh). Kur të lidhen, shtoje:
+     "Programe disaditore: 7, 10, 14 dhe 21 ditë, me një praktikë për çdo ditë."
+
+c) NUK përmenden komentet apo komuniteti.
+   Komentet ruhen vetëm te telefoni i përdoruesit dhe nuk i sheh askush
+   tjetër. Të quash "komunitet" diçka ku askush nuk të dëgjon është premtim
+   i pambajtur.
+
+d) PA pretendime mjekësore.
+   Te kategoritë e aplikacionit ka emra si Hashimoto, IBS, Migrenë,
+   Inflamacion, Tinnitus. Të dy dyqanet i shqyrtojnë veçanërisht aplikacionet
+   që duken se trajtojnë sëmundje. Prandaj përshkrimi nuk përmend asnjë prej
+   tyre dhe mbyllet me shënimin "E RËNDËSISHME". Mos e hiq atë paragraf —
+   është mbrojtja kryesore nëse shqyrtuesi ngre pyetje.
+
+e) Çmimi — 9.99 €/muaj dhe 59.99 €/vit — u mor nga kodi
+   (`src/domain/subscription.js`). Nëse pronari vendos çmim tjetër, ndryshoje
+   te përshkrimi, te kodi dhe te dyqani njëkohësisht: tri vende, jo një.
