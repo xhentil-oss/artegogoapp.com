@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Lock, Sparkles } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
+import { padBottom } from "../../theme/responsive.js";
 import { totalMinutes } from "../../domain/sequence.js";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
@@ -142,7 +143,15 @@ function SummaryBar({ sequence, onCreate }) {
     <div
       style={{
         position: "sticky",
-        bottom: 92,
+        /*
+         * Lartësia e nav-it PLUS shiriti i gjesteve.
+         *
+         * Ishte `92` i ngurtë — pikërisht `navHeight + 14`, por pa zonën e
+         * sigurt. Te telefonat me shirit gjestesh nav-i është po aq më i
+         * lartë (`BottomNav` i shton `env(safe-area-inset-bottom)` te
+         * padding-u), ndaj shiriti hynte poshtë tij deri në gjysmë.
+         */
+        bottom: padBottom(layout.navHeight + 14),
         margin: `18px ${layout.gutter}px 0`,
         background: T.ink,
         borderRadius: radii.lg,
