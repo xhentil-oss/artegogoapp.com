@@ -18,7 +18,7 @@ export const CATEGORIES = [
   { id: "c_gjumi",       label: "Gjumi",                                      intent: "sleep" },
   { id: "c_energji",     label: "Energji e lartë",                            intent: "energy" },
   { id: "c_manifestim",  label: "Manifestim",                                 intent: "abundance" },
-  { id: "c_stres",       label: "Stres",                                      intent: "stress" },
+  { id: "c_stres",       label: "Liro stresin",                               intent: "stress" },
   { id: "c_ankth",       label: "Ankth/Panik/Fobi",                           intent: "stress" },
   { id: "c_marredhenie", label: "Përmirësimi i marrëdhënieve",                intent: "heart" },
   { id: "c_varesi",      label: "Tejkalim i varësive dhe zakoneve të vjetra", intent: "transform" },
