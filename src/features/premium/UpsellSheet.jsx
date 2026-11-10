@@ -3,7 +3,7 @@ import { AlertCircle, Bell, Check, CreditCard, Crown, Unlock } from "lucide-reac
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
-import { PLANS, TRIAL_DAYS, planById, planNote, trialTimeline } from "../../domain/subscription.js";
+import { PLANS, TRIAL_DAYS, planById, planNote, planPrice, trialTimeline } from "../../domain/subscription.js";
 import { cancelPath } from "../../services/billing.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
@@ -288,6 +288,8 @@ function Timeline({ subscription }) {
 
 /** Kartelë plani me shenjë të qartë zgjedhjeje — ✓ ari kur është aktive. */
 function PlanOption({ option, selected, onSelect }) {
+  const price = planPrice(option);
+
   return (
     <button
       onClick={onSelect}
@@ -343,9 +345,24 @@ function PlanOption({ option, selected, onSelect }) {
       </div>
 
       <div style={{ color: T.sub, fontSize: 12, marginBottom: 3 }}>{option.label}</div>
-      <div style={{ color: T.ink, fontSize: 21, fontWeight: 700, letterSpacing: -0.4 }}>
-        {option.price}
+
+      {/*
+        Dy rreshta me të zeza te vjetori: totali, dhe sa bie në muaj.
+
+        18px, jo 21: "228€/vjetore" me 21px matet 120 px, ndërsa kartela te një
+        telefon 360 px ka vetëm 117 px të lira — pra do të thyhej pas vizës,
+        "228€/" mbi "vjetore". Të dyja kartelat e marrin të njëjtën masë, që
+        çmimet të rrinë në një lartësi.
+      */}
+      <div style={{ color: T.ink, fontSize: 18, fontWeight: 700, letterSpacing: -0.4 }}>
+        {price.main}
       </div>
+      {price.sub && (
+        <div style={{ color: T.ink, fontSize: 13, fontWeight: 700, marginTop: 1 }}>
+          {price.sub}
+        </div>
+      )}
+
       <div style={{ color: T.faint, fontSize: 11, marginTop: 2 }}>{planNote(option)}</div>
     </button>
   );

@@ -29,20 +29,38 @@ export function savingsPercent(plan) {
   return Math.round((1 - plan.monthly / monthly) * 100);
 }
 
-/** Teksti nën çmimin e planit: "/muaj" ose "19€/muaj · kurse 21%". */
-export function planNote(plan) {
-  if (plan.id === "month") return "/muaj";
+/**
+ * Çmimi i kartelës, në dy rreshta.
+ *
+ * Vjetori i mban të dyja shifrat me të zeza — totali dhe sa bie në muaj —
+ * sepse pa të dytën 228 duket shumë kundrejt 24. `sub` rri në një rresht të
+ * vetin: i gjithë vargu te një rresht i vetëm do të thyhej në tri rreshta te
+ * kartela 167 px e gjerë.
+ *
+ * `price` mbetet i shkurtër ("228€") sepse e përdor butoni i pagesës —
+ * "Paguaj tani · 228€/vjetore (19€/muaj)" nuk është buton, është fjali.
+ */
+export function planPrice(plan) {
+  if (plan.id === "month") return { main: plan.price, sub: null };
+  return { main: `${plan.price}/vjetore`, sub: `(${perMonthLabel(plan)}/muaj)` };
+}
 
-  /*
-   * "≈" vetëm kur numri rrumbullakoset vërtet.
-   *
-   * 228 / 12 bën saktësisht 19, ndaj një "≈19€" do të shtonte një pasiguri
-   * që nuk ekziston. Me një çmim tjetër, që nuk pjesëtohet, shenja kthehet
-   * vetë — prandaj kushti, dhe jo fshirja e saj.
-   */
+/**
+ * Sa bie në muaj, pa "≈" kur pjesëtimi është i plotë.
+ *
+ * 228 / 12 bën saktësisht 19, ndaj një "≈19€" do të shtonte një pasiguri që
+ * nuk ekziston. Me një çmim tjetër, që nuk pjesëtohet, shenja kthehet vetë.
+ */
+function perMonthLabel(plan) {
   const perMonth = Math.round(plan.monthly);
   const afersi = Math.abs(plan.monthly - perMonth) < 0.005 ? "" : "≈";
-  return `${afersi}${perMonth}€/muaj · kurse ${savingsPercent(plan)}%`;
+  return `${afersi}${perMonth}€`;
+}
+
+/** Teksti nën çmimin e planit: "/muaj" ose "21% zbritje". */
+export function planNote(plan) {
+  if (plan.id === "month") return "/muaj";
+  return `${savingsPercent(plan)}% zbritje`;
 }
 
 export const planById = (id) => PLANS.find((p) => p.id === id) ?? PLANS[0];
