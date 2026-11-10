@@ -25,8 +25,8 @@ router.use(requireAuth);
 const TRIAL_DAYS = 3;
 
 const PLANS = {
-  month: { db: "monthly", days: 30, price: 9.99 },
-  year: { db: "yearly", days: 365, price: 59.99 },
+  month: { db: "monthly", days: 30, price: 24 },
+  year: { db: "yearly", days: 365, price: 228 },
 };
 
 /** Emrat e planeve siç i njeh aplikacioni — e kundërta e `PLANS`. */

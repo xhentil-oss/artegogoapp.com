@@ -97,9 +97,9 @@ I BËRË PËR T'U PËRDORUR, JO PËR T'U SHFLETUAR
 Ekran i qetë, pa reklama. Hap, luaj, mbyll.
 
 ABONIMI
-3 ditë provë falas, një herë për çdo llogari. Më pas 9.99 €/muaj ose
-59.99 €/vit. Abonimi rinovohet vetvetiu derisa ta anulosh, dhe anulohet në
-çdo kohë nga llogaria jote te dyqani.
+3 ditë provë falas, një herë për çdo llogari. Më pas 24 €/muaj, ose
+228 €/vit — që bie 19 €/muaj. Abonimi rinovohet vetvetiu derisa ta
+anulosh, dhe anulohet në çdo kohë nga llogaria jote te dyqani.
 
 E RËNDËSISHME
 Arte Gogo është mjet për qetësi dhe mirëqenie. Nuk zëvendëson mjekun,
@@ -129,7 +129,7 @@ praktikën që i përgjigjet asaj që po kalon sot.                     (131)
 a) NUK ka numër praktikash.
    Baza ka 244 meditime të katalogizuara, por vetëm 14 prej tyre kanë audio
    të ngarkuar deri më sot. Nëse përshkrimi thotë "mbi 240 meditime",
-   përdoruesi që paguan 9.99 € gjen 14 — dhe ajo është ankesë, vlerësim me
+   përdoruesi që paguan 24 € gjen 14 — dhe ajo është ankesë, vlerësim me
    një yll, dhe shkak i mjaftueshëm që dyqani ta heqë aplikacionin.
    Kur biblioteka të mbushet, shtoje një rresht:
      "Mbi 200 praktika të udhëhequra, me të reja çdo muaj."
@@ -152,6 +152,6 @@ d) PA pretendime mjekësore.
    tyre dhe mbyllet me shënimin "E RËNDËSISHME". Mos e hiq atë paragraf —
    është mbrojtja kryesore nëse shqyrtuesi ngre pyetje.
 
-e) Çmimi — 9.99 €/muaj dhe 59.99 €/vit — u mor nga kodi
+e) Çmimi — 24 €/muaj dhe 228 €/vit — u mor nga kodi
    (`src/domain/subscription.js`). Nëse pronari vendos çmim tjetër, ndryshoje
    te përshkrimi, te kodi dhe te dyqani njëkohësisht: tri vende, jo një.

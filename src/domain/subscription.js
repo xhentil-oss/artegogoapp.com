@@ -14,13 +14,13 @@ export const TRIAL_DAYS = 3;
 /**
  * Planet sipas seksionit 8.
  *
- * Vjetori: 59.99 / 12 ≈ 5€ në muaj, kundrejt 9.99 × 12 = 119.88 — pra gjysma.
+ * Vjetori: 228 / 12 = 19€ në muaj, kundrejt 24 × 12 = 288 — pra 21% më lirë.
  * `monthly` mbahet si numër dhe jo si tekst, që kursimi të llogaritet e të mos
  * shkruhet me dorë; një përqindje e shtypur ngec sapo ndryshon çmimi.
  */
 export const PLANS = [
-  { id: "month", label: "Mujor",  price: "9.99€",  periodDays: 30,  amount: 9.99,  monthly: 9.99 },
-  { id: "year",  label: "Vjetor", price: "59.99€", periodDays: 365, amount: 59.99, monthly: 59.99 / 12, best: true },
+  { id: "month", label: "Mujor",  price: "24€",  periodDays: 30,  amount: 24,  monthly: 24 },
+  { id: "year",  label: "Vjetor", price: "228€", periodDays: 365, amount: 228, monthly: 228 / 12, best: true },
 ];
 
 /** Sa përqind kursen ky plan kundrejt atij mujor. */
@@ -29,10 +29,20 @@ export function savingsPercent(plan) {
   return Math.round((1 - plan.monthly / monthly) * 100);
 }
 
-/** Teksti nën çmimin e planit: "/muaj" ose "≈5€/muaj · kurse 50%". */
+/** Teksti nën çmimin e planit: "/muaj" ose "19€/muaj · kurse 21%". */
 export function planNote(plan) {
   if (plan.id === "month") return "/muaj";
-  return `≈${plan.monthly.toFixed(0)}€/muaj · kurse ${savingsPercent(plan)}%`;
+
+  /*
+   * "≈" vetëm kur numri rrumbullakoset vërtet.
+   *
+   * 228 / 12 bën saktësisht 19, ndaj një "≈19€" do të shtonte një pasiguri
+   * që nuk ekziston. Me një çmim tjetër, që nuk pjesëtohet, shenja kthehet
+   * vetë — prandaj kushti, dhe jo fshirja e saj.
+   */
+  const perMonth = Math.round(plan.monthly);
+  const afersi = Math.abs(plan.monthly - perMonth) < 0.005 ? "" : "≈";
+  return `${afersi}${perMonth}€/muaj · kurse ${savingsPercent(plan)}%`;
 }
 
 export const planById = (id) => PLANS.find((p) => p.id === id) ?? PLANS[0];
