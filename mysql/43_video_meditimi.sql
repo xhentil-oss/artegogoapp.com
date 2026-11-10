@@ -33,8 +33,21 @@ ALTER TABLE meditations
 -- ── Hapi 2: videoja e "Shkundje somatike" ──────────────────────
 --
 --  Rruga është e njëjta formë si te `audio_url`: relative, pa domen. Skedari
---  shkon te /home2/appdrartegogo/audio/meditime/teknika-somatike/ — jashtë
---  `public_html`, ku e shërben vetëm `audio.php` pas nënshkrimit.
+--  shkon te /home2/appdrartegogo/public_html/meditime/teknika-somatike/
+--
+--  ⚠️  JO te një dosje `audio` jashtë `public_html`. Ajo nuk ekziston te
+--      serveri, dhe as `audio.php`. Të dyja janë shkruar te projekti —
+--      porta që do t'i mbronte skedarët pas nënshkrimit — por nuk janë
+--      vendosur kurrë. Mp3-të shërbehen drejtpërdrejt, dhe parametrat
+--      `expires`/`u`/`sig` që vendos API-ja i shpërfill serveri statik.
+--
+--      Provuar nga jashtë më 10 nëntor 2026:
+--        app.drartegogo.com/meditime/…/fli-shpejt.mp3  → 206 audio/mpeg
+--        app.drartegogo.com/audio.php?f=…              → 404
+--
+--      Pasojë: kushdo me adresën e plotë e shkarkon skedarin pa abonim.
+--      Videoja nuk e ndryshon këtë gjendje — thjesht e ndjek atë që
+--      vlen për të 244 mp3-të.
 --
 --  `duration_sec` bie nga 600 në 136, sa zgjat vërtet videoja. Pa këtë,
 --  shiriti i kohës do të ndalej te 2:16 dhe do të rrinte bosh deri në 10:00.
