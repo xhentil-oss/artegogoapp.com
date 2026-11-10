@@ -1,11 +1,16 @@
 /**
  * "ÇFARË DO TË NDJESH" — dy rreshta për çdo qëllim.
  *
- * ⚠️  TEKST I PËRKOHSHËM. Databaza nuk mban asnjë fushë për përfitimet e një
- *     meditimi, ndaj këto rrjedhin nga qëllimi, jo nga vetë meditimi: të gjitha
- *     meditimet e "Gjumë" tregojnë të njëjtat dy rreshta. Kur klientja të japë
- *     tekstin e vet për secilin, shtohet një kolonë te `meditations` dhe kjo
- *     hartë bëhet rezervë për ato që mbeten pa të.
+ * TANI ËSHTË REZERVË, JO BURIMI I PARË.
+ *
+ * Kolona `meditations.benefits` (shih `mysql/36_perfitimet.sql`) mban tekstin
+ * e vetë meditimit, dhe `MeditationSheet` e përdor atë kur ekziston. Kjo hartë
+ * vlen vetëm për meditimet që ende s'kanë tekst të tyrin — dhe ato janë shumica,
+ * ndaj nuk fshihet.
+ *
+ * ⚠️  Dy rreshtat këtu janë të përbashkët për një qëllim të tërë: çdo meditim
+ *     i "Gjumë" tregon të njëjtat. Sa herë klientja jep tekst për një meditim,
+ *     ai del nga kjo hartë dhe hyn te databaza.
  */
 const SIPAS_QELLIMIT = {
   calm:      ["Qetësim i sistemit nervor", "Frymëmarrje më e thellë e më e ngadaltë"],

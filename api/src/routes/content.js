@@ -18,7 +18,7 @@ const router = express.Router();
 /** Kolonat publike të një meditimi — pa `audio_url`. */
 const MEDITATION_FIELDS = `
   m.id, m.title, m.subtitle, m.subgroup, m.narrator, m.duration_sec,
-  m.cover_url, m.description, m.is_premium, m.average_rating, m.rating_count,
+  m.cover_url, m.description, m.benefits, m.is_premium, m.average_rating, m.rating_count,
   m.is_daily_featured, m.is_short_daily, m.is_morning_ritual,
   t.slug AS technique_slug, t.name AS technique_name,
   c.slug AS category_slug, c.name AS category_name`;

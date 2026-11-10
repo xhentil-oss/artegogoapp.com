@@ -75,6 +75,16 @@ export function markCatalogPending() {
 /** Aq faqe sa mbulojnë katalogun edhe kur rritet — pa lak të pafund. */
 const MAX_PAGES = 20;
 
+/** Rreshtat jo bosh të kolonës `benefits`, ose `null` nëse s'ka asnjë. */
+function splitBenefits(raw) {
+  if (!raw) return null;
+  const rreshtat = String(raw)
+    .split("\n")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  return rreshtat.length ? rreshtat : null;
+}
+
 /**
  * Përkthen një rresht të serverit në formën që njohin ekranet.
  *
@@ -91,6 +101,14 @@ function toItem(row) {
        kurrë "1" — dhe kurrë 0, që do ta bënte të padukshëm te ndërtuesi. */
     dur: Math.max(1, Math.round(row.duration_sec / 60)),
     desc: row.description ?? `${row.title} — praktikë e udhëhequr nga Arte Gogo.`,
+    /*
+     * Përfitimet e vetë meditimit, një për rresht te databaza.
+     *
+     * `null` kur kolona është bosh — dhe atëherë fletja kthehet te harta
+     * sipas qëllimit (`domain/benefits.js`). Lista bosh dhe `null` duhen
+     * dalluar: një varg me vetëm hapësira do të jepte një ✓ të zbrazët.
+     */
+    benefits: splitBenefits(row.benefits),
     /* Të 244-ta janë korp; vetëm mini-blloqet lokale kanë hapje e mbyllje. */
     phase: PHASES.CORE,
     intent: intentForCategory(categoryId),

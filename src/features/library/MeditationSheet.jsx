@@ -98,13 +98,29 @@ export function MeditationSheet({ item }) {
           <Clock size={14} /> {item.dur} min
         </div>
 
-        <p style={{ color: T.sub, fontSize: 15, lineHeight: 1.6, margin: "16px 0 0" }}>{item.desc}</p>
+        {/*
+          `pre-line` mban paragrafët që vijnë nga databaza.
+
+          Përshkrimet e gjata shkruhen me rreshta bosh mes paragrafëve; pa këtë
+          veti HTML-ja i shkrin të gjithë në një bllok të vetëm teksti.
+        */}
+        <p
+          style={{
+            color: T.sub,
+            fontSize: 15,
+            lineHeight: 1.6,
+            margin: "16px 0 0",
+            whiteSpace: "pre-line",
+          }}
+        >
+          {item.desc}
+        </p>
 
         <h2 style={{ color: T.ink, fontSize: 16, fontWeight: 700, margin: "26px 0 12px" }}>
           Çfarë do të ndjesh
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {benefitsFor(item.intent).map((rresht) => (
+          {(item.benefits ?? benefitsFor(item.intent)).map((rresht) => (
             <div key={rresht} style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span
                 style={{
