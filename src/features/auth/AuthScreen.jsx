@@ -149,7 +149,7 @@ export function AuthScreen() {
             {meta.title}
           </h1>
           <p style={{ color: T.sub, fontSize: 14.5, margin: 0, lineHeight: 1.55 }}>
-            Arte Gogo — hapësira jote e qetësisë
+            NDIEJ nga Arte Gogo — hapësira jote e qetësisë
           </p>
         </div>
 
