@@ -39,7 +39,11 @@ export const REASON_TEXT = {
 /**
  * Kërkon lidhjen e nënshkruar për një meditim.
  *
- * @returns {Promise<{ ok: true, url: string } | { ok: false, reason: string }>}
+ * `kind` është `"video"` kur meditimi ka figurë, `"audio"` përndryshe. Serveri
+ * zgjedh njërën nga të dyja — kurrë të dyja njëherësh, sepse videoja e mban
+ * zërin brenda vetes.
+ *
+ * @returns {Promise<{ ok: true, url: string, kind: string } | { ok: false, reason: string }>}
  */
 export async function fetchAudioUrl(meditationId) {
   if (!isDatabaseId(meditationId)) return { ok: false, reason: REASON.LOCAL };
@@ -47,7 +51,9 @@ export async function fetchAudioUrl(meditationId) {
 
   try {
     const data = await api.get(`/audio/${encodeURIComponent(meditationId)}`);
-    return data?.url ? { ok: true, url: data.url } : { ok: false, reason: REASON.MISSING };
+    return data?.url
+      ? { ok: true, url: data.url, kind: data.kind === "video" ? "video" : "audio" }
+      : { ok: false, reason: REASON.MISSING };
   } catch (err) {
     if (err instanceof ApiError) {
       /* 402 është kodi që serveri përdor për "kërkon abonim" — aplikacioni e

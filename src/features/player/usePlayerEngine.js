@@ -70,6 +70,7 @@ export function usePlayerEngine(sequence, onComplete) {
     seekBy: seekFile,
     onEnded: onFileEnded,
     onSettled: onFileSettled,
+    attachVideo,
   } = useTrackAudio(current?.id);
 
   /* Hapi i tanishëm te një ref, që dëgjuesit e mëposhtëm të mbeten të
@@ -252,5 +253,7 @@ export function usePlayerEngine(sequence, onComplete) {
     realAudio: real,
     audioStatus,
     audioReason,
+    /* Kutia e figurës — vetëm fleta e madhe e përdor; mini-player-i jo. */
+    attachVideo,
   };
 }

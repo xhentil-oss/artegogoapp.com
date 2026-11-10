@@ -23,7 +23,7 @@ import { usePlayer } from "../../store/PlayerContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePlayerEngine } from "./usePlayerEngine.js";
 import { BreathBox, BreathSteps } from "./BreathBox.jsx";
 
@@ -66,6 +66,31 @@ export function PlayerSheet({ sequence }) {
    */
   const ritmi = breathingFor(engine.current);
   const fryma = ritmi ? breathStateAt(ritmi, engine.blockElapsed) : null;
+
+  /**
+   * MEDITIMET ME FIGURË.
+   *
+   * Flamuri vjen nga katalogu, jo nga përgjigjja e `/audio/:id` — pra dihet
+   * para se lidhja të mbërrijë. Po ta prisnim atë, fleta do të hapej me
+   * diskun e zakonshëm dhe do të kërcente te figura një sekondë më vonë.
+   *
+   * Frymëmarrja ka përparësi: po të kishte një meditim edhe me ritëm edhe me
+   * video, udhëzuesi është ai që duhet parë.
+   */
+  const video = !ritmi && Boolean(engine.current?.hasVideo);
+
+  /*
+   * Figura futet te kutia nga një efekt, pasi React-i ta ketë vendosur atë.
+   *
+   * ⚠️  Elementi `<video>` i takon `useTrackAudio`-s, që e krijon një herë dhe
+   *     e mban gjatë gjithë seancës. Po ta vizatonte React-i, çdo ndryshim
+   *     hapi do të krijonte element të ri — dhe te iOS leja e luajtjes, që i
+   *     takon elementit, do të humbiste me të: përdoruesi do të duhej të
+   *     shtypte "Luaj" dy herë, pa asnjë arsye të dukshme.
+   */
+  const kutiaFigures = useRef(null);
+  const { attachVideo } = engine;
+  useEffect(() => attachVideo(kutiaFigures.current), [attachVideo, video]);
 
   const close = () => {
     engine.detach();
@@ -250,9 +275,19 @@ export function PlayerSheet({ sequence }) {
       */}
       <div
         style={{
-          width: ritmi ? "min(300px, 88%)" : FLUID.playerDisc,
+          /*
+              Videoja është vertikale (9:16), ndaj kutia merr atë raport dhe
+              matet me LARTËSI, jo me gjerësi: me një gjerësi fikse, te një
+              telefon i ngushtë figura do të dilte poshtë butonave. `vh` e
+              lidh me ekranin, kufiri në piksel e ndal te tabletët.
+          */
+          ...(video
+            ? { height: "min(44vh, 400px)", aspectRatio: "9 / 16" }
+            : {
+                width: ritmi ? "min(300px, 88%)" : FLUID.playerDisc,
+                aspectRatio: "1 / 1",
+              }),
           maxWidth: layout.sheetMaxWidth,
-          aspectRatio: "1 / 1",
           marginTop: 14,
           marginBottom: 28,
           flexShrink: 0,
@@ -267,7 +302,12 @@ export function PlayerSheet({ sequence }) {
                   ? `${shadows.immersive}, 0 0 80px ${meta.g[0]}99`
                   : shadows.immersive,
                 overflow: "hidden",
-                animation: engine.playing ? "breathe 6s ease-in-out infinite" : "none",
+                /*
+                    Pa pulsim kur ka figurë: videoja ka lëvizjen e vet, dhe dy
+                    ritme mbi të njëjtin element e prishin njëri-tjetrin — i
+                    njëjti rregull si te `BreathBox` më lart.
+                */
+                animation: engine.playing && !video ? "breathe 6s ease-in-out infinite" : "none",
                 transition: "box-shadow .6s ease",
               }),
         }}
@@ -289,6 +329,13 @@ export function PlayerSheet({ sequence }) {
         {ritmi ? (
           /* Katrori zë vendin e kopertinës: ushtrimi është vetë përmbajtja. */
           <BreathBox pattern={ritmi} elapsed={engine.blockElapsed} playing={engine.playing} />
+        ) : video ? (
+          /*
+              Kutia e figurës, e zbrazët te JSX-ja: elementin e fut efekti më
+              lart. Kopertina dhe disku nuk vizatohen fare — figura është vetë
+              përmbajtja, dhe zëri ndodhet brenda saj.
+          */
+          <div className="ag-video-host" ref={kutiaFigures} />
         ) : kopertina ? (
           <>
             <img

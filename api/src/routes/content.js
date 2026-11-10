@@ -15,10 +15,22 @@ const router = express.Router();
  *     `/audio/:id`, pas kontrollit të abonimit.
  */
 
-/** Kolonat publike të një meditimi — pa `audio_url`. */
+/**
+ * Kolonat publike të një meditimi — pa `audio_url` dhe pa `video_url`.
+ *
+ * ⚠️  `has_video` është FLAMUR, jo adresë. Aplikacioni duhet ta dijë që ky
+ *     meditim shihet, jo vetëm dëgjohet — përndryshe player-i do të hapte
+ *     diskun e zakonshëm dhe pastaj do të kërcente te videoja. Rruga e vërtetë
+ *     mbetet e mbyllur pas `/audio/:id`, si edhe audioja.
+ *
+ * ⚠️  KËRKON `43_video_meditimi.sql` TË JETË RROTULLUAR I PARI. Pa kolonën
+ *     `video_url`, ky SELECT dështon me #1054 — dhe bashkë me të bie e gjithë
+ *     biblioteka, jo vetëm videoja.
+ */
 const MEDITATION_FIELDS = `
   m.id, m.title, m.subtitle, m.subgroup, m.narrator, m.duration_sec,
   m.cover_url, m.description, m.benefits, m.is_premium, m.average_rating, m.rating_count,
+  (m.video_url IS NOT NULL) AS has_video,
   m.is_daily_featured, m.is_short_daily, m.is_morning_ritual,
   t.slug AS technique_slug, t.name AS technique_name,
   c.slug AS category_slug, c.name AS category_name`;

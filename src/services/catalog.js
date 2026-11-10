@@ -117,6 +117,14 @@ function toItem(row) {
        peizazhin procedural, siç bënte gjithmonë. */
     cover: row.cover_url ?? null,
     /*
+     * A është ky meditim video.
+     *
+     * Serveri kthen vetëm flamurin, kurrë rrugën — ajo vjen e nënshkruar nga
+     * `/audio/:id`, bashkë me kontrollin e abonimit. MySQL e jep `1`/`0`, jo
+     * `true`/`false`, ndaj kalon nëpër `Boolean`.
+     */
+    hasVideo: Boolean(row.has_video),
+    /*
      * Serveri nuk ka nocionin e "koleksionit" — ai ndan sipas teknikës. Slug-u
      * i teknikës zë vendin e tij, që çelësat e panelit të admin-it
      * (`subKey(collectionId, subTheme)`) të mbeten të qëndrueshëm.

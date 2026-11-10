@@ -74,10 +74,27 @@ export function useTrackAudio(meditationId) {
    * Elementi krijohet një herë dhe ripërdoret: një `<audio>` e re për çdo hap
    * do të humbte lejen e luajtjes që dha prekja e përdoruesit — te iOS ajo
    * leje i takon elementit, jo faqes.
+   *
+   * ⚠️  ËSHTË `<video>`, EDHE PËR MEDITIMET PA FIGURË.
+   *
+   *     Një `<video>` e luan një mp3 njësoj si `<audio>`; e kundërta nuk vlen.
+   *     Me dy elemente — një për zërin, një për figurën — çdo rregull i
+   *     mësipërm do të duhej shkruar dy herë: rimarrja e lidhjes së skaduar,
+   *     bileta e kërkesës, koha që rrjedh nga skedari. Dhe te iOS leja e
+   *     luajtjes i takon elementit: kalimi nga një meditim me zë te një me
+   *     figurë do ta humbte atë, pra do të kërkonte një prekje të dytë pa
+   *     asnjë arsye të dukshme për përdoruesin.
+   *
+   *     Kur nuk ka figurë, elementi rri i pavendosur te faqja — dhe një
+   *     element media luan edhe pa qenë te DOM-i.
    */
   useEffect(() => {
-    const el = new Audio();
+    const el = document.createElement("video");
     el.preload = "auto";
+    /* Pa këtë, iOS e hap videon me ekran të plotë dhe del nga fleta jonë. */
+    el.playsInline = true;
+    el.setAttribute("playsinline", "");
+    el.setAttribute("webkit-playsinline", "");
     elRef.current = el;
 
     const onTime = () => setCurrentTime(el.currentTime);
@@ -108,6 +125,7 @@ export function useTrackAudio(meditationId) {
 
     return () => {
       el.pause();
+      el.remove();
       el.removeAttribute("src");
       el.load();
       el.removeEventListener("timeupdate", onTime);
@@ -291,10 +309,29 @@ export function useTrackAudio(meditationId) {
   const status = !meditationId ? "unavailable" : settled ? loaded.status : "loading";
   const reason = !meditationId ? REASON.LOCAL : settled ? loaded.reason : null;
 
+  /**
+   * Fut figurën te kutia e dhënë dhe kthen funksionin që e shkëput.
+   *
+   * Thirret nga një EFEKT te player-i, jo nga `ref={...}`. Një shigjetë te
+   * `ref` do të ndryshonte identitet çdo render, React-i do ta thërriste
+   * sërish me `null` e pastaj me kutinë — dhe heqja e një `<video>` nga faqja
+   * e ndal luajtjen. Katër herë në sekondë, sa herë përditësohet koha.
+   *
+   * Elementi ekziston kur kjo thirret: efektet e këtij hook-u janë regjistruar
+   * para atyre të player-it, ndaj rrjedhin para tyre.
+   */
+  const attachVideo = useCallback((node) => {
+    const el = elRef.current;
+    if (!el || !node) return undefined;
+    node.appendChild(el);
+    return () => el.remove();
+  }, []);
+
   return {
     usable: status === "ready",
     status,
     reason,
+    attachVideo,
     duration,
     currentTime,
     playing,

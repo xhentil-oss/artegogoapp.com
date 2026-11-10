@@ -205,3 +205,29 @@ video {
     animation: none;
   }
 }
+
+/*
+ * FIGURA E MEDITIMIT ME VIDEO.
+ *
+ * Elementi `<video>` krijohet nga `useTrackAudio` dhe futet këtu me dorë,
+ * ndaj nuk i vihen dot stile si te JSX-ja. Rregulli zbatohet vetëm kur
+ * elementi ndodhet brenda kutisë — pra kur meditimi është video; pa të,
+ * elementi rri i pavendosur dhe nuk e prek askush.
+ *
+ * `object-fit: cover` sepse kutia mban raportin 9:16 të vetë figurës: prerja
+ * është zero, dhe `cover` mbron vetëm nga ndonjë video me raport paksa tjetër.
+ */
+.ag-video-host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.ag-video-host > video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}

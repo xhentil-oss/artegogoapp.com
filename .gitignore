@@ -29,3 +29,17 @@ Thumbs.db
 desktop.ini
 
 *.local
+
+# VIDEOT — rrinë te kompjuteri dhe shkojnë te cPanel-i, kurrë te GitHub-i.
+#
+# GitHub-i e refuzon çdo skedar mbi 100MB, dhe një video e vetme i kalon:
+# origjinali i "Shkundje somatike" është 244MB. Deri tani kjo mbahej vetëm
+# duke mos i shtuar me dorë — një `git add -A` i vetëm e prish depon, dhe
+# pastaj skedari duhet nxjerrë nga i gjithë historiku, jo thjesht fshirë.
+#
+# Audiot (`.mp3`) NUK janë këtu me qëllim: ato janë nën 20MB dhe ndodhen
+# tashmë te depoja. Një rregull që i fshihte do të bënte që i radhës të
+# harrohej pa u vënë re.
+scripts/*.mp4
+scripts/*.mov
+scripts/*.webm

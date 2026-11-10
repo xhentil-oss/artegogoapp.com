@@ -40,16 +40,34 @@ function signedUrl(path, userId) {
   return `${base}/${path}?expires=${expires}&u=${userId}&sig=${signature}`;
 }
 
-/* GET /audio/:meditationId — kthen lidhjen, ose 402 nëse duhet abonim. */
+/*
+ * GET /audio/:meditationId — kthen lidhjen, ose 402 nëse duhet abonim.
+ *
+ * ⚠️  VIDEOJA KA PËRPARËSI mbi audion, kur të dyja ekzistojnë.
+ *
+ *     Një meditim me video e ka zërin brenda vetë skedarit; po të luanim
+ *     audion veçmas, do të dëgjoheshin të dy njëherësh, me pak çaste
+ *     shmangie mes tyre. Ndaj zgjidhet njëra, dhe `kind` i thotë
+ *     aplikacionit cilën mori — që të dijë nëse duhet treguar figura apo
+ *     disku i zakonshëm.
+ *
+ *     Rruga mbetet e njëjta (`/audio/:id`) me qëllim: abonimi, nënshkrimi dhe
+ *     skadimi janë tashmë këtu, të provuara. Një rrugë e dytë `/video/:id`
+ *     do t'i kopjonte të treja — dhe kopja e dytë e një porte abonimi është
+ *     pikërisht ajo që harrohet kur ndryshon rregulli.
+ */
 router.get("/:meditationId", requireAuth, async (req, res, next) => {
   try {
     const row = await one(
-      "SELECT id, title, audio_url, is_premium, published_at FROM meditations WHERE id = ?",
+      "SELECT id, title, audio_url, video_url, is_premium, published_at FROM meditations WHERE id = ?",
       [req.params.meditationId]
     );
 
     if (!row || !row.published_at) return res.status(404).json({ error: "Meditimi nuk u gjet." });
-    if (!row.audio_url) return res.status(404).json({ error: "Audio ende nuk është ngarkuar." });
+
+    const kind = row.video_url ? "video" : "audio";
+    const path = row.video_url || row.audio_url;
+    if (!path) return res.status(404).json({ error: "Media ende nuk është ngarkuar." });
 
     if (row.is_premium && !canAccessAudio(req.user)) {
       /* 402 Payment Required — aplikacioni e njeh dhe hap paywall-in. */
@@ -57,7 +75,8 @@ router.get("/:meditationId", requireAuth, async (req, res, next) => {
     }
 
     res.json({
-      url: signedUrl(row.audio_url, req.userId),
+      url: signedUrl(path, req.userId),
+      kind,
       expires_in: LINK_TTL_SEC,
     });
   } catch (err) {

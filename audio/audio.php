@@ -51,11 +51,21 @@ define('URL_PREFIX', '/audio/');
 /** Sa bajtë dërgohen njëherësh. 256 KB: kujtesë e vogël, sistem-thirrje të pakta. */
 define('CHUNK', 262144);
 
+/*
+ * Llojet e lejuara.
+ *
+ * `mp4` dhe `webm` janë për meditimet me figurë. Shërbehen nga e njëjta rrugë
+ * si zëri me qëllim: nënshkrimi, skadimi dhe `Range` janë shkruar e provuar
+ * këtu, dhe një skedar i dytë PHP do t'i kopjonte të treja — bashkë me çdo
+ * gabim që do të ndreqej vetëm te njëri prej tyre.
+ */
 $MIME = array(
-    'mp3' => 'audio/mpeg',
-    'm4a' => 'audio/mp4',
-    'ogg' => 'audio/ogg',
-    'wav' => 'audio/wav',
+    'mp3'  => 'audio/mpeg',
+    'm4a'  => 'audio/mp4',
+    'ogg'  => 'audio/ogg',
+    'wav'  => 'audio/wav',
+    'mp4'  => 'video/mp4',
+    'webm' => 'video/webm',
 );
 
 /* ─────────── Ndihmësa ─────────── */
@@ -111,7 +121,7 @@ if (strpos($uri, URL_PREFIX) === 0) {
  * `realpath` i vetëm: filtri i formës vjen i pari sepse kurrë nuk duhet të
  * arrijmë te disku me një rrugë të papastër.
  */
-if (!preg_match('#^(?:[A-Za-z0-9_\-]+/)*[A-Za-z0-9_\-]+\.(mp3|m4a|ogg|wav)$#i', $path, $ext)) {
+if (!preg_match('#^(?:[A-Za-z0-9_\-]+/)*[A-Za-z0-9_\-]+\.(mp3|m4a|ogg|wav|mp4|webm)$#i', $path, $ext)) {
     deny(400, 'Kërkesë e pavlefshme.');
 }
 
