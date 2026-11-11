@@ -39,7 +39,7 @@ export const CATEGORIES = [
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm" },
   { id: "c_emergjence",  label: "Emergjencë",                                 intent: "stress" },
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
-  { id: "c_femije_8_12", label: "Fëmijët 8–12",                               intent: "calm" },
+  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm" },
   { id: "c_adoleshentet",label: "Adoleshentët",                               intent: "focus" },
   { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy" },
   { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep" },
