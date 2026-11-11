@@ -16,6 +16,11 @@ export const CATEGORIES = [
   { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy" },
   { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus" },
   { id: "c_gjumi",       label: "Gjumi",                                      intent: "sleep" },
+  /* ⚠️  "Ndiej bollëkun" rri ME QËLLIM këtu, jo te fundi ku ishte "Bollëku".
+         `groupBy` i vizaton grupet sipas RENDIT TË KËSAJ LISTE, ndaj te dosja
+         Afirmime do të dilte poshtë "Faljes" dhe "Dashurisë ndaj vetes" —
+         meditimi i vërtetë nën vendmbajtësit. Këtu del i pari. */
+  { id: "c_bolleku",     label: "Ndiej bollëkun",                             intent: "abundance" },
   { id: "c_energji",     label: "Energji e lartë",                            intent: "energy" },
   { id: "c_manifestim",  label: "Manifestim",                                 intent: "abundance" },
   { id: "c_stres",       label: "Liro stresin",                               intent: "stress" },
@@ -31,7 +36,6 @@ export const CATEGORIES = [
   { id: "c_falja",       label: "Falja",                                      intent: "selflove" },
   { id: "c_dashuria",    label: "Dashuria ndaj vetes",                        intent: "selflove" },
   { id: "c_intuita",     label: "Intuita",                                    intent: "transform" },
-  { id: "c_bolleku",     label: "Bollëku",                                    intent: "abundance" },
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm" },
   { id: "c_emergjence",  label: "Emergjencë",                                 intent: "stress" },
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
