@@ -215,8 +215,8 @@ function RemindersStep({ reminders, onChange }) {
         Kur të të kujtojmë?
       </h1>
       <p style={{ color: T.sub, fontSize: 15, margin: "0 0 24px", lineHeight: 1.55 }}>
-        Çdo ditë do të marrësh një meditim të ri për çastin që zgjedh. Aktivizo ato që do dhe cakto
-        orarin — ose lëri të fikura.
+        Çdo ditë do të kujtohesh të bësh një meditim të ri për çastin që zgjedh. Aktivizo ato që do
+        dhe cakto orarin — ose lëri të fikura.
       </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
