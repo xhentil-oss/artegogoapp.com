@@ -83,7 +83,7 @@ export const COLLECTIONS = [
     desc: "Lirim trupor dhe rregullim i sistemit nervor",
     groups: [
       grp("Lirim & Çlirim", "heal", ["Shkundja neurogjene", "Trauma release", "Shkundje somatike", "Somatic orienting", "Pendulation", "Titration"]),
-      grp("Tokëzim & Lëvizje", "calm", ["Grounding", "Body scan", "Somatic walking", "Somatic dancing"]),
+      grp("Tokëzim & Lëvizje", "calm", ["Ec dhe ndiej energjinë e jetës së re", "Body scan", "Somatic walking", "Somatic dancing"]),
       grp("Lirim i zonave", "heal", ["Lirim i nofullës", "Lirim i legenit", "Lirim i diafragmës", "Lirim i kraharorit", "Hapja e qafës"]),
     ],
   },
