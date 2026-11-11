@@ -47,7 +47,7 @@ export const COLLECTIONS = [
       grp("Truri", "focus", ["Fokus ekstrem", "Kujtesë më e mirë", "Studim intensiv", "Për provime", "Për moshën mbi 50 vjeç", "Kreativitet", "Vendimmarrje", "Intuitë", "Zgjidh probleme", "Mendo qartë"]),
       grp("Gjumi", "sleep", ["Fli shpejt", "Gjumi i thellë", "Pas pagjumësisë", "Pas zgjimit natën", "Rikthe ritmin cirkadian", "Zgjohu me energji"]),
       grp("Energjia", "energy", ["Energjia e mëngjesit", "Pasdite pa lodhje", "Pas punës", "Pas udhëtimit", "Pas stresit", "Rimbush energjinë", "Ndjehu i lehtë"]),
-      grp("Manifestimi", "abundance", ["Manifesto bollëk", "Manifesto partner", "Manifesto shtëpi", "Manifesto punë", "Manifesto klientë", "Manifesto shëndet", "Manifesto sukses"]),
+      grp("Manifestimi", "abundance", ["Manifesto bollëk", "Tërhiq shpirtin binjak", "Manifesto shtëpi", "Manifesto punë", "Manifesto klientë", "Manifesto shëndet", "Manifesto sukses"]),
     ],
   },
   {
