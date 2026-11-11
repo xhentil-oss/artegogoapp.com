@@ -154,7 +154,7 @@ function Welcome() {
         <br />
         dhe për t’u rikthyer tek vetja,
         <br />
-        për të ndier gëzimin e jetës
+        për të ndier gëzimin e jetës.
       </p>
     </div>
   );
