@@ -141,9 +141,18 @@ export const listSubGroups = () => {
   return [...seen.values()];
 };
 
-/** Teknikat me numrin e meditimeve. Ato bosh nuk shfaqen. */
-export const listTechniques = () =>
-  TECHNIQUES.map((t) => ({ ...t, count: techniqueCounts.get(t.id) ?? 0 })).filter((t) => t.count > 0);
+/**
+ * Teknikat me numrin e meditimeve. Ato bosh nuk shfaqen.
+ *
+ * `includeSoon` lejon përjashtimin: praktikat e shënuara me `soon` te
+ * `data/techniques.js` dalin edhe pa asnjë meditim. E përdor vetëm
+ * biblioteka, që klientja t'i shohë pllakat para se të vijë audioja;
+ * ndërtuesi i seancave e thërret pa argument dhe i mban të fshehura.
+ */
+export const listTechniques = ({ includeSoon = false } = {}) =>
+  TECHNIQUES.map((t) => ({ ...t, count: techniqueCounts.get(t.id) ?? 0 })).filter(
+    (t) => t.count > 0 || (includeSoon && t.soon),
+  );
 
 /**
  * Kategoritë me numrin e meditimeve.

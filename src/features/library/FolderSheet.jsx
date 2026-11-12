@@ -1,4 +1,4 @@
-import { fonts, layout } from "../../theme/tokens.js";
+import { T, fonts, layout } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { heroVeil } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
@@ -56,12 +56,35 @@ export function FolderSheet({ collection }) {
             {collection.label}
           </h2>
           <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, margin: "5px 0 0" }}>
-            {collection.desc} · {total} meditime
+            {total > 0 ? `${collection.desc} · ${total} meditime` : "Së shpejti"}
           </p>
         </div>
       </div>
 
       <div style={{ padding: `8px 0 ${padBottom(40)}` }}>
+        {/*
+          Një folder bosh hapet vetëm te dy praktikat e reja, që shfaqen para
+          se të vijë audioja (shih `soon` te `data/techniques.js`). Pa këtë
+          rresht, poshtë hero-s nuk do të kishte asgjë fare — dhe ekrani do të
+          dukej i prishur, jo në pritje.
+        */}
+        {total === 0 && (
+          <p
+            style={{
+              fontSize: 14.5,
+              color: T.sub,
+              lineHeight: 1.55,
+              margin: 0,
+              padding: `18px ${layout.gutter}px`,
+              textAlign: "center",
+            }}
+          >
+            Kjo praktikë po përgatitet.
+            <br />
+            Përmbajtja e parë vjen së shpejti.
+          </p>
+        )}
+
         {collection.groups.map((group, groupIndex) => (
           <section key={group.name} style={{ marginTop: groupIndex === 0 ? 14 : 24 }}>
             <GroupHead title={group.name} count={group.items.length} />

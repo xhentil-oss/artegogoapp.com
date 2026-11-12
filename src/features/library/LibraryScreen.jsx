@@ -23,7 +23,8 @@ import { CategoryList } from "./CategoryList.jsx";
 export function LibraryScreen() {
   const { openFolder } = useNavigation();
 
-  const techniques = listTechniques();
+  /* `includeSoon` — praktikat e reja duken edhe bosh; shih `data/techniques.js`. */
+  const techniques = listTechniques({ includeSoon: true });
   const categories = listCategories();
 
   return (

@@ -76,7 +76,11 @@ function TechniquePill({ technique, onOpen }) {
       >
         {technique.label}
       </div>
-      <div style={{ fontSize: 12.5, color: T.sub, marginTop: 3 }}>{technique.count} meditime</div>
+      {/* Një praktikë bosh nuk shkruan "0 meditime" — ai numër lexohet si
+          gabim, jo si premtim. Shih `soon` te `data/techniques.js`. */}
+      <div style={{ fontSize: 12.5, color: T.sub, marginTop: 3 }}>
+        {technique.count > 0 ? `${technique.count} meditime` : "Së shpejti"}
+      </div>
     </button>
   );
 }

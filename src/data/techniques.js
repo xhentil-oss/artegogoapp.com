@@ -45,11 +45,23 @@ export const TECHNIQUES = [
   /*
    * Dy praktikat e fundit u shtuan më 8 tetor 2026 me kërkesë të klientes.
    *
-   * ⚠️  Nuk shfaqen derisa të kenë përmbajtje: `listTechniques` i heq
+   * `soon: true` — SHFAQEN EDHE KUR JANË BOSH.
+   *
+   * ⚠️  Është përjashtim i qëllimshëm nga rregulli. `listTechniques` i heq
    *     praktikat bosh, sepse një pllakë që hap një folder të zbrazët është më
-   *     keq se asnjë pllakë. Dalin vetvetiu sapo meditimi i parë të marrë
-   *     slug-un përkatës te databaza — pa asnjë ndryshim kodi.
+   *     keq se asnjë pllakë; këto të dyja e kapërcejnë atë filtër me kërkesë
+   *     të klientes (12 nëntor 2026), që të dukeshin para se të vijë audioja.
+   *
+   * ⚠️  FLAMURI HIQET SAPO TË VIJË PËRMBAJTJA. Me të parën këngë a pjesë
+   *     muzikore, numëruesi bëhet > 0 dhe pllaka do të dilte vetvetiu — pra
+   *     `soon` nuk duhet më, dhe po të mbetet aty nuk prish gjë, por fsheh
+   *     faktin që praktika u mbush vërtet. Shih `mysql/19_praktika_te_reja.sql`.
+   *
+   * ⚠️  NUK PREK NDËRTUESIN E SEANCAVE. `BlockBuilder` e thërret
+   *     `listTechniques()` pa argument, ndaj aty praktikat bosh mbeten të
+   *     fshehura — një hap i ndërtuesit që nuk ka çfarë të japë është rrugë
+   *     pa krye, jo premtim.
    */
-  { id: "t_songs",    label: "Këngë motivuese",       icon: Music,      intent: "energy" },
-  { id: "t_music",    label: "Muzikë meditimi",       icon: Headphones, intent: "calm" },
+  { id: "t_songs",    label: "Këngë motivuese",       icon: Music,      intent: "energy", soon: true },
+  { id: "t_music",    label: "Muzikë meditimi",       icon: Headphones, intent: "calm",   soon: true },
 ];
