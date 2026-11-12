@@ -1,7 +1,7 @@
 import { api, onTokenChange } from "./api.js";
 import { PHASES, PHASE_BY_DB, replaceBlocks } from "../data/blocks.js";
 import { replaceCatalog } from "../domain/classification.js";
-import { TECHNIQUE_BY_SLUG, CATEGORY_BY_SLUG, intentForCategory } from "./taxonomy.js";
+import { TECHNIQUE_BY_SLUG, CATEGORY_BY_SLUG, intentForCategory, intentFor } from "./taxonomy.js";
 import { relativeTime } from "../lib/format.js";
 
 /**
@@ -118,7 +118,8 @@ function toItem(row) {
     benefits: splitBenefits(row.benefits),
     /* Të 244-ta janë korp; vetëm mini-blloqet lokale kanë hapje e mbyllje. */
     phase: PHASES.CORE,
-    intent: intentForCategory(categoryId),
+    /* Kategoria e para; teknika kur ajo mungon (këngët). Shih `intentFor`. */
+    intent: intentFor(categoryId, TECHNIQUE_BY_SLUG[row.technique_slug] ?? null),
     subTheme: row.subgroup ?? "Të tjera",
     /* Kopertina e vërtetë, nëse databaza e mban. `null` → karta vizaton
        peizazhin procedural, siç bënte gjithmonë. */

@@ -144,7 +144,11 @@ export function TrackCard({ item }) {
       style={{ ...sx.cardButton, textAlign: "left" }}
     >
       <div style={cover("square", 16)}>
-        <CoverArt intent={item.intent} image={item.cover} />
+        {/* Titulli shkruhet mbi kapak VETËM kur nuk ka foto. Me foto, teksti
+            do të rrinte mbi artin e këngës dhe do ta mbulonte — dhe titulli
+            lexohet gjithsesi poshtë. Pa foto, pa të, do të mbeteshin
+            shtatëmbëdhjetë katrorë bosh që nuk dallohen nga njëri-tjetri. */}
+        <CoverArt intent={item.intent} image={item.cover} title={item.cover ? undefined : item.title} big />
         <AccessBadge {...accessBadge(item)} size={12} />
       </div>
 

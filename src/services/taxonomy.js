@@ -98,3 +98,17 @@ const INTENT_BY_CATEGORY_ID = new Map(CATEGORIES.map((c) => [c.id, c.intent]));
 
 export const intentForCategory = (categoryId) =>
   INTENT_BY_CATEGORY_ID.get(categoryId) ?? "calm";
+
+/**
+ * `intent` i teknikës — rrjeta e fundit, kur meditimi nuk ka kategori.
+ *
+ * Këngët rrinë me `category_id` NULL me qëllim (shih
+ * `mysql/73_kenge_motivuese.sql`), ndaj `intentForCategory` do t'u jepte të
+ * gjithave "calm" dhe të 17 kapakët pa foto do të dilnin një gradient i
+ * vetëm, i njëjtë. Me teknikën, këngët marrin "energy" — e njëjta ngjyrë si
+ * hero-ja e dosjes që sapo u hap.
+ */
+const INTENT_BY_TECHNIQUE_ID = new Map(TECHNIQUES.map((t) => [t.id, t.intent]));
+
+export const intentFor = (categoryId, techniqueId) =>
+  INTENT_BY_CATEGORY_ID.get(categoryId) ?? INTENT_BY_TECHNIQUE_ID.get(techniqueId) ?? "calm";
