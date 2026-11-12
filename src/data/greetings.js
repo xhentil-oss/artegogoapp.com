@@ -1,172 +1,199 @@
 import { DAY_PARTS } from "../lib/time.js";
 
 /**
- * Përshëndetjet, etiketat dhe citatet sipas pjesës së ditës.
+ * Përshëndetjet, etiketat dhe afirmimi i ditës.
  * Faqja "Sot" dhe hero-ja e Komunitetit zgjedhin bllokun sipas `dayPart()`.
  *
- * ⚠️  TRIDHJETË CITATE PËR ÇDO PJESË, jo tri.
+ * ⚠️  HISTORIKU I ZGJEDHJES, që shpjegon pse `quoteOfDay` punon me ditën e
+ *     vitit dhe jo me diçka më të thjeshtë:
  *
- *     Më parë ishin tri, dhe zgjedhja bëhej me `date.getDate() % 3` — pra i
- *     njëjti varg kthehej çdo ditë të tretë, dhe brenda javës përdoruesi i
- *     kishte parë të gjitha. Klientja kërkoi shprehje të ndryshme çdo ditë
- *     (18 shtator 2026), ndaj pishina u rrit dhjetëfish dhe zgjedhja kaloi te
- *     dita e vitit (shih `quoteOfDay` te `services/contentRepository.js`):
- *     një muaj i plotë pa përsëritje për secilën pjesë të ditës.
+ *       • Në fillim ishin tri thënie për çdo pjesë dite, të zgjedhura me
+ *         `date.getDate() % 3` — pra e njëjta rikthehej çdo ditë të tretë.
+ *       • Më 18 shtator 2026 u rritën në tridhjetë për pjesë (120 gjithsej)
+ *         dhe zgjedhja kaloi te dita e vitit: një muaj pa përsëritje.
+ *       • Më 12 nëntor 2026 të 120-at u zëvendësuan nga njëqind afirmimet e
+ *         klientes, të përbashkëta për të katër pjesët e ditës.
  *
- *     Shtimi i një citati të ri nuk kërkon asgjë tjetër — mjafton rreshti.
+ *     Zgjedhja me ditën e vitit mbeti e njëjta në të tria hapat; ndryshoi
+ *     vetëm se çfarë ka brenda lista dhe sa e gjatë është.
  */
+/**
+ * AFIRMIMET — njëqind, një për çdo ditë.
+ *
+ * Teksti është i klientes, i dërguar më 12 nëntor 2026, i marrë fjalë për
+ * fjalë. Grupimet me komente janë po të sajat; shërbejnë vetëm për lexim —
+ * aplikacioni e trajton vargun si një listë të vetme.
+ *
+ * ⚠️  ZËVENDËSOJNË 120 CITATET E MËPARSHME, që ishin katër pishina prej
+ *     tridhjetësh — një për mëngjesin, drekën, mbrëmjen dhe natën. Ato ishin
+ *     vëzhgime në vetën e dytë ("Zgjohu ngadalë"); këto janë pohime në vetën
+ *     e parë ("Unë rritem çdo ditë"), ndaj nuk ndahen dot sipas orës pa i
+ *     prishur. Lista e vjetër rri e plotë te historiku i Git-it.
+ *
+ * ⚠️  TË KATËR PJESËT E DITËS TREGOJNË TË NJËJTIN AFIRMIM. Më parë shfaqeshin
+ *     katër thënie brenda ditës, një për çdo pjesë. Tani është një e vetme,
+ *     nga mëngjesi deri natën, dhe ndryshon vetëm me ditën — ashtu siç u
+ *     kërkua: "çdo ditë nga një thënie".
+ *
+ * ⚠️  NUK I PREK ETIKETAT. `hi`, `label`, `sub` dhe `intent` mbeten të ndara
+ *     sipas orës: përshëndetja te hero-ja dhe rituali te faqja "Sot" vazhdojnë
+ *     të ndryshojnë gjatë ditës. Vetëm teksti i afirmimit është i përbashkët.
+ *
+ * ⚠️  NJËQIND, JO NJË NUMËR TJETËR. `quoteOfDay` zgjedh me
+ *     `dita e vitit % gjatësia e listës`. Me 100, i njëjti afirmim rikthehet
+ *     një herë në njëqind ditë. Shtimi ose heqja e një rreshti e zhvendos
+ *     gjithë rrotullimin — gjë e padëmshme, por e dukshme nëse pret të njëjtin
+ *     afirmim nesër.
+ *
+ * ⚠️  THONJËZAT NUK JANË KËTU. I vendos pamja (`CommunityHero`), që teksti të
+ *     mbetet i përdorshëm edhe te njoftimet.
+ */
+export const AFIRMIME = [
+  /* Fillime dhe rritje — 1–12 */
+  "Unë jam i hapur ndaj fillimeve të reja.",
+  "Unë jam mrekullia në jetën time.",
+  "Dyert e mirësisë hapen për mua.",
+  "Çdo ditë mësoj më shumë për veten time.",
+  "Unë rritem çdo ditë.",
+  "Çdo ditë bëhem më mirë e më mirë.",
+  "Tani jam gati për hapin e radhës.",
+  "Jam gati për aventurën e jetës sime.",
+  "Unë jam artisti i jetës sime.",
+  "E pikturoj të ardhmen time me ngjyrat e ëndrrave të mia.",
+  "Unë jam krijuesi i jetës sime.",
+  "Unë zhvillohem çdo ditë drejt vetes sime më të lartë.",
+
+  /* Dashuri dhe pranim i vetes — 13–30 */
+  "Jam i denjë për t’u dashur dhe pranuar.",
+  "Unë zgjedh t’i jap vetes dashuri çdo ditë.",
+  "E vlerësoj veten ashtu siç jam.",
+  "Çdo karakteristikë e imja më bën unik.",
+  "E pranoj veten me gjithë kufizimet e mia.",
+  "E dua veten me gjithë imperfeksionet e mia.",
+  "E mbështes veten edhe në momentet e vështira.",
+  "Në pranimin e vetes rizbuloj forcën time.",
+  "Unë e përqafoj veten time të plotë.",
+  "Çdo pjesë e imja është e bukur.",
+  "Unë jam dhurata e kësaj bote.",
+  "E njoh dhe e pranoj vlerën time.",
+  "Unë e fal veten.",
+  "E liroj veten nga presioni për të qenë i përsosur.",
+  "Çdo përpjekje e imja sjell rritje.",
+  "Jam krenar me veten për gjithçka që kam bërë.",
+  "E vlerësoj veten për çdo ndryshim që kam arritur.",
+  "Në zemrën time ka mirësi, dhembshuri dhe mençuri.",
+
+  /* Ndjenjat, nevojat dhe kufijtë — 31–40 */
+  "E vërteta ime ka rëndësi.",
+  "Ndjenjat e mia kanë vlerë.",
+  "Nuk ka ndjenja të gabuara.",
+  "E lejoj veten të ndiej me pranim dhe dashuri.",
+  "Unë i jap vlerë çdo përvoje që kam.",
+  "Nevojat e mia kanë rëndësi.",
+  "Është në rregull të kërkoj atë që më nevojitet.",
+  "Unë kujdesem për veten me dashuri.",
+  "Kam të drejtë të them “jo” për atë që nuk më shërben.",
+  "Ndihem i lirë kur nuk reagoj ndaj rrethanave.",
+
+  /* Siguri, paqe dhe besim — 41–58 */
+  "Unë jam i sigurt dhe i mbrojtur.",
+  "Unë lëshoj nevojën për t’u mbrojtur.",
+  "Ka paqe për mua.",
+  "Lëshoj nevojën për kontroll.",
+  "Çdo gjë është ashtu si duhet të jetë.",
+  "Çdo gjë në Univers është pro meje.",
+  "Çdo gjë ndodh për mua dhe në favorin tim.",
+  "Një dashuri pa kushte më shoqëron në çdo hap.",
+  "Jam në harmoni të përsosur me krijimin.",
+  "Unë lëshoj çdo situatë në duart e Dashurisë pa Kushte.",
+  "Gjithçka zhvillohet sipas planit të përsosur të Burimit.",
+  "Çdo pengesë në rrugën time shpërbëhet tani.",
+  "Rruga ime është e hapur.",
+  "Çdo sfidë është një mundësi për t’u rritur.",
+  "Çdo vonesë ndodh për të mirën time më të lartë.",
+  "Gabimet më mësojnë dhe më ngrenë në një nivel të ri.",
+  "Çdo person është një mësues për mua.",
+  "Çdo takim është i shenjtë.",
+
+  /* Intuitë dhe qartësi — 59–68 */
+  "Unë besoj te vetja dhe te urtësia ime e brendshme.",
+  "Intuita ime gjithmonë më udhëheq.",
+  "Jam një kanal frymëzimesh dhe idesh.",
+  "Zemra ime më dhuron çdo ide që më nevojitet.",
+  "Unë tani po shoh qartë.",
+  "Marr vendime të drejta me qartësi dhe siguri.",
+  "Jam gjithmonë në rrugën e duhur, në kohën e duhur.",
+  "Të gjitha dyert e mundësive janë të hapura për mua.",
+  "Aty ku të tjerët shohin rezistencë, unë shoh potencial.",
+  "Fjalët e mia shërojnë, bekojnë dhe frymëzojnë.",
+
+  /* Bollëk — 69–80 */
+  "Unë jam magnet për bollëkun dhe dashurinë.",
+  "Ligji i jetës është bollëku.",
+  "Burimet e mia janë të pafundme.",
+  "Të gjitha të mirat rrjedhin drejt meje.",
+  "Çdo gjë që më nevojitet vjen tek unë.",
+  "Paratë dhe pasuria vijnë tek unë lirshëm.",
+  "Fuqia e krijimit banon te unë.",
+  "Thesari i pasurive të pafundme është brenda meje.",
+  "Jeta i plotëson të gjitha nevojat e mia tani.",
+  "Kam lindur me gjithçka që më nevojitet.",
+  "Kam lindur për t’u ngritur mbi çdo pengesë.",
+  "Jam një me pafundësinë, prandaj ka vetëm sukses.",
+
+  /* Trupi dhe shëndeti — 81–90 */
+  "Trupi im është i fuqishëm.",
+  "Ka shëndet, energji dhe vitalitet në trupin tim.",
+  "Trupi im po bëhet çdo ditë më i shëndetshëm.",
+  "Unë e respektoj dhe e dua trupin tim.",
+  "E ushqej mirë trupin tim dhe e lë të pushojë.",
+  "Unë jam i sigurt dhe në paqe në trupin tim.",
+  "Çdo qelizë e trupit tim rigjenerohet çdo ditë.",
+  "Çdo qelizë në trupin tim vallëzon në ritmin e shëndetit.",
+  "Valë dashurie dhe shërimi rrjedhin në trupin tim.",
+  "Uji që pi i pastron qelizat e mia.",
+
+  /* Dashuri, falënderim dhe mrekulli — 91–100 */
+  "Unë rrezatoj dashuri, paqe dhe gëzim.",
+  "Ka harmoni dhe mirëkuptim në familjen time.",
+  "E dua jetën dhe jeta ma kthen këtë dashuri.",
+  "Jeta është një dhuratë për mua.",
+  "Mrekullitë ndodhin në jetën time çdo ditë.",
+  "Diçka e mrekullueshme po më ndodh pikërisht tani.",
+  "Surpriza të lumtura më vijnë çdo ditë.",
+  "Falenderimi në zemrën time tërheq mrekulli.",
+  "Çdo ditë kam më shumë arsye për të falenderuar.",
+  "Faleminderit për të gjitha të mirat në jetën time.",
+];
+
 export const GREETINGS = {
   [DAY_PARTS.MORNING]: {
     hi: "Mirëmëngjes",
     label: "RITUALI I MËNGJESIT",
     sub: "Nis ditën me qartësi dhe qëllim",
     intent: "energy",
-    quotes: [
-      "Çdo mëngjes je një version i ri i vetes.",
-      "Fryma e parë e ditës është një dhuratë.",
-      "Si e nis mëngjesin, ashtu e formon ditën.",
-      "Zgjohu ngadalë. Dita nuk ikën pa ty.",
-      "Para telefonit, merr një frymë të thellë.",
-      "Sot nuk ke pse ta mbash gjithë ditën përnjëherë.",
-      "Një qëllim i vetëm vlen më shumë se dhjetë detyra.",
-      "Trupi zgjohet me lëvizje, mendja me frymë.",
-      "Drita e mëngjesit nuk kërkon asgjë prej teje.",
-      "Nis nga e thjeshta: një frymë, një hap.",
-      "Mëngjesi është e vetmja orë që s'e ka prekur askush.",
-      "Dje mbaroi. Sot ka vend të mjaftueshëm.",
-      "Qetësia e mëngjesit është investimi i gjithë ditës.",
-      "Ngadalë nuk do të thotë vonë.",
-      "Zgjidh si do ta nisësh — pjesa tjetër vjen vetë.",
-      "Një trup i zgjuar butë punon më mirë.",
-      "Mos e mbush mëngjesin me zhurmën e të tjerëve.",
-      "Sot mjafton të jesh këtu, pastaj të bësh.",
-      "Frymë e gjatë, shpatulla poshtë, sy të hapur.",
-      "Ajo që bën në gjysmë ore mbetet gjithë ditën.",
-      "Nis ditën si mik i vetes, jo si mbikëqyrës.",
-      "Mëngjesi i qetë nuk humb kurrë kohë.",
-      "Një gllënjkë ujë, një frymë, një mendim i mirë.",
-      "Nuk je prapa. Je në fillim.",
-      "Ç'do të thuash sot kur të bjerë nata?",
-      "Hapi i parë është gjithmonë i vogël.",
-      "Lëre trupin të zgjohet para mendjes.",
-      "Sot ke të drejtë të nisësh nga e para.",
-      "Mëngjesi pyet vetëm: ku dëshiron të shkosh?",
-      "Qartësia nuk vjen nga nxitimi.",
-    ],
+    quotes: AFIRMIME,
   },
   [DAY_PARTS.AFTERNOON]: {
     hi: "Mirëdita",
     label: "PAUZË KOHERENCE",
     sub: "Një moment qetësie në mes të ditës",
     intent: "focus",
-    quotes: [
-      "Ndalo. Merr frymë. Rikthehu te qendra.",
-      "Qetësia mes zhurmës është fuqi.",
-      "Një pauzë e vetëdijshme rikthen energjinë.",
-      "Mesi i ditës është vendi ku humbet fryma.",
-      "Dy minuta tani kursejnë dy orë më vonë.",
-      "Nuk je makinë. Edhe ti ke nevojë të ndalosh.",
-      "Lëre ekranin një çast. Bota pret.",
-      "Fokusi kthehet kur trupi ulet.",
-      "Një gjë në një kohë — kjo është e gjithë zgjidhja.",
-      "Shpatullat i ke ngritur? Lëri të bien.",
-      "Ushqehu ngadalë, edhe kjo është praktikë.",
-      "Nxitimi nuk e shkurton rrugën, e lodh udhëtarin.",
-      "Ajo që ndihet urgjente rrallë është e rëndësishme.",
-      "Ngadalëso dhe do ta shohësh më qartë.",
-      "Fryma është pushimi që mbart me vete kudo.",
-      "Mesdita: pyet trupin çfarë i duhet vërtet.",
-      "Mjafton një frymë e plotë për të rifilluar.",
-      "Lodhja nuk është dobësi — është informacion.",
-      "Ndalo para se të të ndalojë trupi.",
-      "Gjysma e ditës ka mbaruar; gjysma të pret.",
-      "Kthehu te ajo që po bëje, por ngadalë.",
-      "Vëmendja është burimi yt më i shtrenjtë.",
-      "Një pushim i shkurtër nuk është kohë e humbur.",
-      "Trupi i tendosur mban një mendje të tendosur.",
-      "Pi ujë. Merr frymë. Vazhdo.",
-      "Nuk duhet ta mbarosh gjithçka sot.",
-      "Qendra jote nuk ka ikur — vetëm e le pas.",
-      "Ç'do të ndryshonte nëse ngadalësoje pak?",
-      "Ky çast është i mjaftueshëm ashtu siç është.",
-      "Rikthehu te fryma sa herë ta humbasësh.",
-    ],
+    quotes: AFIRMIME,
   },
   [DAY_PARTS.EVENING]: {
     hi: "Mirëmbrëma",
     label: "ÇLODHJE E MBRËMJES",
     sub: "Lëre ditën dhe kthehu te vetja",
     intent: "calm",
-    quotes: [
-      "Lëre ditën të shkojë butësisht.",
-      "Mbrëmja është koha për të çliruar.",
-      "Mirënjohja e mbyll ditën me paqe.",
-      "Ajo që nuk u bë sot, do të presë.",
-      "Hiqi rrobat e ditës — edhe ato të brendshmet.",
-      "Mbrëmja nuk është vazhdim i punës.",
-      "Tri gjëra të vogla shkuan mirë. Cilat?",
-      "Mjafton. Kjo fjalë e mbyll ditën.",
-      "Lëre trupin të ulet para se të flesh.",
-      "Të qenët i lodhur nuk do të thotë të kesh dështuar.",
-      "Fali vetes atë që nuk doli si e doje.",
-      "Mbrëmja i do dritat e ulëta dhe zërat e butë.",
-      "Nuk e mbyll dot ditën duke e menduar ende.",
-      "Dhe kjo ditë kaloi — me gjithçka pati.",
-      "Ngadalëso një orë para se të biesh.",
-      "Lëri mendimet të ulen si pluhuri në ujë.",
-      "Fundi i ditës kërkon butësi, jo bilanc.",
-      "Ajo që mban në trup, lëre këtu.",
-      "Sonte nuk ke pse të zgjidhësh asgjë.",
-      "Mbylle ditën me një frymë të gjatë.",
-      "Hapësira mes ditës dhe gjumit është e shenjtë.",
-      "Fjalët e mbrëmjes ndjekin ëndrrat.",
-      "Fik ekranet; ndiz qetësinë.",
-      "Ke bërë mjaftueshëm për sot.",
-      "Mirënjohja ndryshon si e kujton ditën.",
-      "Lëre trupin të rrëfejë ç'kaloi.",
-      "Mbrëmja është kthim, jo arratisje.",
-      "Nesër fillon i freskët — sonte pusho.",
-      "Ç'do të lije jashtë derës sonte?",
-      "Butësi ndaj vetes, pikërisht tani.",
-    ],
+    quotes: AFIRMIME,
   },
   [DAY_PARTS.NIGHT]: {
     hi: "Natën e mirë",
     label: "SHTEGU I GJUMIT",
     sub: "Përgatitu për pushim të thellë",
     intent: "sleep",
-    quotes: [
-      "Gjumi është meditimi më i thellë.",
-      "Lëre trupin të prehet, mendjen të qetësohet.",
-      "Nata sjell rilindjen e mëngjesit.",
-      "Nuk zgjidhet asgjë pas mesnatës.",
-      "Lëri mendimet aty; do t'i gjesh nesër.",
-      "Trupi rëndohet, fryma zgjatet, dita mbaron.",
-      "Errësira nuk është zbrazëti — është pushim.",
-      "Lësho fund e krye, nga këmbët te nofulla.",
-      "Nata të kërkon vetëm një gjë: të lëshohesh.",
-      "Gjumi vjen kur pushon ta kërkosh.",
-      "Çdo frymë e nxjerrë të fut më thellë.",
-      "Nuk ka asgjë për të bërë tani.",
-      "Lëre ditën e nesërme të flejë edhe ajo.",
-      "Qetësia e natës është e jotja.",
-      "Mendimet mund të vijnë; nuk duhen ndjekur.",
-      "Shtrati është vend prehjeje, jo planifikimi.",
-      "Nata numëron frymë, jo detyra.",
-      "Lësho shpatullat një herë të fundit.",
-      "Gjumi është kujdesi më i thjeshtë për veten.",
-      "Nën yje, gjithçka duket më e vogël.",
-      "Lëre trupin të bëjë punën e vet.",
-      "Fryma e ngadaltë është dera e gjumit.",
-      "Sonte nuk ke ku të shkosh veç brenda.",
-      "Heshtja është shoqëri e mirë.",
-      "Pushimi nuk fitohet — merret.",
-      "Lëre kokën të rëndohet mbi jastëk.",
-      "Nata nuk kërkon përgjigje.",
-      "Mbyll sytë; trupi e di rrugën.",
-      "Gjithçka e rëndë mund të presë deri nesër.",
-      "Flej i qetë — ke bërë sa munde.",
-    ],
+    quotes: AFIRMIME,
   },
 };
 
