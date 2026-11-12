@@ -195,6 +195,21 @@ export function techniqueFolder(techniqueId) {
     intent: technique.intent,
     desc: "sipas kategorive",
     groups: groupBy(items, "categoryId", CATEGORIES),
+    /*
+     * Dy pamje për të njëjtin folder.
+     *
+     * "rows"  — rreshta horizontalë të ndarë sipas kategorisë. Mënyra e
+     *           meditimeve: ato jetojnë te një kategori, dhe grupimi është
+     *           gjysma e kuptimit.
+     * "grid"  — një rrjetë e vetme me kapakë të mëdhenj, pa ndarje. Mënyra e
+     *           këngëve dhe e muzikës (shih `grid` te `data/techniques.js`):
+     *           ato nuk kanë kategori që të ndahen, dhe kapaku është vetë
+     *           arsyeja pse zgjidhet njëra apo tjetra.
+     *
+     * `items` rri e rrafshët pikërisht për të dytën; rrjeta nuk i grupon.
+     */
+    layout: technique.grid ? "grid" : "rows",
+    items,
   };
 }
 

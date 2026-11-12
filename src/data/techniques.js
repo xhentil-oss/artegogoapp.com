@@ -62,6 +62,6 @@ export const TECHNIQUES = [
    *     fshehura — një hap i ndërtuesit që nuk ka çfarë të japë është rrugë
    *     pa krye, jo premtim.
    */
-  { id: "t_songs",    label: "Këngë motivuese",       icon: Music,      intent: "energy", soon: true },
-  { id: "t_music",    label: "Muzikë meditimi",       icon: Headphones, intent: "calm",   soon: true },
+  { id: "t_songs",    label: "Këngë motivuese",       icon: Music,      intent: "energy", soon: true, grid: true },
+  { id: "t_music",    label: "Muzikë meditimi",       icon: Headphones, intent: "calm",   soon: true, grid: true },
 ];

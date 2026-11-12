@@ -7,7 +7,7 @@ import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { CoverArt } from "../../components/art/CoverArt.jsx";
 import { BackButton } from "../../components/ui/Controls.jsx";
 import { GroupHead } from "../../components/ui/SectionHead.jsx";
-import { CompactMedCard } from "../../components/cards/MedCard.jsx";
+import { CompactMedCard, TrackCard } from "../../components/cards/MedCard.jsx";
 
 /**
  * Folderi i hapur: hero i kategorisë + një rresht horizontal për çdo nën-grup.
@@ -17,7 +17,20 @@ export function FolderSheet({ collection }) {
   const { closeFolder } = useNavigation();
   /* i njëjti komponent shërben të dyja pamjet: `desc` thotë "sipas kategorive"
      kur hapet një teknikë, dhe "sipas teknikave" kur hapet një kategori */
-  const total = collection.groups.reduce((sum, g) => sum + g.items.length, 0);
+  /* "grid" vjen nga `techniqueFolder`; shih `layout` te `domain/classification.js`. */
+  const rrjete = collection.layout === "grid";
+  /*
+   * ⚠️  Te rrjeta numërohet `items`, JO `groups`.
+   *
+   *     `groupBy` i hedh poshtë rreshtat pa kategori — ata nuk bien te asnjë
+   *     bucket i njohur. Një këngë nuk ka kategori (`category_id` rri NULL te
+   *     databaza, me qëllim: përndryshe do të dilte edhe te folderi i asaj
+   *     kategorie). Po ta numëronim me `groups`, rrjeta do të shihte zero dhe
+   *     ekrani do të shkruante "Së shpejti" mbi një praktikë plot këngë.
+   */
+  const total = rrjete
+    ? (collection.items?.length ?? 0)
+    : collection.groups.reduce((sum, g) => sum + g.items.length, 0);
   useBodyScrollLock();
 
   return (
@@ -56,7 +69,11 @@ export function FolderSheet({ collection }) {
             {collection.label}
           </h2>
           <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 13, margin: "5px 0 0" }}>
-            {total > 0 ? `${collection.desc} · ${total} meditime` : "Së shpejti"}
+            {total === 0
+              ? "Së shpejti"
+              : rrjete
+                ? `${total} pjesë`
+                : `${collection.desc} · ${total} meditime`}
           </p>
         </div>
       </div>
@@ -85,7 +102,33 @@ export function FolderSheet({ collection }) {
           </p>
         )}
 
-        {collection.groups.map((group, groupIndex) => (
+        {/*
+          Rrjeta e këngëve dhe e muzikës: një rrjetë e vetme dy-kolonëshe, pa
+          ndarje sipas kategorive. Ato nuk kanë kategori — dhe një rresht
+          horizontal që rrëshqitet fsheh gjysmën e kapakëve, ndërsa pikërisht
+          kapaku është ajo që e bën njeriun të zgjedhë një këngë.
+        */}
+        {rrjete && total > 0 && (
+          <div
+            className="ag-stagger"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 14,
+              /* `start` — pa të, një titull dy-rreshtësh ia zhvendos kapakun
+                 fqinjit brenda të njëjtit rresht. E njëjta arsye si te
+                 `TechniqueGrid` dhe `CategoryList`. */
+              alignItems: "start",
+              padding: `6px ${layout.gutter}px 0`,
+            }}
+          >
+            {collection.items.map((item) => (
+              <TrackCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+
+        {!rrjete && collection.groups.map((group, groupIndex) => (
           <section key={group.name} style={{ marginTop: groupIndex === 0 ? 14 : 24 }}>
             <GroupHead title={group.name} count={group.items.length} />
             {/* scrollPaddingLeft: shih shënimin në components/ui/Row.jsx */}

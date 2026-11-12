@@ -100,6 +100,13 @@ function toItem(row) {
     /* Minuta, të rrumbullakosura lart: një meditim 90-sekondësh është "2 min",
        kurrë "1" — dhe kurrë 0, që do ta bënte të padukshëm te ndërtuesi. */
     dur: Math.max(1, Math.round(row.duration_sec / 60)),
+    /*
+     * Sekondat e plota, pa rrumbullakosje. `dur` mjafton te kartelat e
+     * meditimeve ("9 min"), por kartela e këngëve e shkruan gjatësinë
+     * saktësisht ("3 min 49 s") — dhe për atë, minutat e rrumbullakosura
+     * nuk kthehen dot prapa.
+     */
+    durationSec: Number(row.duration_sec) || 0,
     desc: row.description ?? `${row.title} — praktikë e udhëhequr nga Arte Gogo.`,
     /*
      * Përfitimet e vetë meditimit, një për rresht te databaza.

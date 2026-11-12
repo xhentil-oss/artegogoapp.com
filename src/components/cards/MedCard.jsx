@@ -113,3 +113,75 @@ export function CompactMedCard({ item }) {
     </RowItem>
   );
 }
+
+
+/**
+ * Kartela e një kënge ose pjese muzikore, te rrjeta e praktikës.
+ *
+ * Ndryshe nga `CompactMedCard`, që rri te një rresht horizontal dhe jep vetëm
+ * minutat, kjo zë një kuti të rrjetës dhe shkruan edhe interpretuesin edhe
+ * gjatësinë e saktë — sepse te muzika gjatësia nuk është "rreth sa minuta
+ * zgjat", por vetë pjesa.
+ *
+ * ⚠️  VETËM TË DHËNA TË VËRTETA. `lib/placeholders.js` mban autorë dhe
+ *     vlerësime të trilluara nga indeksi; këtu nuk përdoret asnjëri. Emri
+ *     vjen nga `narrator` te databaza, gjatësia nga `durationSec`. Nëse
+ *     njëri mungon, rreshti thjesht nuk shkruhet — më mirë bosh se i sajuar.
+ *
+ * ⚠️  PA YLL VLERËSIMI. Pamja që solli klientja e ka; ne jo, sepse asnjë
+ *     meditim nuk ka marrë ende asnjë votë — të gjitha janë 0.00. Një "0,0 ★"
+ *     poshtë çdo kënge do të lexohej si vlerësim i keq, jo si mungesë.
+ *     Kur votat të fillojnë, rreshti hapet këtu dhe askund tjetër.
+ */
+export function TrackCard({ item }) {
+  const { accessBadge } = usePlayback();
+  const { openMeditation } = useNavigation();
+
+  return (
+    <button
+      onClick={() => openMeditation(item)}
+      className="ag-card"
+      style={{ ...sx.cardButton, textAlign: "left" }}
+    >
+      <div style={cover("square", 16)}>
+        <CoverArt intent={item.intent} image={item.cover} />
+        <AccessBadge {...accessBadge(item)} size={12} />
+      </div>
+
+      <div
+        style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: T.ink,
+          marginTop: 10,
+          lineHeight: 1.3,
+          /* Titujt e këngëve janë të gjatë — dy rreshta, pastaj pikë. Pa këtë,
+             një titull tre-rreshtësh ia shtyn poshtë fqinjin e vet. */
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {item.title}
+      </div>
+
+      {item.narrator && (
+        <div style={{ fontSize: 12.5, color: T.sub, marginTop: 3, ...sx.truncate }}>
+          {item.narrator}
+        </div>
+      )}
+
+      <div style={{ fontSize: 12.5, color: T.faint, marginTop: 2 }}>{gjatesia(item)}</div>
+    </button>
+  );
+}
+
+/** "3 min 49 s", ose vetëm minutat kur sekondat bien fiks. */
+function gjatesia(item) {
+  const sek = Number(item.durationSec) || 0;
+  if (!sek) return `${item.dur} min`;
+  const m = Math.floor(sek / 60);
+  const s = sek % 60;
+  return s === 0 ? `${m} min` : `${m} min ${s} s`;
+}
