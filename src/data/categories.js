@@ -23,12 +23,20 @@
  *
  *     Po të vijnë ikona të reja, duhet e njëjta punë; mos i vër ashtu siç vijnë.
  *
- * ⚠️  TETË KATEGORI RRINË PA IKONË: "Emocionet" (e vetmja me meditime), dhe
- *     shtatë që janë bosh e nuk shfaqen fare. Pa `icon`, karta vizaton
+ * ⚠️  TETË KATEGORI RRINË PA IKONË: "Fëmijë dhe adoleshentë" (e vetmja me
+ *     meditime), dhe shtatë që janë bosh e nuk shfaqen fare.
+ *
+ *     Fillimisht ishte "Emocionet" ajo që mbeti pa — zip-i kishte 20 figura
+ *     për 21 kategori jo-bosh. Me kërkesë të klientes (13 nëntor), ikona e dy
+ *     shkëndijave që buzëqeshin u zhvendos tek ajo: fytyra me shprehje është
+ *     ajo që u rri më afër emocioneve. "Emocionet" rri e para te lista, pra
+ *     mungesa u zhvendos atje ku bie më pak në sy. Kthehet duke ia dhënë
+ *     sërish `icon` kategorisë `c_femije_8_12` dhe duke ia hequr
+ *     `c_emocionet` — skedari është i njëjti. Pa `icon`, karta vizaton
  *     peizazhin procedural si më parë — `CoverArt` bie vetë te arti.
  */
 export const CATEGORIES = [
-  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress" },
+  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet.jpeg" },
   { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg" },
   { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg" },
   { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg" },
@@ -56,7 +64,7 @@ export const CATEGORIES = [
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm", icon: "/ikona/situata.jpeg" },
   { id: "c_emergjence",  label: "Emergjencë",                                 intent: "stress" },
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
-  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm", icon: "/ikona/femijet-8-12.jpeg" },
+  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm" },
   { id: "c_adoleshentet",label: "Adoleshentët",                               intent: "focus" },
   { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy", icon: "/ikona/mengjes.jpeg" },
   { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep", icon: "/ikona/mbremje.jpeg" },
