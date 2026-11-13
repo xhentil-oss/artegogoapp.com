@@ -193,6 +193,11 @@ export function techniqueFolder(techniqueId) {
     id: technique.id,
     label: technique.label,
     intent: technique.intent,
+    /* E njëjta foto si te pllaka — folderi i hapur duhet ta vazhdojë atë që
+       preku përdoruesi, jo t'i japë një peizazh tjetër. Kategoritë nuk kanë
+       foto, ndaj `categoryFolder` nuk e dërgon fare dhe hero-ja e tyre rri
+       art procedural. */
+    cover: technique.cover,
     desc: "sipas kategorive",
     groups: groupBy(items, "categoryId", CATEGORIES),
     /*

@@ -47,7 +47,7 @@ export function FolderSheet({ collection }) {
         }}
       >
         <div style={sx.absoluteFill}>
-          <CoverArt intent={collection.intent} big />
+          <CoverArt intent={collection.intent} image={collection.cover} big />
         </div>
         <div style={{ ...sx.absoluteFill, background: heroVeil }} />
 

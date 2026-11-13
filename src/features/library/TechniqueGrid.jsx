@@ -42,7 +42,9 @@ function TechniquePill({ technique, onOpen }) {
           boxShadow: shadows.cardSmall,
         }}
       >
-        <CoverArt intent={technique.intent} />
+        {/* `cover` e ka vetëm një pjesë e praktikave; pjesa tjetër mbetet te
+            peizazhi procedural. Shih `data/techniques.js`. */}
+        <CoverArt intent={technique.intent} image={technique.cover} />
         {/* ikona merr ngjyrën e teknikës brenda një rrethi të bardhë */}
         <div
           style={{
