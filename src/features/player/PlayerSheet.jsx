@@ -403,45 +403,35 @@ export function PlayerSheet({ sequence }) {
         {engine.current?.title}
       </h2>
       {/*
-        Firma dhe përshkrimi — VETËM kur nuk ka udhëzues frymëmarrjeje.
+        Firma — VETËM kur nuk ka udhëzues frymëmarrjeje.
 
         ⚠️  Te një ushtrim, poshtë titullit vijnë menjëherë katër hapat, dhe ata
-            janë e vetmja gjë që duhet lexuar atje. Një paragraf që përshkruan
-            me fjalë të njëjtin ritëm që figura e tregon me lëvizje e zgjat
-            ekranin dhe e shpërqendëron — pikërisht atë që ushtrimi mundohet të
-            mbledhë. (Kërkesë e klientes, 9 tetor 2026.)
+            janë e vetmja gjë që duhet lexuar atje.
 
-            Te meditimet e tjera mbetet si ishte: aty përshkrimi është e vetmja
-            gjë që thotë çfarë do të dëgjosh.
+        ⚠️  PËRSHKRIMI NUK SHFAQET MË KËTU (kërkesë e klientes, 13 nëntor 2026).
+            Qëndroi deri atëherë si paragraf nën firmën. Por njeriu e ka lexuar
+            tashmë te fleta e meditimit, pikërisht para se të shtypte "Luaj" —
+            dhe këtu, me sy gjysmë të mbyllur, ai bllok teksti vetëm zgjat
+            ekranin dhe shtyn kontrollet poshtë. `description` mbetet te
+            databaza dhe te `MeditationSheet`; hiqet vetëm nga luajtësi.
+
+            Po të duhet prapë, kthehet duke e vënë sërish paragrafin me
+            `engine.current?.desc` poshtë firmës — asgjë tjetër nuk u prek.
       */}
       {!ritmi && (
-        <>
-          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
-            <div style={circle(24, tile(meta.g))}>
-              {/* Logoja e hyrjes — e njëjta si te "Krijo" dhe te postimet: e zezë
-                  mbi sfond të tejdukshëm, ndaj kthehet e bardhë me filtër. */}
-              <img
-                src="/transparent-logo-2.png"
-                alt=""
-                aria-hidden="true"
-                style={{ height: 14, width: "auto", filter: "brightness(0) invert(1)" }}
-              />
-            </div>
-            <span style={{ color: onDark.primary, fontSize: 15 }}>Arte Gogo · {meta.label}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 4 }}>
+          <div style={circle(24, tile(meta.g))}>
+            {/* Logoja e hyrjes — e njëjta si te "Krijo" dhe te postimet: e zezë
+                mbi sfond të tejdukshëm, ndaj kthehet e bardhë me filtër. */}
+            <img
+              src="/transparent-logo-2.png"
+              alt=""
+              aria-hidden="true"
+              style={{ height: 14, width: "auto", filter: "brightness(0) invert(1)" }}
+            />
           </div>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontSize: 13.5,
-              maxWidth: 360,
-              textAlign: "center",
-              lineHeight: 1.6,
-              margin: "10px 0 0",
-            }}
-          >
-            {engine.current?.desc}
-          </p>
-        </>
+          <span style={{ color: onDark.primary, fontSize: 15 }}>Arte Gogo · {meta.label}</span>
+        </div>
       )}
 
       {/*
