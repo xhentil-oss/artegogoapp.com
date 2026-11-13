@@ -44,6 +44,18 @@
 --     se përdoruesi nuk i sheh.
 --
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  ASNJË VIDEO
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Dy nga 18 skedarët e zip-it ishin `.mp4` me rrjedhë h264: "Observuesi"
+-- dhe "Zgjidhja e një sfide". Klientja e sqaroi më 13 nëntor 2026 se kjo
+-- ishte gabim ruajtjeje te studioja — të 18-ta janë pjesë zëri, asnjëra
+-- nuk duhet të hapet si video.
+--
+-- Zëri u nxor prej tyre pa prekur asgjë tjetër (aac 196 kbps → mp3 192 kbps,
+-- 48 kHz stereo, e njëjta kohëzgjatje deri në të qindtën). Prandaj te ky
+-- skript `video_url` mbetet NULL kudo, edhe te rreshti që e kishte.
+--
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 SET NAMES utf8mb4;
 
@@ -90,19 +102,37 @@ WHERE id IN (
 
 
 -- ───────────────────────────────────────────────────────────────
---  2. KËNGA E 18-TË — ajo që nuk u shkarkua kurrë
+--  2. "OBSERVUESI" — nga video në zë
 -- ───────────────────────────────────────────────────────────────
--- "Zgjidhja e një sfide" është VIDEO: h264 824×1464 me zë aac, 239,6 s,
--- 9 891 669 bajt. Si "Observuesi", që doli video për të njëjtën arsye:
--- zip-i i ruan të dyja me prapashtesën `.mp4` dhe shkarkimi i zhvendosur
--- ia kishte ngjitur prapashtesën këngës fqinje.
+-- Ky rresht (sot me titullin "Pranimi i vetes") tregon te
+-- `pranimi-i-vetes.mp4`, që mban videon e Observuesit. Pas pikës 1 ai
+-- quhet "Observuesi", dhe tani duhet të tregojë te zëri i nxjerrë.
 --
--- Emri `…-video.mp4` dhe jo `zgjidhja-e-nje-sfide.mp4`, sepse atje pranë
--- rri `zgjidhja-e-nje-sfide.mp3`, që pas pikës 1 i përket "Zëri im le të
--- dëgjohet". Dy skedarë me të njëjtin trung dhe dy zotërues të ndryshëm
--- është pikërisht ngatërresa që sapo na kushtoi një ditë.
+-- Emri `observuesi-audio.mp3` dhe jo `observuesi.mp3`, sepse ky i fundit
+-- është zënë: mban zërin e "Ndiej falënderim!". Shih shënimin te kreu.
 --
--- ⚠️  Kërkon NGARKIM përpara: `meditime/kenge-motivuese/zgjidhja-e-nje-sfide-video.mp4`
+-- ⚠️  Kërkon NGARKIM përpara: `meditime/kenge-motivuese/observuesi-audio.mp3`
+
+UPDATE meditations
+   SET audio_url = 'meditime/kenge-motivuese/observuesi-audio.mp3',
+       video_url = NULL,
+       duration_sec = 242
+ WHERE id = 'cc7f8d43-deab-11f1-af71-107c614af9b1';
+
+-- Duhet "1 row affected".
+
+
+-- ───────────────────────────────────────────────────────────────
+--  3. KËNGA E 18-TË — ajo që nuk u shkarkua kurrë
+-- ───────────────────────────────────────────────────────────────
+-- "Zgjidhja e një sfide" nuk mbërriti më 12 nëntor sepse ishte e fundit
+-- në listë dhe nuk mbeti emër që t'i ngjitej. Edhe ajo ishte `.mp4`;
+-- zëri u nxor njësoj, 239,6 s.
+--
+-- Emri `…-audio.mp3` sepse `zgjidhja-e-nje-sfide.mp3` është zënë nga
+-- zëri i "Zëri im le të dëgjohet".
+--
+-- ⚠️  Kërkon NGARKIM përpara: `meditime/kenge-motivuese/zgjidhja-e-nje-sfide-audio.mp3`
 
 INSERT INTO meditations
   (title, technique_id, category_id, subgroup, narrator,
@@ -110,8 +140,8 @@ INSERT INTO meditations
    is_premium, is_block, published_at)
 SELECT 'Zgjidhja e një sfide', tec.id, NULL, 'Këngë', NULL,
        240,
-       'meditime/kenge-motivuese/zgjidhja-e-nje-sfide-video.mp4',
-       'meditime/kenge-motivuese/zgjidhja-e-nje-sfide-video.mp4',
+       'meditime/kenge-motivuese/zgjidhja-e-nje-sfide-audio.mp3',
+       NULL,
        NULL, NULL, 1, 0, NOW()
   FROM techniques tec
  WHERE tec.slug = 'kenge-motivuese'
@@ -128,11 +158,12 @@ SELECT 'Zgjidhja e një sfide', tec.id, NULL, 'Këngë', NULL,
 -- ───────────────────────────────────────────────────────────────
 --  KONTROLL
 -- ───────────────────────────────────────────────────────────────
--- Duhen 18 rreshta. Kolona e fundit tregon se emri i skedarit nuk
--- përputhet më me titullin — kjo është e pritshme, shih shënimin lart.
+-- Duhen 18 rreshta. `video_url` duhet NULL te të gjitha. Kolona `skedari`
+-- nuk përputhet më me titullin — kjo është e pritshme, shih shënimin lart.
 
 SELECT m.title, m.duration_sec,
-       SUBSTRING_INDEX(m.audio_url, '/', -1) AS skedari
+       SUBSTRING_INDEX(m.audio_url, '/', -1) AS skedari,
+       m.video_url
   FROM meditations m
   JOIN techniques t ON t.id = m.technique_id
  WHERE t.slug = 'kenge-motivuese'
