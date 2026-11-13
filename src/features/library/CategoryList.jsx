@@ -73,8 +73,10 @@ function CategoryBox({ category, onOpen }) {
           textAlign: "left",
         }}
       >
+        {/* `icon` e ka shumica e kategorive; pa të mbetet peizazhi procedural.
+            `borderRadius: 12` i rrumbullakos edhe qoshet e vetë figurës. */}
         <div style={{ width: 46, height: 46, borderRadius: 12, overflow: "hidden", position: "relative", flexShrink: 0 }}>
-          <CoverArt intent={category.intent} />
+          <CoverArt intent={category.intent} image={category.icon} />
         </div>
 
         <div style={sx.flexText}>
