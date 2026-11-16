@@ -4,6 +4,7 @@ import {
   Download,
   Headphones,
   Info,
+  Loader2,
   Pause,
   Play,
   RotateCcw,
@@ -108,10 +109,20 @@ export function PlayerSheet({ sequence }) {
    *     veprim që nuk thotë asgjë duket i prishur edhe kur ka punuar.
    */
   const [flash, setFlash] = useState(null);
-  const say = (message) => {
+  /*
+   * ⚠️  Ora e mëparshme ANULOHET.
+   *
+   *     Pa këtë, dy mesazhe brenda 2 sekondash përplaseshin: ora e të parit
+   *     fshinte të dytin pothuajse sapo dilte. Shkarkimi tani flet dy herë —
+   *     "po ruhet" dhe pastaj rezultati — ndaj kjo u bë e dukshme.
+   */
+  const flashTimer = useRef(null);
+  const say = (message, ms = 2600) => {
+    clearTimeout(flashTimer.current);
     setFlash(message);
-    setTimeout(() => setFlash(null), 2200);
+    flashTimer.current = setTimeout(() => setFlash(null), ms);
   };
+  useEffect(() => () => clearTimeout(flashTimer.current), []);
 
   const [downloading, setDownloading] = useState(false);
 
@@ -138,12 +149,29 @@ export function PlayerSheet({ sequence }) {
     }
 
     if (!supportsOffline()) {
-      say("Kjo pajisje nuk e mbështet ruajtjen brenda aplikacionit.");
+      say("Kjo pajisje nuk e lejon ruajtjen brenda aplikacionit.");
       return;
     }
 
+    /*
+     * ⚠️  Flitet PARA se të niset, dhe ikona bëhet orë.
+     *
+     *     Një meditim 9-minutësh është rreth 8MB: me internet celulari kalojnë
+     *     dhjetëra sekonda gjatë të cilave asgjë nuk ndryshonte në ekran.
+     *     Klientja shtypi dhe pa "asgjë" (16 nëntor 2026) — butoni po punonte,
+     *     por heshturazi.
+     */
     setDownloading(true);
-    const result = await storeOffline(engine.current);
+    say("Po ruhet në aplikacion…", 60000);
+
+    let result;
+    try {
+      result = await storeOffline(engine.current);
+    } catch (err) {
+      /* Asnjë rrugë nuk mbetet e heshtur: edhe një përjashtim i papritur
+         shkruhet në ekran, përndryshe butoni duket i prishur pa asnjë shenjë. */
+      result = { ok: false, reason: null, detail: String(err?.message ?? err) };
+    }
     setDownloading(false);
 
     if (result.ok) {
@@ -153,10 +181,11 @@ export function PlayerSheet({ sequence }) {
     }
     /* 402 nga serveri nuk është gabim për t'u treguar — është ftesë. */
     if (result.reason === REASON.PREMIUM) {
+      setFlash(null);
       openUpsell();
       return;
     }
-    say(REASON_TEXT[result.reason] ?? "Shkarkimi nuk u krye.");
+    say(result.detail ?? REASON_TEXT[result.reason] ?? "Ruajtja nuk u krye.", 5000);
   };
 
   /** Ruaj te të preferuarat — shfaqet te Profili, dhe shkon te databaza. */
@@ -253,7 +282,11 @@ export function PlayerSheet({ sequence }) {
             label={downloading ? "Po shkarkohet…" : downloaded ? "Hiq nga të shkarkuarat" : "Shkarko"}
             active={downloaded}
           >
-            <Download size={17} color={downloaded ? T.gold : "#fff"} />
+            {downloading ? (
+              <Loader2 size={17} color="#fff" className="ag-spin" />
+            ) : (
+              <Download size={17} color={downloaded ? T.gold : "#fff"} />
+            )}
           </OutlineCircle>
 
           <OutlineCircle onClick={share} label="Shpërndaj">

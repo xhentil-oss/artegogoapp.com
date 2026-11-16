@@ -63,7 +63,9 @@ async function box() {
  */
 export async function storeOffline(item) {
   const cache = await box();
-  if (!cache) return { ok: false, reason: REASON.MISSING };
+  if (!cache) {
+    return { ok: false, reason: null, detail: "Kujtesa e aplikacionit nuk u hap dot." };
+  }
 
   const link = await fetchAudioUrl(item?.id);
   if (!link.ok) return link;
@@ -74,7 +76,14 @@ export async function storeOffline(item) {
   } catch {
     return { ok: false, reason: REASON.OFFLINE };
   }
-  if (!response.ok) return { ok: false, reason: REASON.MISSING };
+  /*
+   * Kodi i serverit shkruhet te mesazhi. Një "nuk u krye" i thatë nuk thotë
+   * nëse skedari mungon (404), nëse nënshkrimi skadoi (410) apo nëse porta e
+   * abonimit e ndaloi (403) — dhe pa të, kërkimi nis nga zeroja.
+   */
+  if (!response.ok) {
+    return { ok: false, reason: null, detail: `Serveri ktheu ${response.status} për skedarin.` };
+  }
 
   /*
    * Trupi merret si `blob` dhe rishkruhet me koka të tonat.
@@ -92,9 +101,13 @@ export async function storeOffline(item) {
 
   try {
     await cache.put(keyFor(item.id), new Response(blob, { headers }));
-  } catch {
-    /* Kuota e pajisjes u mbush. */
-    return { ok: false, reason: REASON.MISSING };
+  } catch (err) {
+    /* Zakonisht kuota e pajisjes. Mesazhi i vërtetë kalon te përdoruesi. */
+    return {
+      ok: false,
+      reason: null,
+      detail: `Nuk u ruajt dot (${Math.round(blob.size / 1048576)}MB): ${err?.message ?? err}`,
+    };
   }
 
   return { ok: true, bytes: blob.size };
