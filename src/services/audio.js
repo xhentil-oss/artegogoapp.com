@@ -67,55 +67,14 @@ export async function fetchAudioUrl(meditationId) {
   }
 }
 
-/** Emër skedari i sigurt nga titulli shqip. */
-function fileName(title) {
-  const base = (title || "meditim")
-    .replace(/[ëË]/g, "e")
-    .replace(/[çÇ]/g, "c")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toLowerCase();
-  return `${base || "meditim"}.mp3`;
-}
-
-/**
- * Shkarkon vërtet skedarin.
+/*
+ * ⚠️  `downloadAudio()` U HOQ më 16 nëntor 2026.
  *
- * Merret si `blob` dhe jo thjesht duke hapur lidhjen, për dy arsye: emri i
- * skedarit vendoset nga ne (përndryshe do të ruhej me hash-in e nënshkrimit),
- * dhe një lidhje që kthen 404 do të hapte një skedë bosh në vend që të thoshte
- * çfarë ndodhi.
+ *     Krijonte një `<a download>`, pra e ruante mp3-në te dosja "Downloads" e
+ *     telefonit: jashtë aplikacionit, e dëgjueshme nga çdo player dhe e
+ *     dërgueshme kujtdo. Klientja e kërkoi të kundërtën — kopja të rrijë
+ *     brenda aplikacionit. Zëvendësuesi është `services/offlineAudio.js`.
  *
- * @returns {Promise<{ ok: true, name: string } | { ok: false, reason: string }>}
+ *     Nuk u la "për çdo rast": një funksion i tillë, i harruar te skedari,
+ *     kthehet në përdorim nga rrjedha e parë që kërkon "shkarkim".
  */
-export async function downloadAudio(item) {
-  const link = await fetchAudioUrl(item?.id);
-  if (!link.ok) return link;
-
-  let response;
-  try {
-    response = await fetch(link.url);
-  } catch {
-    return { ok: false, reason: REASON.OFFLINE };
-  }
-
-  /* Skedari nuk është ngarkuar ende te serveri — rasti i pritshëm sot. */
-  if (!response.ok) return { ok: false, reason: REASON.MISSING };
-
-  const blob = await response.blob();
-  const name = fileName(item?.title);
-
-  const href = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = href;
-  anchor.download = name;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  /* Lirohet pasi shfletuesi e ka marrë — pa këtë, blob-i mbetet në kujtesë. */
-  setTimeout(() => URL.revokeObjectURL(href), 1000);
-
-  return { ok: true, name };
-}

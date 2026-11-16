@@ -18,7 +18,8 @@ import { tile, immersiveBackdrop } from "../../theme/gradients.js";
 import { FLUID, padTop, padBottom } from "../../theme/responsive.js";
 import { fmt } from "../../lib/format.js";
 import { shareText } from "../../lib/share.js";
-import { downloadAudio, REASON, REASON_TEXT } from "../../services/audio.js";
+import { REASON, REASON_TEXT } from "../../services/audio.js";
+import { removeOffline, storeOffline, supportsOffline } from "../../services/offlineAudio.js";
 import { intentMeta } from "../../domain/intent.js";
 import { breathStateAt, breathingFor } from "../../domain/breathing.js";
 import { usePlayer } from "../../store/PlayerContext.jsx";
@@ -115,7 +116,12 @@ export function PlayerSheet({ sequence }) {
   const [downloading, setDownloading] = useState(false);
 
   /**
-   * Shkarkim i vërtetë: lidhje e nënshkruar nga serveri, pastaj skedari.
+   * Shkarkimi BRENDA aplikacionit.
+   *
+   * ⚠️  Nuk ruan më asgjë te telefoni. Më parë skedari shkonte te dosja
+   *     "Downloads", pra dilte nga aplikacioni dhe dëgjohej e shpërndahej pa
+   *     abonim. Tani kopja rri te kujtesa e aplikacionit (`offlineAudio.js`)
+   *     dhe player-i e lexon prej saj kur nuk ka internet.
    *
    * ⚠️  Regjistrimi te `/me/downloads` bëhet VETËM pas suksesit. Më parë
    *     flamuri ndizej menjëherë, ndaj profili tregonte një meditim "të
@@ -125,18 +131,24 @@ export function PlayerSheet({ sequence }) {
     if (!engine.current || downloading) return;
 
     if (downloaded) {
+      await removeOffline(currentId);
       toggleDownload(currentId);
       say("Hequr nga të shkarkuarat");
       return;
     }
 
+    if (!supportsOffline()) {
+      say("Kjo pajisje nuk e mbështet ruajtjen brenda aplikacionit.");
+      return;
+    }
+
     setDownloading(true);
-    const result = await downloadAudio(engine.current);
+    const result = await storeOffline(engine.current);
     setDownloading(false);
 
     if (result.ok) {
       toggleDownload(currentId);
-      say(`U shkarkua: ${result.name}`);
+      say("U ruajt në aplikacion — dëgjohet edhe pa internet");
       return;
     }
     /* 402 nga serveri nuk është gabim për t'u treguar — është ftesë. */

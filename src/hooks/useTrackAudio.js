@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchAudioUrl, REASON } from "../services/audio.js";
+import { readOffline } from "../services/offlineAudio.js";
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -64,6 +65,12 @@ export function useTrackAudio(meditationId) {
   const resumeAtRef = useRef(0);
   /** Bileta e kërkesës së fundit; përgjigjet e vjetra e humbin garën. */
   const requestRef = useRef(0);
+  /**
+   * `blob:` URL-ja e kopjes së brendshme, që të lirohet kur ndërron meditimi.
+   * Pa këtë, çdo hap i një seance të shkarkuar do të linte pas vetes një
+   * skedar të plotë në kujtesë.
+   */
+  const blobUrlRef = useRef(null);
 
   const [loaded, setLoaded] = useState(IDLE);
   const [duration, setDuration] = useState(0);
@@ -135,6 +142,11 @@ export function useTrackAudio(meditationId) {
       el.removeEventListener("ended", onEnded);
       readyRef.current = false;
       elRef.current = null;
+      /* Kopja e brendshme nuk duhet të mbetet në kujtesë pas player-it. */
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
   }, []);
 
@@ -152,9 +164,31 @@ export function useTrackAudio(meditationId) {
     const ticket = ++requestRef.current;
     readyRef.current = false;
 
+    /* Kopja e mëparshme lirohet para se të vijë e reja. */
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+
     if (!id) return;
 
-    fetchAudioUrl(id).then((result) => {
+    /*
+     * KOPJA E BRENDSHME E PARA.
+     *
+     * ⚠️  Rendi nuk është çështje shpejtësie — është i vetmi që punon pa
+     *     internet. `fetchAudioUrl` i kërkon serverit një lidhje të
+     *     nënshkruar; pa rrjet ajo dështon, dhe një meditim i shkarkuar do të
+     *     mbetej i padëgjueshëm pikërisht atëherë kur i duhet përdoruesit.
+     */
+    const burimi = readOffline(id)
+      .then((kopja) => {
+        if (!kopja) return fetchAudioUrl(id);
+        blobUrlRef.current = kopja.url;
+        return { ok: true, url: kopja.url, kind: kopja.kind };
+      })
+      .catch(() => fetchAudioUrl(id));
+
+    burimi.then((result) => {
       /* Meditimi ndërroi ndërkohë, ose komponenti u shkëput. */
       if (ticket !== requestRef.current) return;
       const el = elRef.current;
