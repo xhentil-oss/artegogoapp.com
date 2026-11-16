@@ -35,23 +35,26 @@
  * ⚠️  TETË KATEGORI RRINË PA IKONË: "Fëmijë dhe adoleshentë" (e vetmja me
  *     meditime), dhe shtatë që janë bosh e nuk shfaqen fare.
  *
- *     Fillimisht ishte "Emocionet" ajo që mbeti pa — zip-i kishte 20 figura
- *     për 21 kategori jo-bosh. Me kërkesë të klientes (13 nëntor), ikona e dy
- *     shkëndijave që buzëqeshin u zhvendos tek ajo: fytyra me shprehje është
- *     ajo që u rri më afër emocioneve. "Emocionet" rri e para te lista, pra
- *     mungesa u zhvendos atje ku bie më pak në sy. Kthehet duke ia dhënë
- *     sërish `icon` kategorisë `c_femije_8_12` dhe duke ia hequr
- *     `c_emocionet` — skedari është i njëjti.
+     HISTORIKU I DY IKONAVE TË FUNDIT, që të mos ribëhet rrethi:
+
+ *     13 nëntor — zip-i solli 20 figura për 21 kategori jo-bosh. "Emocionet"
+ *     mbeti pa; me kërkesë të klientes mori ikonën e dy shkëndijave që
+ *     buzëqeshin, të marrë nga "Fëmijë dhe adoleshentë".
  *
- *     Më 16 nëntor "Fëmijë dhe adoleshentë" e mori ikonën e vet përsëri, por
- *     të prerë nga fotoja e kokës së asaj kategorie (`kategoria-femijet.jpeg`,
- *     katrori qendror me të dy fëmijët). Pra ajo ndryshon në stil nga të
- *     njëzetat e tjera: fotografi, jo pllakë e vizatuar. Kur të vijë një
- *     ikonë e vërtetë, zëvendësohet skedari dhe asgjë tjetër. Pa `icon`, karta vizaton
+ *     16 nëntor — klientja e kërkoi atë ikonë prapë te fëmijët. Tani ajo rri
+ *     aty si `shkendijat.jpeg`, ndërsa "Emocionet" merr `emocionet-drite.jpeg`,
+ *     katrorin qendror të prerë nga fotoja e vet e kokës. Pra ikona e
+ *     Emocioneve është fotografi, jo pllakë e vizatuar si të njëzetat e tjera.
+ *
+ *  ⚠️  EMRAT E RINJ JANË ME QËLLIM. Skedarët e vjetër (`emocionet.jpeg`,
+ *      `femijet-8-12.jpeg`) mbanin përmbajtje tjetër, dhe serveri i jep
+ *      ikonat me `max-age=86400`. Po të ruheshin emrat, shfletuesit do të
+ *      vazhdonin të tregonin ato të djeshmet deri në njëzet e katër orë.
+ *      Dy skedarët e vjetër rrinë ende te serveri; asgjë nuk i lidh. Pa `icon`, karta vizaton
  *     peizazhin procedural si më parë — `CoverArt` bie vetë te arti.
  */
 export const CATEGORIES = [
-  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet.jpeg", cover: "/kopertina/kategoria-emocionet.jpeg" },
+  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet-drite.jpeg", cover: "/kopertina/kategoria-emocionet.jpeg" },
   { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg", cover: "/kopertina/kategoria-zemra-plot.jpeg" },
   { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg", cover: "/kopertina/kategoria-vetebesim.jpeg" },
   { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg", cover: "/kopertina/kategoria-tru.jpeg" },
@@ -79,7 +82,7 @@ export const CATEGORIES = [
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm", icon: "/ikona/situata.jpeg", cover: "/kopertina/kategoria-situata.jpeg" },
   { id: "c_emergjence",  label: "Emergjencë",                                 intent: "stress" },
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
-  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm", icon: "/ikona/femijet-8-12.jpeg", cover: "/kopertina/kategoria-femijet.jpeg" },
+  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm", icon: "/ikona/shkendijat.jpeg", cover: "/kopertina/kategoria-femijet.jpeg" },
   { id: "c_adoleshentet",label: "Adoleshentët",                               intent: "focus" },
   { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy", icon: "/ikona/mengjes.jpeg", cover: "/kopertina/kategoria-mengjes.jpeg" },
   { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep", icon: "/ikona/mbremje.jpeg", cover: "/kopertina/kategoria-mbremje.jpeg" },
