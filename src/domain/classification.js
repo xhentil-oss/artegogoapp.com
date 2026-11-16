@@ -234,6 +234,9 @@ export function categoryFolder(categoryId) {
        Shumica e kategorive nuk kanë foto ende, ndaj `cover` rri `undefined`
        dhe `CoverArt` bie vetë te arti. */
     cover: category.cover,
+    /* Ku duhet parë fotoja kur pritet te brezi i kokës — shih `position` te
+       `components/art/CoverArt.jsx`. Pa të, qendra, si gjithmonë. */
+    coverPos: category.coverPos,
     desc: "sipas teknikave",
     groups: groupBy(items, "techniqueId", TECHNIQUES),
   };

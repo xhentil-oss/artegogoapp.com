@@ -11,7 +11,7 @@ import { sceneFor, SceneLayers } from "./scenes.jsx";
  * Id-të e gradientëve rrjedhin nga `useId()`, që dy kapakë të njëjtë në
  * faqe të mos përplasen me `<defs>` të njëjta.
  */
-export function CoverArt({ intent, title, sub, big = false, image = null }) {
+export function CoverArt({ intent, title, sub, big = false, image = null, position = "center" }) {
   /*
    * Dështimi i imazhit mbahet te gjendja, që karta të kthehet te arti dhe të
    * mos mbetet bosh.
@@ -49,18 +49,37 @@ export function CoverArt({ intent, title, sub, big = false, image = null }) {
            * `loading="lazy"`: një folder me dhjetëra karta nuk duhet t'i
            * shkarkojë të gjitha para se përdoruesi të rrëshqasë.
            *
-           * ⚠️  `objectPosition: center` — parazgjedhja, dhe e zgjedhur me vetëdije.
+           * ⚠️  `center` MBETET PARAZGJEDHJA, dhe e zgjedhur me vetëdije.
            *
-           *     Për pak kohë qëndroi `top`, që titulli i kopertinave të mos
-           *     pritej lart. Por atë herë prerja binte e tëra poshtë dhe fotot
-           *     me subjektin në mes dilnin të zhvendosura. Kërkesa e klientes
-           *     (12 tetor 2026) është e prerë: fotoja rri në QENDËR, dhe
-           *     lartësia e kapakut nuk ndryshon për t'i ardhur asaj përshtat.
+           *     Për pak kohë qëndroi `top` për të gjitha, që titulli i
+           *     kopertinave të mos pritej lart. Por atë herë prerja binte e
+           *     tëra poshtë dhe fotot me subjektin në mes dilnin të
+           *     zhvendosura. Kërkesa e klientes (12 tetor 2026) është e prerë:
+           *     fotoja rri në QENDËR, dhe lartësia e kapakut nuk ndryshon për
+           *     t'i ardhur asaj përshtat.
            *
            *     Pra kompozimi i kopertinës duhet ta mbajë të rëndësishmen në
            *     mes — ajo është zona që shihet gjithmonë, në çdo formë kuti.
+           *
+           * ⚠️  PËRJASHTIMI: `position` (16 nëntor 2026). Koka e një dosjeje
+           *     është brez i ulët dhe i gjerë — nga një foto katrore mbetet
+           *     vetëm një rrip i hollë në mes. Te "Falja" ai rrip binte mbi
+           *     gjoks e flokë, dhe fytyra mbetej jashtë. Prandaj çdo foto
+           *     kategorie mund ta thotë vetë se ku duhet parë
+           *     (`coverPos` te `data/categories.js`).
+           *
+           *     Nuk u ndryshua për të gjitha me qëllim: te "Mëngjes" dielli
+           *     rri në mes të figurës, dhe një `top` i përgjithshëm do ta
+           *     priste atë. Pra vendimi i tetorit mbetet; shtohet vetëm aty ku
+           *     vetë fotoja e kërkon.
            */
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: position,
+            display: "block",
+          }}
           loading="lazy"
           decoding="async"
         />
