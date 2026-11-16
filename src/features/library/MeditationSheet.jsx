@@ -4,7 +4,6 @@ import { sx } from "../../theme/styles.js";
 import { heroVeil } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
 import { intentMeta } from "../../domain/intent.js";
-import { benefitsFor } from "../../domain/benefits.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useCollections } from "../../store/CollectionsContext.jsx";
 import { usePlayback } from "../../hooks/usePlayback.js";
@@ -118,28 +117,51 @@ export function MeditationSheet({ item }) {
           {item.desc}
         </p>
 
-        <h2 style={{ color: T.ink, fontSize: 16, fontWeight: 700, margin: "26px 0 12px" }}>
-          Çfarë do të ndjesh
-        </h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {(item.benefits ?? benefitsFor(item.intent)).map((rresht) => (
-            <div key={rresht} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span
-                style={{
-                  ...sx.center,
-                  width: 22,
-                  height: 22,
-                  borderRadius: "50%",
-                  background: `${meta.g[1]}22`,
-                  flexShrink: 0,
-                }}
-              >
-                <Check size={13} color={meta.g[1]} />
-              </span>
-              <span style={{ color: T.sub, fontSize: 14.5 }}>{rresht}</span>
+        {/*
+          "Çfarë do të ndjesh" — VETËM kur përfitimet vijnë nga databaza.
+
+          ⚠️  Deri më 16 nëntor 2026, kur `benefits` ishte NULL, blloku
+              mbushej nga `benefitsFor(item.intent)` te `domain/benefits.js`:
+              një hartë e ngurtë sipas qëllimit. Pasoja ishte që çdo meditim
+              me të njëjtin qëllim premtonte fjalë për fjalë të njëjtat dy
+              gjëra — dhe te një këngë dilnin premtime që askush nuk i kishte
+              shkruar ("Energji e ngrohtë në trup" nën "Bollëku është e Drejta
+              Ime"). Kërkesë e klientes: më mirë asgjë se të sajuara.
+
+          ⚠️  `domain/benefits.js` NUK U FSHI. Mbetet aty si hartë e gatshme
+              nëse klientja vendos ndonjëherë t'i mbushë përfitimet masivisht;
+              thjesht nuk e thërret më askush. Po të duhet kthimi, mjafton
+              `item.benefits ?? benefitsFor(item.intent)` këtu.
+
+          Pra: meditimi që ka përfitime të shkruara i tregon; ai që nuk ka,
+          kalon drejt te butoni.
+        */}
+        {item.benefits?.length > 0 && (
+          <>
+            <h2 style={{ color: T.ink, fontSize: 16, fontWeight: 700, margin: "26px 0 12px" }}>
+              Çfarë do të ndjesh
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {item.benefits.map((rresht) => (
+                <div key={rresht} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span
+                    style={{
+                      ...sx.center,
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      background: `${meta.g[1]}22`,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Check size={13} color={meta.g[1]} />
+                  </span>
+                  <span style={{ color: T.sub, fontSize: 14.5 }}>{rresht}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </div>
 
       {/* ---------- butoni ---------- */}
