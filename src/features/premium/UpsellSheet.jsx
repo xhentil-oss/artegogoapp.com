@@ -121,8 +121,15 @@ export function UpsellSheet() {
           <h2 style={{ color: T.ink, fontSize: 24, fontWeight: 700, margin: "0 0 6px" }}>
             Provoje {TRIAL_DAYS} ditë falas
           </h2>
+          {/*
+            ⚠️  PA NUMËR. Këtu shkruhej "244 meditime" — numër i ngurtë që nuk e
+                dinte sa ishin vërtet: pas fshehjes së vendmbajtësve (11 nëntor
+                2026) të dukshmet mbetën 69, dhe teksti premtonte katërfishin.
+                Klientja e hoqi më 16 nëntor 2026. Nëse numri kthehet ndonjëherë,
+                duhet të vijë nga `listMeditations().length`, jo i shkruar me dorë.
+          */}
           <p style={{ color: T.sub, fontSize: 13.5, margin: 0, lineHeight: 1.5 }}>
-            I gjithë katalogu hapet me abonim — 244 meditime, programe dhe tinguj.
+            I gjithë katalogu hapet me abonim — meditime, programe dhe tinguj.
           </p>
         </div>
 
