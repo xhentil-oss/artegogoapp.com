@@ -41,10 +41,13 @@
  *     mbeti pa; me kërkesë të klientes mori ikonën e dy shkëndijave që
  *     buzëqeshin, të marrë nga "Fëmijë dhe adoleshentë".
  *
- *     16 nëntor — klientja e kërkoi atë ikonë prapë te fëmijët. Tani ajo rri
- *     aty si `shkendijat.jpeg`, ndërsa "Emocionet" merr `emocionet-drite.jpeg`,
- *     katrorin qendror të prerë nga fotoja e vet e kokës. Pra ikona e
- *     Emocioneve është fotografi, jo pllakë e vizatuar si të njëzetat e tjera.
+ *     16 nëntor — klientja e kërkoi atë ikonë prapë te fëmijët, dhe pastaj
+ *     vendosi që ta mbajnë TË DYJA. Pra `shkendijat.jpeg` është e vetmja ikonë
+ *     që përdoret dy herë te lista: një herë te "Emocionet", një herë te
+ *     "Fëmijë dhe adoleshentë". Nuk është gabim dhe nuk duhet "ndrequr".
+ *
+ *     Ndërkohë u provua edhe një ikonë e prerë nga vetë fotoja e kokës
+ *     (`emocionet-drite.jpeg`); klientja e hodhi poshtë, dhe skedari u fshi.
  *
  *  ⚠️  EMRAT E RINJ JANË ME QËLLIM. Skedarët e vjetër (`emocionet.jpeg`,
  *      `femijet-8-12.jpeg`) mbanin përmbajtje tjetër, dhe serveri i jep
@@ -54,7 +57,7 @@
  *     peizazhin procedural si më parë — `CoverArt` bie vetë te arti.
  */
 export const CATEGORIES = [
-  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet-drite.jpeg", cover: "/kopertina/kategoria-emocionet.jpeg" },
+  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/shkendijat.jpeg", cover: "/kopertina/kategoria-emocionet.jpeg" },
   { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg", cover: "/kopertina/kategoria-zemra-plot.jpeg" },
   { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg", cover: "/kopertina/kategoria-vetebesim.jpeg" },
   { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg", cover: "/kopertina/kategoria-tru.jpeg" },
