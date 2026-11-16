@@ -21,6 +21,52 @@ function validate(email, password) {
   return null;
 }
 
+/* ═══════════════ VERIFIKIMI I EMAILIT ═══════════════ */
+
+/**
+ * Sa gjatë vlen një link verifikimi.
+ *
+ * Më i gjatë se ai i rivendosjes (60 minuta): dikush regjistrohet mbrëmjen
+ * dhe e hap postën të nesërmen, dhe një link i skaduar atëherë do të dukej
+ * si defekt i aplikacionit.
+ */
+const VERIFY_HOURS = Number(process.env.VERIFY_TTL_HOURS || 48);
+
+/** Sa shpesh mund të kërkohet një link i ri për të njëjtën llogari. */
+const VERIFY_COOLDOWN_SEC = 90;
+
+const hashToken = (value) => crypto.createHash("sha256").update(value).digest("hex");
+
+/**
+ * Krijon token-in dhe dërgon email-in e verifikimit.
+ *
+ * ⚠️  Token-i shkruhet VETËM pasi email-i të jetë dërguar — i njëjti rregull
+ *     si te rivendosja. Përndryshe do të mbeteshin token-a të vlefshëm që nuk
+ *     i merr kush, dhe llogaria do të dukej e verifikueshme pa qenë.
+ *
+ * @returns {Promise<{ok:boolean, reason?:string}>}
+ */
+async function sendVerification(user, ip) {
+  if (!mailer.configured()) return { ok: false, reason: "not_configured" };
+
+  const token = crypto.randomBytes(32).toString("hex");
+  const base = (process.env.APP_ORIGIN || "").replace(/\/$/, "");
+  const link = `${base}/?verify=${token}`;
+
+  const sent = await mailer.send({
+    to: user.email,
+    ...mailer.verifyEmail({ name: user.name, link, hours: VERIFY_HOURS }),
+  });
+  if (!sent.ok) return { ok: false, reason: sent.reason ?? "send_failed" };
+
+  await query(
+    `INSERT INTO email_verifications (user_id, token_hash, expires_at, requested_ip)
+     VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR), ?)`,
+    [user.id, hashToken(token), VERIFY_HOURS, String(ip ?? "").slice(0, 45)]
+  );
+  return { ok: true };
+}
+
 /* ---------------------------------------------------------------
    POST /auth/register
    --------------------------------------------------------------- */
@@ -40,13 +86,49 @@ router.post("/register", async (req, res, next) => {
      * njëjti burim si te importet e tjera, dhe nuk ka dy konventa.
      */
     const id = (await one("SELECT UUID() AS id")).id;
+    const emri = (name ?? "").trim() || clean.split("@")[0];
     await query(
       "INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)",
-      [id, clean, await hashPassword(password), (name ?? "").trim() || clean.split("@")[0]]
+      [id, clean, await hashPassword(password), emri]
     );
 
-    const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [id]);
-    res.status(201).json({ token: await startSession(id), user });
+    /*
+     * ⚠️  ASNJË SESION NUK NIS KËTU.
+     *
+     *     Deri më 16 nëntor 2026 regjistrimi kthente token-in menjëherë, pra
+     *     një adresë e trilluar hynte në aplikacion po aq lehtë sa një e
+     *     vërtetë. Tani llogaria ekziston por nuk hapet: çelësi vjen me
+     *     email-in, dhe vetëm kush e lexon atë adresë e merr.
+     */
+    const dergimi = await sendVerification({ id, email: clean, name: emri }, req.ip);
+
+    if (!dergimi.ok) {
+      /*
+       * ⚠️  LLOGARIA FSHIHET kur email-i nuk niset.
+       *
+       *     Po të mbetej, adresa do të zinte vend te `users` pa asnjë mënyrë
+       *     për ta hapur: regjistrimi i radhës me të njëjtin email do të merrte
+       *     "Kjo llogari ekziston" dhe njeriu do të ngecte përgjithmonë.
+       */
+      await query("DELETE FROM users WHERE id = ?", [id]);
+
+      if (dergimi.reason === "not_configured") {
+        return res.status(501).json({
+          error: "Dërgimi i email-eve nuk është konfiguruar ende te serveri.",
+          code: "not_configured",
+        });
+      }
+      return res.status(502).json({
+        error: "Email-i i verifikimit nuk u dërgua. Provo përsëri pas pak.",
+        code: "mail_failed",
+      });
+    }
+
+    res.status(201).json({
+      verification: "sent",
+      email: clean,
+      message: "Të dërguam një email. Hap link-un brenda tij për të hapur llogarinë.",
+    });
   } catch (err) {
     next(err);
   }
@@ -62,7 +144,10 @@ router.post("/login", async (req, res, next) => {
     if (problem) return res.status(400).json({ error: problem });
 
     const clean = email.trim().toLowerCase();
-    const row = await one("SELECT id, password_hash FROM users WHERE email = ?", [clean]);
+    const row = await one(
+      "SELECT id, password_hash, email_verified_at FROM users WHERE email = ?",
+      [clean]
+    );
 
     /*
      * I njëjti mesazh për email që s'ekziston dhe për fjalëkalim të gabuar.
@@ -72,6 +157,21 @@ router.post("/login", async (req, res, next) => {
      */
     const okPassword = row && (await verifyPassword(password, row.password_hash));
     if (!okPassword) return res.status(401).json({ error: "Email ose fjalëkalim i pasaktë." });
+
+    /*
+     * ⚠️  Kontrolli vjen PAS fjalëkalimit, jo para tij.
+     *
+     *     Po të vinte para, kushdo do të mësonte cilat email-e janë të
+     *     regjistruara: një adresë e panjohur do të kthente "i pasaktë" dhe
+     *     një e vërtetë "pa verifikuar". Kështu e mëson vetëm ai që e di edhe
+     *     fjalëkalimin — pra vetë i zoti i llogarisë.
+     */
+    if (!row.email_verified_at) {
+      return res.status(403).json({
+        error: "Hap email-in dhe kliko link-un e verifikimit para se të hysh.",
+        code: "email_unverified",
+      });
+    }
 
     const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [row.id]);
     res.json({ token: await startSession(row.id), user });
@@ -312,6 +412,113 @@ router.post("/reset", async (req, res, next) => {
     /* Hyrja bëhet menjëherë: përdoruesi sapo provoi identitetin e vet përmes
        email-it, dhe një ekran hyrjeje pas kësaj është hap i kotë. */
     res.json({ token: await startSession(row.user_id), user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ---------------------------------------------------------------
+   POST /auth/verify  — hap llogarinë me token-in nga email-i
+   --------------------------------------------------------------- */
+/**
+ * ⚠️  Hyrja bëhet menjëherë pas verifikimit.
+ *
+ *     Njeriu sapo provoi se adresa është e tij; një ekran hyrjeje pas kësaj
+ *     është hap i kotë, dhe pikërisht aty humbasin regjistrimet.
+ *
+ * ⚠️  Një token i përdorur dy herë nuk është gabim për përdoruesin.
+ *
+ *     Klientët e email-it i hapin link-at vetë për t'i kontrolluar, ndaj
+ *     token-i mund të jetë konsumuar para se ta prekë njeriu. Prandaj, kur
+ *     token-i njihet por është përdorur dhe llogaria është tashmë e
+ *     verifikuar, përgjigjja është sukses — jo "link i pavlefshëm".
+ */
+router.post("/verify", async (req, res, next) => {
+  const token = String(req.body?.token ?? "");
+  if (token.length !== 64) return res.status(400).json({ error: "Link i pavlefshëm." });
+
+  try {
+    const row = await one(
+      `SELECT v.id, v.user_id, v.used_at, v.expires_at, u.email_verified_at
+         FROM email_verifications v
+         JOIN users u ON u.id = v.user_id
+        WHERE v.token_hash = ?`,
+      [hashToken(token)]
+    );
+
+    if (!row) return res.status(400).json({ error: "Link-u ka skaduar ose është përdorur." });
+
+    /* I përdorur, por llogaria është e hapur: njeriu po e klikon dy herë. */
+    if (row.used_at && row.email_verified_at) {
+      const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [row.user_id]);
+      return res.json({ token: await startSession(row.user_id), user });
+    }
+
+    if (row.used_at || new Date(row.expires_at) <= new Date()) {
+      return res.status(400).json({
+        error: "Link-u ka skaduar. Kërko një link të ri.",
+        code: "expired",
+      });
+    }
+
+    await query("UPDATE users SET email_verified_at = NOW() WHERE id = ?", [row.user_id]);
+    /* Të gjithë token-at e tjerë të kësaj llogarie mbyllen bashkë me të: një
+       link i vjetër te posta nuk duhet të mbetet i vlefshëm. */
+    await query(
+      "UPDATE email_verifications SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL",
+      [row.user_id]
+    );
+
+    const user = await one(`SELECT ${PUBLIC_FIELDS} FROM users WHERE id = ?`, [row.user_id]);
+    res.json({ token: await startSession(row.user_id), user });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/* ---------------------------------------------------------------
+   POST /auth/resend  — dërgo përsëri link-un e verifikimit
+   --------------------------------------------------------------- */
+/**
+ * ⚠️  Përgjigjja është E NJËJTA për çdo rast, si te `/auth/forgot`.
+ *
+ *     Një "kjo llogari nuk ekziston" ose "është verifikuar tashmë" do t'i
+ *     tregonte kujtdo cilat adresa janë të regjistruara — dhe kjo formë është
+ *     pikërisht vendi ku dikush do të provonte një listë të tërë.
+ */
+router.post("/resend", async (req, res, next) => {
+  const email = String(req.body?.email ?? "").trim().toLowerCase();
+
+  const same = () =>
+    res.json({ ok: true, message: "Nëse kjo llogari pret verifikim, link-u i ri është nisur." });
+
+  /* Gjendje e serverit, jo e llogarisë — ndaj thuhet hapur. */
+  if (!mailer.configured()) {
+    return res.status(501).json({
+      error: "Dërgimi i email-eve nuk është konfiguruar ende te serveri.",
+      code: "not_configured",
+    });
+  }
+
+  if (!email || !email.includes("@")) return same();
+
+  try {
+    const user = await one(
+      "SELECT id, name, email, email_verified_at FROM users WHERE email = ?",
+      [email]
+    );
+    if (!user || user.email_verified_at) return same();
+
+    const recent = await one(
+      `SELECT id FROM email_verifications
+        WHERE user_id = ? AND created_at > DATE_SUB(NOW(), INTERVAL ? SECOND)
+        ORDER BY created_at DESC LIMIT 1`,
+      [user.id, VERIFY_COOLDOWN_SEC]
+    );
+    if (recent) return same();
+
+    await sendVerification(user, req.ip);
+    return same();
   } catch (err) {
     next(err);
   }

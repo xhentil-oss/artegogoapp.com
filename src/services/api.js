@@ -116,10 +116,18 @@ function announceSessionEnded(reason) {
  * "sesioni skadoi" (401) pa lexuar tekstin e mesazhit.
  */
 export class ApiError extends Error {
-  constructor(message, status) {
+  /**
+   * @param {string} message mesazhi i serverit, gati për ekran
+   * @param {number} status kodi HTTP; `0` kur serveri nuk u arrit fare
+   * @param {string|null} code etiketa e serverit (`email_unverified`,
+   *   `not_configured`…), kur ekranet duhet të sillen ndryshe e jo vetëm të
+   *   tregojnë tekstin
+   */
+  constructor(message, status, code = null) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -178,7 +186,11 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
   }
 
   if (!response.ok) {
-    throw new ApiError(payload?.error ?? `Gabim ${response.status}.`, response.status);
+    throw new ApiError(
+      payload?.error ?? `Gabim ${response.status}.`,
+      response.status,
+      payload?.code ?? null
+    );
   }
   return payload;
 }
@@ -222,7 +234,11 @@ export async function upload(path, formData, { timeoutMs = 180000 } = {}) {
   }
 
   if (!response.ok) {
-    throw new ApiError(payload?.error ?? `Gabim ${response.status}.`, response.status);
+    throw new ApiError(
+      payload?.error ?? `Gabim ${response.status}.`,
+      response.status,
+      payload?.code ?? null
+    );
   }
   return payload;
 }

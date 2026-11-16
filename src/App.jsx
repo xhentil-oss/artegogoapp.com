@@ -12,7 +12,7 @@ import { TopBar } from "./components/layout/TopBar.jsx";
 import { BottomNav } from "./components/layout/BottomNav.jsx";
 
 import { AuthScreen } from "./features/auth/AuthScreen.jsx";
-import { resetTokenFromUrl } from "./services/auth.js";
+import { resetTokenFromUrl, verifyTokenFromUrl } from "./services/auth.js";
 import { OnboardingScreen } from "./features/onboarding/OnboardingScreen.jsx";
 import { TodayScreen } from "./features/today/TodayScreen.jsx";
 import { CommunityScreen } from "./features/community/CommunityScreen.jsx";
@@ -84,7 +84,14 @@ function Root() {
    * Nëse token-i i takon një llogarie tjetër nga ajo e hapur, `adoptAccount`
    * e trajton: profili i vjetër hiqet dhe onboarding-u rinis.
    */
-  if (resetTokenFromUrl()) {
+  /*
+   * Link-u i verifikimit ka po atë përparësi si ai i rivendosjes, dhe për të
+   * njëjtën arsye: kush është ende i futur te pajisja dhe klikon link-un e
+   * email-it do të hynte drejt te aplikacioni, dhe `AuthScreen` — i vetmi që
+   * e lexon `?verify=` — nuk do të vizatohej kurrë. Verifikimi do të mbetej i
+   * pakryer, dhe llogaria e re e mbyllur.
+   */
+  if (verifyTokenFromUrl() || resetTokenFromUrl()) {
     return (
       <AppShell light>
         <AuthScreen />

@@ -1,13 +1,16 @@
-import { useState } from "react";
-import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AlertCircle, ArrowRight, Eye, EyeOff, Lock, Mail, MailCheck } from "lucide-react";
 import { T, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
 import {
   MIN_PASSWORD,
   clearResetFromUrl,
+  clearVerifyFromUrl,
   requestReset,
+  resendVerification,
   resetTokenFromUrl,
+  verifyTokenFromUrl,
 } from "../../services/auth.js";
 import { useSession } from "../../store/SessionContext.jsx";
 
@@ -26,6 +29,24 @@ const MODES = {
     swap: "Kthehu te hyrja",
     other: "in",
   },
+  /*
+   * Dy gjendje pa formë, që nga 16 nëntor 2026 kur regjistrimi filloi të
+   * kërkojë verifikim email-i:
+   *   `pending`  — llogaria u krijua, link-u u nis, po presim klikimin
+   *   `verifying`— link-u u hap, po e pyesim serverin
+   */
+  pending: {
+    title: "Kontrollo email-in",
+    cta: "Dërgo përsëri link-un",
+    swap: "Kthehu te hyrja",
+    other: "in",
+  },
+  verifying: {
+    title: "Po hapet llogaria",
+    cta: "Një moment…",
+    swap: "Kthehu te hyrja",
+    other: "in",
+  },
 };
 
 /**
@@ -39,7 +60,7 @@ const MODES = {
  *     anashkalohej nga kushdo që hap DevTools, ndaj do të ishte mashtrim.
  */
 export function AuthScreen() {
-  const { signIn, signUp, completeReset, sessionNotice } = useSession();
+  const { signIn, signUp, completeReset, completeVerification, sessionNotice } = useSession();
 
   /*
    * Token-i lexohet një herë, në montim.
@@ -49,7 +70,16 @@ export function AuthScreen() {
    *     ditur se çfarë duhet të bëjë.
    */
   const [resetToken] = useState(() => resetTokenFromUrl());
-  const [mode, setMode] = useState(() => (resetTokenFromUrl() ? "reset" : "in"));
+  /* Token-i i verifikimit, nga `/?verify=…`. Lexohet një herë, si ai i
+     rivendosjes: pas suksesit adresa pastrohet dhe nuk duhet rilexuar. */
+  const [verifyToken] = useState(() => verifyTokenFromUrl());
+  const [mode, setMode] = useState(() => {
+    if (verifyTokenFromUrl()) return "verifying";
+    return resetTokenFromUrl() ? "reset" : "in";
+  });
+  /* Adresa së cilës i shkoi link-u — vetëm për ta shkruar te ekrani i pritjes
+     dhe për butonin "dërgo përsëri". */
+  const [pendingEmail, setPendingEmail] = useState("");
   /* Mesazhi i daljes së detyruar vjen nga sesioni dhe shfaqet si çdo njoftim
      tjetër i këtij ekrani — shih `sessionNotice` te `SessionContext`. */
   const [notice, setNotice] = useState(() => sessionNotice ?? null);
@@ -60,6 +90,29 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false);
 
   const meta = MODES[mode];
+
+  /*
+   * Link-u i email-it u hap: pyetet serveri menjëherë, pa asnjë buton.
+   *
+   * ⚠️  `njehere` e ndal thirrjen e dytë te `StrictMode`, ku efektet rrjedhin
+   *     dy herë. Pa të, token-i do të konsumohej nga thirrja e parë dhe e dyta
+   *     do të nxirrte "Link-u ka skaduar" mbi një verifikim që sapo pati
+   *     sukses.
+   */
+  const njehere = useRef(false);
+  useEffect(() => {
+    if (!verifyToken || njehere.current) return;
+    njehere.current = true;
+
+    completeVerification(verifyToken).then((result) => {
+      /* Token-i hiqet nga adresa në të dyja rastet: i përdorur ose i skaduar,
+         nuk ka pse të mbetet te historiku i shfletuesit. */
+      clearVerifyFromUrl();
+      if (result.ok) return;
+      setMode("in");
+      setError(result.error);
+    });
+  }, [verifyToken, completeVerification]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -91,11 +144,56 @@ export function AuthScreen() {
       return;
     }
 
+    /* Ekrani i pritjes: i vetmi buton dërgon përsëri link-un. */
+    if (mode === "pending") {
+      const result = await resendVerification(pendingEmail || email);
+      if (result.ok) setNotice(result.message);
+      else setError(result.error);
+      setBusy(false);
+      return;
+    }
+
     const action = mode === "in" ? signIn : signUp;
     const result = await action({ email, password });
-    if (!result.ok) setError(result.error);
+
+    if (result.ok) {
+      /*
+       * Regjistrimi nuk hyn më: serveri dërgoi një email dhe pret klikimin.
+       * `pending` e thotë këtë, dhe ekrani kalon te pritja.
+       */
+      if (result.pending) {
+        setPendingEmail(result.email ?? email);
+        setPassword("");
+        setNotice(result.message);
+        setMode("pending");
+      }
+      setBusy(false);
+      return;
+    }
+
+    /*
+     * ⚠️  "Pa verifikuar" NUK trajtohet si gabim hyrjeje.
+     *
+     *     Fjalëkalimi ishte i saktë — mungon vetëm klikimi te email-i. Po ta
+     *     linim si tekst të kuq te forma, njeriu do të provonte prapë e prapë
+     *     të njëjtin fjalëkalim. Këtu kalon te ekrani i pritjes, ku ka edhe
+     *     butonin për të rimarrë link-un.
+     */
+    if (result.code === "email_unverified") {
+      setPendingEmail(email.trim().toLowerCase());
+      setPassword("");
+      setNotice(result.error);
+      setMode("pending");
+      setBusy(false);
+      return;
+    }
+
+    setError(result.error);
     setBusy(false);
   };
+
+  /* Dy gjendjet pa fusha: pritja e email-it dhe verifikimi në rrjedhë. */
+  const paForme = mode === "pending" || mode === "verifying";
 
   const swap = () => {
     /* Kthimi te hyrja nga rivendosja heq edhe token-in nga adresa: përndryshe
@@ -158,8 +256,9 @@ export function AuthScreen() {
             dërgimin me një flluskë në gjuhën e VET, dhe mesazhet tona shqip nuk
             do të shiheshin kurrë — dy stile gabimi për të njëjtën fushë. */}
         <form onSubmit={submit} noValidate>
-          {/* Te "reset" email-i nuk kërkohet — token-i e mban identitetin. */}
-          {mode !== "reset" && (
+          {/* Te "reset" email-i nuk kërkohet — token-i e mban identitetin; te
+              pritja dhe verifikimi nuk ka fare formë. */}
+          {mode !== "reset" && !paForme && (
           <FieldRow icon={Mail}>
             <input
               type="email"
@@ -176,7 +275,7 @@ export function AuthScreen() {
           )}
 
           {/* Te "forgot" nuk ka fjalëkalim — dërgohet vetëm link-u. */}
-          {mode !== "forgot" && (
+          {mode !== "forgot" && !paForme && (
           <FieldRow icon={Lock}>
             <input
               type={visible ? "text" : "password"}
@@ -203,6 +302,36 @@ export function AuthScreen() {
               )}
             </button>
           </FieldRow>
+          )}
+
+          {/*
+            EKRANI I PRITJES.
+
+            Adresa shkruhet e plotë me qëllim: gabimi më i shpeshtë te
+            regjistrimi është një shkronjë e humbur te email-i, dhe njeriu e
+            sheh vetëm kur e lexon të shkruar.
+          */}
+          {mode === "pending" && (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                textAlign: "center",
+                gap: 10,
+                marginBottom: 18,
+              }}
+            >
+              <MailCheck size={34} color={T.accent} />
+              <p style={{ color: T.ink, fontSize: 14, margin: 0, lineHeight: 1.55 }}>
+                Link-un e dërguam te
+                <br />
+                <strong style={{ wordBreak: "break-all" }}>{pendingEmail}</strong>
+              </p>
+              <p style={{ color: T.sub, fontSize: 12.5, margin: 0, lineHeight: 1.5 }}>
+                Hape atë dhe llogaria hapet vetë. Shiko edhe te “Spam”, nëse nuk duket.
+              </p>
+            </div>
           )}
 
           {(mode === "up" || mode === "reset") && !error && !notice && (
@@ -253,7 +382,7 @@ export function AuthScreen() {
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || mode === "verifying"}
             className="ag-press"
             style={{
               width: "100%",
@@ -271,7 +400,7 @@ export function AuthScreen() {
             }}
           >
             {busy ? "Një moment…" : meta.cta}
-            {!busy && <ArrowRight size={18} />}
+            {!busy && mode !== "verifying" && <ArrowRight size={18} />}
           </button>
         </form>
 

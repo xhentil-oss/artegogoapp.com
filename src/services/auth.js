@@ -70,6 +70,15 @@ async function establish({ token, user }, fallbackEmail) {
   return { ok: true, account };
 }
 
+/**
+ * Krijim llogarie.
+ *
+ * ⚠️  NUK HYN MENJËHERË. Serveri nuk kthen më token te regjistrimi: dërgon një
+ *     email dhe pret klikimin. Kështu një adresë e trilluar nuk hap llogari —
+ *     kërkesa e klientes, 16 nëntor 2026.
+ *
+ * @returns {{ok:true, pending:true, email:string, message:string}|{ok:false, error:string}}
+ */
 export async function signUp({ email, password }) {
   const problem = validate({ email, password });
   if (problem) return { ok: false, error: problem };
@@ -77,11 +86,71 @@ export async function signUp({ email, password }) {
   const clean = email.trim().toLowerCase();
   try {
     const data = await api.post("/auth/register", { email: clean, password }, { auth: false });
-    return await establish(data, clean);
+
+    /*
+     * Serverët e vjetër (para ngarkimit të API-së së re) kthejnë ende token.
+     * Atëherë sillemi si më parë — përndryshe aplikacioni do të ngecte te një
+     * ekran "kontrollo email-in" për një email që serveri nuk e dërgoi kurrë.
+     */
+    if (data?.token) return await establish(data, clean);
+
+    return {
+      ok: true,
+      pending: true,
+      email: clean,
+      message: data?.message ?? "Të dërguam një email. Hap link-un brenda tij për të hapur llogarinë.",
+    };
   } catch (err) {
     /* Serveri e formulon vetë mesazhin — përfshirë "Kjo llogari ekziston". */
     return { ok: false, error: err.message };
   }
+}
+
+/**
+ * Hap llogarinë me token-in e verifikimit nga email-i.
+ *
+ * Pas suksesit përdoruesi është brenda: sapo provoi se adresa është e tij.
+ */
+export async function completeVerification(token) {
+  if (!token || token.length !== 64) return { ok: false, error: "Link i pavlefshëm." };
+
+  try {
+    const data = await api.post("/auth/verify", { token }, { auth: false });
+    return await establish(data, data?.user?.email);
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Verifikimi dështoi." };
+  }
+}
+
+/** Kërkon një link të ri verifikimi. Përgjigjja është e njëjtë për çdo rast. */
+export async function resendVerification(email) {
+  const clean = String(email ?? "").trim().toLowerCase();
+  if (!clean.includes("@")) return { ok: false, error: "Shkruaj një email të vlefshëm." };
+
+  try {
+    const data = await api.post("/auth/resend", { email: clean }, { auth: false });
+    return { ok: true, message: data?.message ?? "Link-u i ri është nisur." };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Dërgimi dështoi." };
+  }
+}
+
+/**
+ * Token-i i verifikimit nga adresa — `/?verify=<token>`.
+ * I njëjti mekanizëm si `?reset=`; aplikacioni nuk ka rrugëzim.
+ */
+export function verifyTokenFromUrl() {
+  if (typeof window === "undefined") return null;
+  const value = new URLSearchParams(window.location.search).get("verify");
+  return value && value.length === 64 ? value : null;
+}
+
+/** Heq `?verify=` nga adresa pa rifreskuar faqen. */
+export function clearVerifyFromUrl() {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("verify");
+  window.history.replaceState({}, "", url.pathname + url.search + url.hash);
 }
 
 /**
@@ -101,7 +170,9 @@ export async function signIn({ email, password }) {
     const data = await api.post("/auth/login", { email: clean, password }, { auth: false });
     return await establish(data, clean);
   } catch (err) {
-    return { ok: false, error: err.message };
+    /* `code` përcillet që ekrani të dallojë "pa verifikuar" nga një fjalëkalim
+       i gabuar — i pari ka një rrugë dalëse, i dyti jo. */
+    return { ok: false, error: err.message, code: err?.code ?? null };
   }
 }
 

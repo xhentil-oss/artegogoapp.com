@@ -121,4 +121,53 @@ function resetEmail({ name, link, minutes }) {
   };
 }
 
-module.exports = { send, configured, resetEmail };
+/**
+ * Email-i i verifikimit të adresës.
+ *
+ * Të njëjtat rregulla si te `resetEmail`: tekst i thjeshtë bashkë me HTML, dhe
+ * link-u i shkruar i plotë edhe te teksti.
+ *
+ * ⚠️  Nuk thotë "nëse nuk e ke kërkuar ti, shpërfille" dhe aq. Dikush mund të
+ *     shkruajë adresën e një tjetri te regjistrimi; atij njeriu i duhet thënë
+ *     se asnjë llogari nuk hapet pa këtë klikim, përndryshe email-i duket si
+ *     njoftim se dikush i mori adresën.
+ */
+function verifyEmail({ name, link, hours }) {
+  const hello = name ? `Përshëndetje, ${name}.` : "Përshëndetje.";
+
+  return {
+    subject: "Verifiko email-in — Arte Gogo",
+    text: [
+      hello,
+      "",
+      "Faleminderit që krijove llogari te Arte Gogo.",
+      "Konfirmo që ky email është i yti duke hapur këtë link:",
+      link,
+      "",
+      `Link-u vlen ${hours} orë dhe përdoret vetëm një herë.`,
+      "",
+      "Nëse nuk e ke bërë ti këtë regjistrim, shpërfille këtë email: pa këtë",
+      "klikim llogaria nuk hapet, dhe adresa jote mbetet e lirë.",
+      "",
+      "— Arte Gogo",
+    ].join("\n"),
+    html: `
+<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1b1630;max-width:520px">
+  <p>${hello}</p>
+  <p>Faleminderit që krijove llogari te <strong>Arte Gogo</strong>. Konfirmo që ky email është i yti:</p>
+  <p style="margin:26px 0">
+    <a href="${link}"
+       style="background:#7C5CE0;color:#fff;text-decoration:none;padding:13px 24px;border-radius:999px;font-weight:700;display:inline-block">
+      Verifiko email-in
+    </a>
+  </p>
+  <p style="color:#6b6480;font-size:13px">
+    Link-u vlen ${hours} orë dhe përdoret vetëm një herë.<br>
+    Nëse nuk e ke bërë ti këtë regjistrim, shpërfille këtë email — pa këtë klikim llogaria nuk hapet.
+  </p>
+  <p style="color:#9a94ad;font-size:12px;word-break:break-all">${link}</p>
+</div>`.trim(),
+  };
+}
+
+module.exports = { send, configured, resetEmail, verifyEmail };

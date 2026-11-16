@@ -140,9 +140,27 @@ export function SessionProvider({ children }) {
     [adoptAccount]
   );
 
+  /**
+   * Krijim llogarie.
+   *
+   * ⚠️  `result.account` MUND TË MOS JETË. Kur serveri kërkon verifikim
+   *     email-i, regjistrimi kthen `{ ok: true, pending: true }` pa llogari —
+   *     dhe `adoptAccount(undefined)` do ta linte sesionin në një gjendje të
+   *     gjysmuar, me `account` bosh por të vendosur.
+   */
   const signUp = useCallback(
     async (credentials) => {
       const result = await auth.signUp(credentials);
+      if (result.ok && result.account) await adoptAccount(result.account);
+      return result;
+    },
+    [adoptAccount]
+  );
+
+  /** Verifikimi i email-it me token-in nga link-u — hyn menjëherë, si `completeReset`. */
+  const completeVerification = useCallback(
+    async (token) => {
+      const result = await auth.completeVerification(token);
       if (result.ok) await adoptAccount(result.account);
       return result;
     },
@@ -463,6 +481,7 @@ export function SessionProvider({ children }) {
       sessionNotice,
       signIn,
       signUp,
+      completeVerification,
       completeReset,
       signOut,
       deleteAccount,
@@ -516,6 +535,7 @@ export function SessionProvider({ children }) {
       sessionNotice,
       signIn,
       signUp,
+      completeVerification,
       completeReset,
       signOut,
       deleteAccount,
