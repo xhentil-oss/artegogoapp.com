@@ -64,17 +64,36 @@ export function CoverArt({ intent, title, sub, big = false, image = null }) {
           loading="lazy"
           decoding="async"
         />
-        {/* I njëjti mjegullim si te arti — pa të, titulli i bardhë humbet mbi
-            pjesët e ndritshme të fotos. */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
-          }}
-        />
-        {title && <CoverTitle title={title} sub={sub} big={big} />}
+        {/*
+          Perdeja e errët — VETËM kur mbi foto shkruhet një titull.
+
+          ⚠️  Deri më 16 nëntor 2026 vihej gjithmonë: 12% errësirë lart, 55%
+              poshtë. Ekzistonte që titulli i bardhë të mos humbiste mbi
+              pjesët e ndritshme të fotos — por shumica e thirrjeve nuk japin
+              titull fare. Te ikonat e kategorive (46×46) dhe te kapakët që e
+              mbajnë titullin të shtypur brenda vetë figurës, ajo errësonte pa
+              mbrojtur asgjë; klientja e vuri re si "hije e errët sipër".
+
+          ⚠️  Te `MeditationSheet` dhe `FolderSheet` ishte dy herë: ato vënë
+              `heroVeil` të vetin mbi kapak, dhe mbi të binte edhe kjo. Ato
+              nuk preken — perdeja e tyre rri, se aty vërtet shkruhet tekst i
+              bardhë. Hiqet vetëm shtresa e dytë.
+
+              Pra rregulli: perdeja i përket tekstit, jo fotos.
+        */}
+        {title && (
+          <>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
+              }}
+            />
+            <CoverTitle title={title} sub={sub} big={big} />
+          </>
+        )}
       </div>
     );
   }
