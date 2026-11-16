@@ -41,7 +41,13 @@
  *     ajo që u rri më afër emocioneve. "Emocionet" rri e para te lista, pra
  *     mungesa u zhvendos atje ku bie më pak në sy. Kthehet duke ia dhënë
  *     sërish `icon` kategorisë `c_femije_8_12` dhe duke ia hequr
- *     `c_emocionet` — skedari është i njëjti. Pa `icon`, karta vizaton
+ *     `c_emocionet` — skedari është i njëjti.
+ *
+ *     Më 16 nëntor "Fëmijë dhe adoleshentë" e mori ikonën e vet përsëri, por
+ *     të prerë nga fotoja e kokës së asaj kategorie (`kategoria-femijet.jpeg`,
+ *     katrori qendror me të dy fëmijët). Pra ajo ndryshon në stil nga të
+ *     njëzetat e tjera: fotografi, jo pllakë e vizatuar. Kur të vijë një
+ *     ikonë e vërtetë, zëvendësohet skedari dhe asgjë tjetër. Pa `icon`, karta vizaton
  *     peizazhin procedural si më parë — `CoverArt` bie vetë te arti.
  */
 export const CATEGORIES = [
@@ -73,7 +79,7 @@ export const CATEGORIES = [
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm", icon: "/ikona/situata.jpeg", cover: "/kopertina/kategoria-situata.jpeg" },
   { id: "c_emergjence",  label: "Emergjencë",                                 intent: "stress" },
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
-  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm", cover: "/kopertina/kategoria-femijet.jpeg" },
+  { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm", icon: "/ikona/femijet-8-12.jpeg" cover: "/kopertina/kategoria-femijet.jpeg" },
   { id: "c_adoleshentet",label: "Adoleshentët",                               intent: "focus" },
   { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy", icon: "/ikona/mengjes.jpeg", cover: "/kopertina/kategoria-mengjes.jpeg" },
   { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep", icon: "/ikona/mbremje.jpeg", cover: "/kopertina/kategoria-mbremje.jpeg" },
