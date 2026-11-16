@@ -10,6 +10,21 @@ export const SERIES = [
   { id: "s3", title: "Ritmi i Gjumit",        sub: "DELTA & PUSHIM",    intent: "sleep" },
 ];
 
+/**
+ * Kapaku i çdo programi, i lidhur me `intent`-in e tij — JO me id-në.
+ *
+ * ⚠️  Programet vijnë nga serveri me id të databazës (shih
+ *     `services/catalog.js`); `PROGRAMS` poshtë janë vetëm rezervë kur
+ *     serveri nuk lexohet. Po t'i kisha lidhur fotot me "p1"…"p4", kapakët
+ *     do të zhdukeshin sapo lista të vinte nga databaza.
+ */
+export const PROGRAM_COVERS = {
+  heart:     "/kopertina/program-mistik-zemer.jpeg",
+  transform: "/kopertina/program-transformim.jpeg",
+  sleep:     "/kopertina/program-gjume-i-qete.jpeg",
+  abundance: "/kopertina/program-bollek.jpeg",
+};
+
 /** Programe shumë-ditore. `lessons` = numri i seancave. */
 export const PROGRAMS = [
   { id: "p1", title: "MISTIK ZEMËR", sub: "7 ditë · hapje e zemrës", lessons: 7,  intent: "heart" },

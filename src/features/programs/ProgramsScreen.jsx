@@ -5,6 +5,7 @@ import { sx, circle } from "../../theme/styles.js";
 import { tile, rayTexture } from "../../theme/gradients.js";
 import { CARD_WIDTH } from "../../theme/responsive.js";
 import { ALL_AREAS } from "../../data/lifeAreas.js";
+import { PROGRAM_COVERS } from "../../data/catalog.js";
 import { intentMeta } from "../../domain/intent.js";
 import { listSeries, programsByLifeArea } from "../../services/contentRepository.js";
 import { useJourney } from "../../store/JourneyContext.jsx";
@@ -235,6 +236,7 @@ function ProgramCard({ program, onStarted }) {
   const { startProgram, progressFor } = useJourney();
   const progress = progressFor(program.id);
   const done = progress?.done ?? 0;
+  const cover = program.cover ?? PROGRAM_COVERS[program.intent] ?? null;
 
   const open = () => {
     if (!isPremium) return openUpsell();
@@ -258,8 +260,26 @@ function ProgramCard({ program, onStarted }) {
       }}
     >
       <div style={sx.absoluteFill}>
-        <CoverArt intent={program.intent} big />
+        <CoverArt intent={program.intent} image={cover} big />
       </div>
+
+      {/*
+        Hije VETËM nga e majta, dhe vetëm kur ka foto.
+        Titulli, nëntitulli dhe pista e progresit janë të bardha poshtë majtas;
+        mbi kapakët e artë e rozë do të humbisnin pa të. Fillon e errët te buza
+        e majtë dhe shuhet para mesit, që guri në të djathtë të mbetet i pastër
+        — ndryshe nga velloja e vjetër mbi tërë kartën, të cilën klientja e
+        hoqi (16 nëntor 2026).
+      */}
+      {cover && (
+        <div
+          style={{
+            ...sx.absoluteFill,
+            background:
+              "linear-gradient(to right, rgba(0,0,0,0.52) 0%, rgba(0,0,0,0.30) 42%, rgba(0,0,0,0) 70%)",
+          }}
+        />
+      )}
 
       <span
         style={{
