@@ -17,9 +17,9 @@ const ALL = "all";
 /**
  * Ndërtuesi manual: seanca në ndërtim lart, biblioteka poshtë.
  *
- * Biblioteka mban të 259 zërat — 15 mini-blloqet plus 244 meditimet e
- * katalogut. Më parë ofronte vetëm blloqet, që ishte dukshëm pak për një
- * veçori të shitur si "krijim i pakufizuar".
+ * Biblioteka mban meditimet e katalogut — ato që kanë zë dhe kopertinë. Më
+ * parë ofronte edhe 15 mini-blloqet vendmbajtëse; u hoqën më 16 nëntor 2026,
+ * shih `listBuilderLibrary`.
  *
  * Kërkimi vepron mbi TË GJITHË katalogun, jo mbi kategorinë e zgjedhur —
  * përndryshe përdoruesi do të duhej të gjente vetë kategorinë e duhur para se
@@ -72,9 +72,8 @@ export function BlockBuilder({ sequence, setSequence }) {
    *     e kështu me radhë. `listTechniques()` i kthen vetëm ato që kanë
    *     përmbajtje — një filtër që nxjerr listë bosh është më keq se mungesa.
    *
-   * ⚠️  Të 15 mini-blloqet lokale nuk mbajnë teknikë, ndaj shfaqen te
-   *     "Të gjitha". Kjo është e qëllimshme: ato janë copëza ndërtimi, jo
-   *     meditime të katalogut.
+   * ⚠️  Më parë këtu rrinte një shënim për 15 mini-blloqet pa teknikë, që
+   *     dilnin vetëm te "Të gjitha". Ato nuk janë më pjesë e bibliotekës.
    */
   const techniques = listTechniques();
   const filterOptions = [

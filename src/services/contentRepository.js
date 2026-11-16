@@ -177,16 +177,24 @@ export const listMeditations = () => MEDITATIONS;
 /**
  * Gjithçka që mund të hyjë në një seancë të ndërtuar me dorë.
  *
- * Ndërtuesi më parë ofronte vetëm 15 mini-blloqet, ndërsa katalogu ka 244
- * meditime të tjera — dhe fusha e kërkimit premtonte "të gjithë katalogun".
- * Të dyja bashkë japin 259 zgjedhje.
+ * ⚠️  VETËM KATALOGU. Mini-blloqet (`BLOCKS`) u hoqën nga ndërtuesi me kërkesë
+ *     të klientes (16 nëntor 2026): ato janë vendmbajtës — asnjëri nuk ka as
+ *     zë as kopertinë, ndaj një seancë e ndërtuar prej tyre luante tone demo
+ *     dhe kartat dilnin pa foto. Rrinin të parat te lista, pra ishin pikërisht
+ *     ajo që shihej e para.
  *
- * Blloqet vijnë TË PARAT dhe kjo renditje mban peshë: vetëm ato kanë faza
- * hyrjeje dhe mbylljeje, ndërsa 244 meditimet e katalogut janë të gjitha
- * `Korpi`. Të vendosura në krye, të katër blloqet strukturore mbeten të
- * dukshme pa u dashur asnjë filtër më shumë.
+ *     Të 69 meditimet e katalogut, përkundrazi, i kanë të dyja — e provuar nga
+ *     jashtë po atë ditë: 69 skedarë te `/meditime/` dhe 69 kopertina që
+ *     hapen, një për secilin.
+ *
+ *     Blloqet NUK u fshinë: `BLOCKS` mbetet, sepse seancat e ruajtura më parë
+ *     u referohen me id dhe `buildGuidedSequence` merr prej tyre hapjen e
+ *     mbylljen. Kur të marrin zë e kopertinë, kthimi është ky rresht.
+ *
+ *     Vendmbajtësit e njëjtë dalin ende te rekomandimet e ditës
+ *     (`blocksForDayPart`) — ajo rrugë nuk u prek këtu.
  */
-export const listBuilderLibrary = () => [...BLOCKS, ...MEDITATIONS];
+export const listBuilderLibrary = () => [...MEDITATIONS];
 
 /*
  * Listat e plota për panelin e admin-it.
