@@ -45,7 +45,7 @@
  *     peizazhin procedural si më parë — `CoverArt` bie vetë te arti.
  */
 export const CATEGORIES = [
-  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet.jpeg" },
+  { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet.jpeg", cover: "/kopertina/kategoria-emocionet.jpeg" },
   { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg" },
   { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg" },
   { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg" },
