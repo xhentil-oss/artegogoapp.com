@@ -599,7 +599,18 @@ function ProgressBar({ percent, elapsed, seconds, onSeek }) {
 
   const pos = drag ?? percent;
   const koha = drag === null ? elapsed : (drag / 100) * seconds;
-  const kalim = drag === null ? "1s linear" : "none";
+  /*
+   * ⚠️  "0s", JO "none".
+   *
+   *     Këtu rrinte `"none"`, dhe dilte `transition: width none` — vlerë e
+   *     pavlefshme CSS. Një vlerë e pavlefshme nuk e fik vetinë: shfletuesi e
+   *     shpërfill fare dhe mban atë të mëparshmen, pra `width 1s linear`.
+   *     Rrjedhimisht shiriti vinte pas gishtit me një sekondë vonesë dhe nuk
+   *     mbushej kurrë aty ku e çoje — pikërisht ankesa e klientes
+   *     (16 nëntor 2026). `0s` është vlerë e vlefshme dhe do të thotë
+   *     "menjëherë".
+   */
+  const kalim = drag === null ? "1s linear" : "0s";
 
   const hap = (delta) => {
     const next = Math.min(Math.max(pos + delta, 0), 100);
