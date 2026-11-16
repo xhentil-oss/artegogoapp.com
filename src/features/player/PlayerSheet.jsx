@@ -9,6 +9,8 @@ import {
   RotateCcw,
   RotateCw,
   Share2,
+  SkipBack,
+  SkipForward,
 } from "lucide-react";
 import { T, layout, onDark, radii, shadows } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
@@ -444,7 +446,38 @@ export function PlayerSheet({ sequence }) {
       {ritmi && <BreathSteps pattern={ritmi} activeIndex={fryma?.done ? -1 : fryma?.index} />}
 
       {/* ---------- kontrollet ---------- */}
-      <div style={{ display: "flex", alignItems: "center", gap: "clamp(18px, 7vw, 30px)", margin: "36px 0 28px" }}>
+      {/*
+        Hapësira ngushtohet VETËM kur shtohen dy butona.
+        Me tre butona rreshti mbetet si ka qenë; me pesë, 84+42+42+44+44 pikselë
+        bashkë me hapësirat e vjetra do të dilnin jashtë ekranit 360-pikselësh.
+      */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: sequence.length > 1 ? "clamp(8px, 3.5vw, 18px)" : "clamp(18px, 7vw, 30px)",
+          margin: "36px 0 28px",
+        }}
+      >
+        {/*
+          ⏮/⏭ — kalimi te meditimi i mëparshëm ose i radhës brenda seancës
+          (kërkesë e klientes, 16 nëntor 2026).
+
+          ⚠️  Dalin VETËM kur seanca ka më shumë se një meditim. Një seancë me
+              një meditim të vetëm — rasti më i zakonshëm, kur hapet nga
+              biblioteka — nuk ka ku të shkojë, dhe dy butona përherë të
+              zbehtë do të dukeshin si defekt.
+
+          ⚠️  Te meditimi i parë, ⏮ nuk del nga seanca: e rikthen atë në
+              fillim, si çdo player muzike.
+        */}
+        {sequence.length > 1 && (
+          <SkipButton
+            label="Meditimi i mëparshëm"
+            onClick={engine.goPrev}
+            icon={<SkipBack size={19} color="#fff" fill="#fff" />}
+          />
+        )}
         <SeekButton direction="back" seconds={engine.seekStep} onClick={() => engine.seek(-engine.seekStep)} />
         <button
           onClick={engine.toggle}
@@ -463,6 +496,14 @@ export function PlayerSheet({ sequence }) {
           )}
         </button>
         <SeekButton direction="forward" seconds={engine.seekStep} onClick={() => engine.seek(engine.seekStep)} />
+        {sequence.length > 1 && (
+          <SkipButton
+            label="Meditimi tjetër"
+            onClick={engine.goNext}
+            disabled={!engine.hasNext}
+            icon={<SkipForward size={19} color="#fff" fill="#fff" />}
+          />
+        )}
       </div>
 
       {/* ---------- shënim mbi audion ---------- */}
@@ -703,6 +744,34 @@ function ProgressBar({ percent, elapsed, seconds, onSeek }) {
         <span>{fmt(seconds)}</span>
       </div>
     </>
+  );
+}
+
+/**
+ * Shigjeta ⏮/⏭.
+ *
+ * E zbehur dhe e paprekshme kur nuk ka ku të shkojë — te meditimi i fundit.
+ * Fshehja do ta zhvendoste rreshtin e kontrolleve sapo të mbërrije aty, dhe
+ * butoni "Luaj" nuk duhet të lëvizë nën gisht.
+ */
+function SkipButton({ onClick, icon, label, disabled = false }) {
+  return (
+    <button
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={disabled ? undefined : "ag-press"}
+      style={{
+        ...circle(44, "none"),
+        border: "none",
+        padding: 0,
+        cursor: disabled ? "default" : "pointer",
+        opacity: disabled ? 0.3 : 1,
+        transition: "opacity .2s",
+      }}
+    >
+      {icon}
+    </button>
   );
 }
 

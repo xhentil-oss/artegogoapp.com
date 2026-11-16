@@ -138,6 +138,33 @@ export function usePlayerEngine(sequence, onComplete) {
   /** Butoni "Përpara" dhe timer-i: vazhdimi varet nga gjendja e tanishme. */
   const goNext = useCallback(() => advance(playing), [advance, playing]);
 
+  /**
+   * Hapi i mëparshëm — shigjeta ⏮.
+   *
+   * ⚠️  Te hapi i parë NUK del nga seanca: e rikthen atë hap në fillim, si
+   *     çdo player muzike. Dalja do të ishte veprim tjetër nga ai që pret
+   *     përdoruesi, dhe pa kthim.
+   *
+   * ⚠️  Nuk kalon nga `advance`: ai, kur nuk ka hap tjetër, e MBYLL seancën
+   *     (`finish`). Prapa nuk ka asgjë të tillë për të bërë.
+   */
+  const goPrev = useCallback(() => {
+    if (index === 0) {
+      if (real) seekFileTo(0);
+      else writeElapsed(0);
+      return;
+    }
+
+    const wasPlaying = playing;
+    stopTone();
+    setTonePlaying(false);
+    resetFile();
+    /* Si te `advance`: vendimi ruhet para se `index` të ndryshojë. */
+    continueRef.current = wasPlaying;
+    setIndex(index - 1);
+    writeElapsed(0);
+  }, [index, real, seekFileTo, writeElapsed, playing, stopTone, resetFile]);
+
   /* Skedari mbaroi vetë — pra po luhej me sigurí, pavarësisht `playing`. */
   const handleEnded = useCallback(() => advance(true), [advance]);
   useEffect(() => onFileEnded(handleEnded), [onFileEnded, handleEnded]);
@@ -271,6 +298,10 @@ export function usePlayerEngine(sequence, onComplete) {
     overallSeconds: totalSeconds(sequence),
     toggle,
     goNext,
+    goPrev,
+    /* Shigjetat ⏮/⏭ te pamja: cila prej tyre ka ku të shkojë. */
+    hasNext,
+    hasPrev: index > 0,
     seek,
     seekTo,
     seekStep: SEEK_STEP,
