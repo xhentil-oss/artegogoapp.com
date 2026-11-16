@@ -18,7 +18,9 @@ import { BackButton, CircleIconButton } from "../../components/ui/Controls.jsx";
  * ⚠️  Prekja e një meditimi nuk e nis më dëgjimin drejtpërdrejt. Më parë
  *     shtypja e një kartele hapte player-in menjëherë: pa titull të plotë, pa
  *     përshkrim, pa kohëzgjatje të lexuar — vendimi merrej pa asnjë të dhënë.
- *     Tani hapet kjo fletë, dhe dëgjimi nis me butonin "Luaj meditimin".
+ *     Tani hapet kjo fletë, dhe dëgjimi nis me butonin "Nis praktikën"
+ *     (u quajt "Luaj meditimin" deri më 16 nëntor 2026; emri i ri i rri
+ *     edhe një kënge a pjese muzikore, jo vetëm një meditimi).
  *
  * Vjen si fletë mbi ekran, jo si skedë: mbyllet me "prapa" dhe e lë pamjen e
  * mëparshme aty ku ishte.
@@ -167,7 +169,7 @@ export function MeditationSheet({ item }) {
             gap: 9,
           }}
         >
-          <Play size={17} fill="#fff" /> Luaj meditimin
+          <Play size={17} fill="#fff" /> Nis praktikën
         </button>
       </div>
     </div>

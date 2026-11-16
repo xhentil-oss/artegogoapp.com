@@ -16,7 +16,7 @@ const ASPECT_WIDE = "22 / 15";
  * `square` = kapak 1:1 me titull të madh; përndryshe kapak i shtypur.
  *
  * ⚠️  Prekja HAP FLETËN e meditimit, nuk nis dëgjimin. Dëgjimi nis me butonin
- *     "Luaj meditimin" atje — shih `features/library/MeditationSheet.jsx`.
+ *     "Nis praktikën" atje — shih `features/library/MeditationSheet.jsx`.
  */
 export function MedCard({ block, index = 0, square = false }) {
   const { accessBadge } = usePlayback();
