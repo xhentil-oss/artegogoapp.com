@@ -46,9 +46,9 @@
  */
 export const CATEGORIES = [
   { id: "c_emocionet",   label: "Emocionet",                                  intent: "stress", icon: "/ikona/emocionet.jpeg", cover: "/kopertina/kategoria-emocionet.jpeg" },
-  { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg" },
-  { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg" },
-  { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg" },
+  { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg", cover: "/kopertina/kategoria-zemra-plot.jpeg" },
+  { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg", cover: "/kopertina/kategoria-vetebesim.jpeg" },
+  { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg", cover: "/kopertina/kategoria-tru.jpeg" },
   { id: "c_gjumi",       label: "Gjumi",                                      intent: "sleep", icon: "/ikona/gjumi.jpeg" },
   /* ⚠️  "Ndiej bollëkun" rri ME QËLLIM këtu, jo te fundi ku ishte "Bollëku".
          `groupBy` i vizaton grupet sipas RENDIT TË KËSAJ LISTE, ndaj te dosja
