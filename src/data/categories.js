@@ -67,7 +67,7 @@ export const CATEGORIES = [
   { id: "c_vetja",       label: "Vetja e së ardhmes",                         intent: "transform" },
   { id: "c_kaluara",     label: "Shëro të kaluarën",                          intent: "heal" },
   { id: "c_jeta",        label: "Jeta ideale",                                intent: "abundance" },
-  { id: "c_falja",       label: "Falja",                                      intent: "selflove", icon: "/ikona/falja.jpeg" },
+  { id: "c_falja",       label: "Falja",                                      intent: "selflove", icon: "/ikona/falja.jpeg", cover: "/kopertina/kategoria-falja.jpeg" },
   { id: "c_dashuria",    label: "Dashuria ndaj vetes",                        intent: "selflove", icon: "/ikona/dashuria-vetes.jpeg", cover: "/kopertina/kategoria-dashuria-vetes.jpeg" },
   { id: "c_intuita",     label: "Intuita",                                    intent: "transform", icon: "/ikona/intuita.jpeg", cover: "/kopertina/kategoria-intuita.jpeg" },
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm", icon: "/ikona/situata.jpeg" },
