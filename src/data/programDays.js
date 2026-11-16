@@ -86,4 +86,27 @@ export const PROGRAM_DAYS = {
     "Rikthe energjinë",
     "Fli shpejt",
   ],
+
+  /*
+   * BOLLËK — 14 ditë (lista e klientes, 16 nëntor 2026).
+   *
+   * Si te "TRANSFORMIM", katër tituj te lista ishin të shkurtuar dhe këtu
+   * rrinë me emrin e plotë të katalogut; forma e shkurtër është shënuar pranë.
+   */
+  abundance: [
+    "Aktivizo vetëvlerësimin",
+    "Foli vetes pozitivisht",
+    "Hap zemrën",
+    "Meditim për të marrë bekime",
+    "Sill një emocion të ri",
+    "Vizualizim për bollëk",
+    "Afirmime për bollëk financiar",
+    "Meditim për të gjetur rrugën më të lartë",        // "Gjej rrugën më të lartë"
+    "Aktivizo një cilësi dhe fito energji në mëngjes", // "Aktivizo një cilësi"
+    "Tejkalo prokrastinimin dhe rrit produktivitetin", // "Tejkalo prokrastinimin — Jam i mjaftueshëm"
+    "Ndiej motivim dhe përfundo punën me sukses",      // "Ndiej motivim"
+    "Vizualizim për bollëk",
+    "Meditim për të manifestuar me dritë",
+    "Meditim për të marrë bekime",
+  ],
 };
