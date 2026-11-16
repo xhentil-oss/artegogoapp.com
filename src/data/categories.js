@@ -61,7 +61,7 @@ export const CATEGORIES = [
   { id: "c_ankth",       label: "Ankth/Panik/Fobi",                           intent: "stress", icon: "/ikona/ankth-panik.jpeg" },
   { id: "c_marredhenie", label: "Përmirësimi i marrëdhënieve",                intent: "heart", icon: "/ikona/marredheniet.jpeg" },
   { id: "c_varesi",      label: "Tejkalim i varësive dhe zakoneve të vjetra", intent: "transform" },
-  { id: "c_fokus",       label: "Fokus dhe performancë",                      intent: "focus", icon: "/ikona/fokus.jpeg" },
+  { id: "c_fokus",       label: "Fokus dhe performancë",                      intent: "focus", icon: "/ikona/fokus.jpeg", cover: "/kopertina/kategoria-fokus.jpeg", coverPos: "center 20%" },
   { id: "c_shendeti",    label: "Shëndeti",                                   intent: "heal", icon: "/ikona/shendeti.jpeg", cover: "/kopertina/kategoria-shendeti.jpeg" },
   { id: "c_qetesim",     label: "Qetësim",                                    intent: "calm", icon: "/ikona/qetesim.jpeg", cover: "/kopertina/kategoria-qetesim.jpeg" },
   { id: "c_vetja",       label: "Vetja e së ardhmes",                         intent: "transform" },
@@ -76,5 +76,5 @@ export const CATEGORIES = [
   { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm" },
   { id: "c_adoleshentet",label: "Adoleshentët",                               intent: "focus" },
   { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy", icon: "/ikona/mengjes.jpeg", cover: "/kopertina/kategoria-mengjes.jpeg" },
-  { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep", icon: "/ikona/mbremje.jpeg" },
+  { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep", icon: "/ikona/mbremje.jpeg", cover: "/kopertina/kategoria-mbremje.jpeg" },
 ];
