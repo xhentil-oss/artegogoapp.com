@@ -23,6 +23,15 @@
  *
  *     Po të vijnë ikona të reja, duhet e njëjta punë; mos i vër ashtu siç vijnë.
  *
+ * `cover` — fotoja e madhe te koka e dosjes, kur kategoria hapet. Ndryshe
+ * nga `icon`, që është pllaka 46×46 te lista, kjo mbulon një brez të gjerë
+ * sa gjerësia e ekranit. E ka vetëm ajo kategori për të cilën erdhi një foto;
+ * pa të, koka vizaton peizazhin procedural si më parë.
+ *
+ * ⚠️  Fotoja duhet ta mbajë të rëndësishmen NË MES. Brezi është i ulët dhe i
+ *     gjerë, ndaj një figurë katrore pritet lart e poshtë — shih shënimin për
+ *     `objectPosition` te `components/art/CoverArt.jsx`.
+ *
  * ⚠️  TETË KATEGORI RRINË PA IKONË: "Fëmijë dhe adoleshentë" (e vetmja me
  *     meditime), dhe shtatë që janë bosh e nuk shfaqen fare.
  *
@@ -66,6 +75,6 @@ export const CATEGORIES = [
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
   { id: "c_femije_8_12", label: "Fëmijë dhe adoleshentë",                      intent: "calm" },
   { id: "c_adoleshentet",label: "Adoleshentët",                               intent: "focus" },
-  { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy", icon: "/ikona/mengjes.jpeg" },
+  { id: "c_mengjes",     label: "Mëngjes",                                    intent: "energy", icon: "/ikona/mengjes.jpeg", cover: "/kopertina/kategoria-mengjes.jpeg" },
   { id: "c_mbremje",     label: "Mbrëmje",                                    intent: "sleep", icon: "/ikona/mbremje.jpeg" },
 ];

@@ -230,6 +230,10 @@ export function categoryFolder(categoryId) {
     id: category.id,
     label: category.label,
     intent: category.intent,
+    /* Si te `techniqueFolder`: koka e dosjes vazhdon atë që preku përdoruesi.
+       Shumica e kategorive nuk kanë foto ende, ndaj `cover` rri `undefined`
+       dhe `CoverArt` bie vetë te arti. */
+    cover: category.cover,
     desc: "sipas teknikave",
     groups: groupBy(items, "techniqueId", TECHNIQUES),
   };
