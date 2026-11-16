@@ -33,4 +33,38 @@ export const PROGRAM_DAYS = {
     "Fuqizo lidhjen",
     "Sill një emocion të ri",
   ],
+
+  /*
+   * TRANSFORMIM — 21 ditë (lista e klientes, 16 nëntor 2026).
+   *
+   * Dita 7 është "Rikthe energjinë" me kërkesë të saj, në vend të "Fuqizo
+   * lidhjen" që ishte te lista e parë.
+   *
+   * Pesë tituj te lista ishin të shkurtuar; këtu rrinë ashtu siç janë te
+   * katalogu, sepse përputhja bëhet me titullin e plotë. Forma e shkurtër e
+   * secilit është shënuar pranë.
+   */
+  transform: [
+    "Liro stresin",
+    "Pushim meditativ për rigjenerim",
+    "Aktivizo dhembshurinë",
+    "Fal veten",
+    "Fal dikë",
+    "Hap zemrën",
+    "Rikthe energjinë",
+    "Foli vetes pozitivisht",
+    "Aktivizo vetëvlerësimin",
+    "Sill një emocion të ri",
+    "Aktivizo një cilësi dhe fito energji në mëngjes", // "Aktivizo një cilësi"
+    "Tejkalo prokrastinimin dhe rrit produktivitetin", // "Tejkalo prokrastinimin — Jam i mjaftueshëm"
+    "Ndiej motivim dhe përfundo punën me sukses",      // "Ndiej motivim"
+    "Ec dhe ndiej energjinë e jetës së re",            // "Ec me një energji të re"
+    "Meditim për të rritur ndërgjegjen",
+    "Aktivizo intuitën",
+    "Meditim për të gjetur rrugën më të lartë",        // "Gjej rrugën më të lartë"
+    "Meditim për të lexuar librin e jetës",
+    "Vizualizim për bollëk",
+    "Meditim për të manifestuar me dritë",
+    "Meditim për të marrë bekime",
+  ],
 };
