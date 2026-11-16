@@ -57,11 +57,46 @@ async function box() {
 }
 
 /**
+ * Lexon trupin duke njoftuar sa ka ardhur.
+ *
+ * ⚠️  `response.blob()` do të mjaftonte, por nuk thotë asgjë derisa të
+ *     mbarojë — dhe 16MB me internet celulari janë dhjetëra sekonda heshtje.
+ *     Leximi copë-copë jep përqindjen, dhe kur dështon, dihet se ku ndaloi.
+ *
+ * Kur `body` nuk lexohet dot (shfletues i vjetër), kthehet te `blob()`.
+ */
+async function lexoTrupin(response, onProgress) {
+  const total = Number(response.headers.get("Content-Length")) || 0;
+  if (!response.body?.getReader || !total) return response.blob();
+
+  const reader = response.body.getReader();
+  const copat = [];
+  let marre = 0;
+  /* Njoftohet vetëm kur ndryshon përqindja e plotë: copat janë me dhjetëra
+     kilobajtë, pra një njoftim për copë do të ishin qindra rivizatime. */
+  let fundit = -1;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    copat.push(value);
+    marre += value.length;
+    const percent = Math.min(99, Math.round((marre / total) * 100));
+    if (percent !== fundit) {
+      fundit = percent;
+      onProgress?.(percent, total);
+    }
+  }
+
+  return new Blob(copat, { type: response.headers.get("Content-Type") || "" });
+}
+
+/**
  * Shkarkon meditimin dhe e ruan brenda aplikacionit.
  *
  * @returns {Promise<{ ok: true, bytes: number } | { ok: false, reason: string }>}
  */
-export async function storeOffline(item) {
+export async function storeOffline(item, onProgress = null) {
   const cache = await box();
   if (!cache) {
     return { ok: false, reason: null, detail: "Kujtesa e aplikacionit nuk u hap dot." };
@@ -93,7 +128,29 @@ export async function storeOffline(item) {
    *     kërkon një pjesë, e dyta mund ta fshinte vetë. Këtu ruajmë skedarin e
    *     plotë dhe vetëm atë që na duhet për ta luajtur.
    */
-  const blob = await response.blob();
+  /*
+   * ⚠️  LEXIMI I TRUPIT KA KURTHIN E VET.
+   *
+   *     `fetch()` kthehet sapo mbërrijnë kokat — skedari vazhdon të vijë pas
+   *     saj. Nëse lidhja këputet gjatë atyre 16 megabajtëve, ai që dështon
+   *     është `blob()`, jo `fetch()`, dhe përjashtimi del jashtë bllokut të
+   *     mësipërm. Pikërisht kjo nxori "Failed to fetch" te ekrani më 16 nëntor
+   *     2026, pa asnjë shpjegim se në cilin hap ndodhi.
+   */
+  let blob;
+  try {
+    blob = await lexoTrupin(response, onProgress);
+  } catch {
+    const mb = Math.round((Number(response.headers.get("Content-Length")) || 0) / 1048576);
+    return {
+      ok: false,
+      reason: null,
+      detail: mb
+        ? `Lidhja u këput gjatë marrjes së skedarit (${mb}MB). Provo me Wi-Fi.`
+        : "Lidhja u këput gjatë marrjes së skedarit. Provo me Wi-Fi.",
+    };
+  }
+
   const headers = new Headers();
   headers.set("Content-Type", blob.type || (link.kind === "video" ? "video/mp4" : "audio/mpeg"));
   headers.set("Content-Length", String(blob.size));

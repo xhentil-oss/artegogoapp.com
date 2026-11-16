@@ -162,11 +162,14 @@ export function PlayerSheet({ sequence }) {
      *     por heshturazi.
      */
     setDownloading(true);
-    say("Po ruhet në aplikacion…", 60000);
+    say("Po ruhet në aplikacion…", 600000);
 
     let result;
     try {
-      result = await storeOffline(engine.current);
+      result = await storeOffline(engine.current, (percent, bytes) => {
+        const mb = Math.round(bytes / 1048576);
+        say(`Po ruhet në aplikacion… ${percent}%${mb ? ` (${mb}MB)` : ""}`, 600000);
+      });
     } catch (err) {
       /* Asnjë rrugë nuk mbetet e heshtur: edhe një përjashtim i papritur
          shkruhet në ekran, përndryshe butoni duket i prishur pa asnjë shenjë. */
