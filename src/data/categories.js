@@ -69,7 +69,7 @@ export const CATEGORIES = [
   { id: "c_jeta",        label: "Jeta ideale",                                intent: "abundance" },
   { id: "c_falja",       label: "Falja",                                      intent: "selflove", icon: "/ikona/falja.jpeg" },
   { id: "c_dashuria",    label: "Dashuria ndaj vetes",                        intent: "selflove", icon: "/ikona/dashuria-vetes.jpeg" },
-  { id: "c_intuita",     label: "Intuita",                                    intent: "transform", icon: "/ikona/intuita.jpeg" },
+  { id: "c_intuita",     label: "Intuita",                                    intent: "transform", icon: "/ikona/intuita.jpeg", cover: "/kopertina/kategoria-intuita.jpeg" },
   { id: "c_situata",     label: "Për situata të veçanta",                     intent: "calm", icon: "/ikona/situata.jpeg" },
   { id: "c_emergjence",  label: "Emergjencë",                                 intent: "stress" },
   { id: "c_femije_0_7",  label: "Fëmijët 0–7",                                intent: "calm" },
