@@ -38,6 +38,33 @@ const VERIFY_COOLDOWN_SEC = 90;
 const hashToken = (value) => crypto.createHash("sha256").update(value).digest("hex");
 
 /**
+ * Adresa publike e aplikacionit, për link-at që shkojnë me email.
+ *
+ * ⚠️  `APP_ORIGIN` NUK ËSHTË NJË ADRESË. Që nga 22 tetori 2026 është listë e
+ *     ndarë me presje (shih `app.js`): domeni plus `https://localhost`, që
+ *     është origjina e pakos Capacitor te Androidi.
+ *
+ *     Link-at e email-it e ngjisnin të tërë listën, ndaj dilte
+ *     `https://app.drartegogo.com,https://localhost/?verify=…` — adresë e
+ *     pavlefshme, dhe Gmail-i e ndalonte me "Redirect Notice". E njëjta gjë
+ *     ndodhte edhe me link-un e rivendosjes së fjalëkalimit, pa u vënë re, që
+ *     nga dita kur lista u zgjerua.
+ *
+ * ⚠️  `localhost` KAPËRCEHET me qëllim. Është origjinë e vlefshme për API-në,
+ *     por një link te `https://localhost` i hapur nga posta nuk çon askund.
+ *     Merret adresa e parë e vërtetë; `localhost` vetëm nëse s'ka tjetër.
+ */
+function appBase() {
+  const lista = (process.env.APP_ORIGIN || "")
+    .split(",")
+    .map((o) => o.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+
+  const jashte = lista.find((o) => !/^https?:\/\/localhost(:\d+)?$/i.test(o));
+  return jashte ?? lista[0] ?? "";
+}
+
+/**
  * Krijon token-in dhe dërgon email-in e verifikimit.
  *
  * ⚠️  Token-i shkruhet VETËM pasi email-i të jetë dërguar — i njëjti rregull
@@ -50,8 +77,7 @@ async function sendVerification(user, ip) {
   if (!mailer.configured()) return { ok: false, reason: "not_configured" };
 
   const token = crypto.randomBytes(32).toString("hex");
-  const base = (process.env.APP_ORIGIN || "").replace(/\/$/, "");
-  const link = `${base}/?verify=${token}`;
+  const link = `${appBase()}/?verify=${token}`;
 
   const sent = await mailer.send({
     to: user.email,
@@ -345,8 +371,8 @@ router.post("/forgot", async (req, res, next) => {
     if (recent) return same();
 
     const token = crypto.randomBytes(32).toString("hex");
-    const base = (process.env.APP_ORIGIN || "").replace(/\/$/, "");
-    const link = `${base}/?reset=${token}`;
+    /* I njëjti ndihmës si te verifikimi: `APP_ORIGIN` është listë, jo adresë. */
+    const link = `${appBase()}/?reset=${token}`;
 
     const sent = await mailer.send({ to: user.email, ...mailer.resetEmail({
       name: user.name, link, minutes: RESET_MINUTES,
