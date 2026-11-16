@@ -1,5 +1,6 @@
 import { MEDITATIONS } from "./classification.js";
 import { BLOCKS } from "../data/blocks.js";
+import { PROGRAM_DAYS } from "../data/programDays.js";
 
 /**
  * RRUGËTIMI I NJË PROGRAMI (seksioni 6.5)
@@ -73,16 +74,38 @@ export function programStops(program) {
   const pool = MEDITATIONS.filter((m) => m.intent === program.intent);
   const source = pool.length > 0 ? pool : MEDITATIONS;
 
-  return Array.from({ length: total }, (_, i) => ({
-    day: i + 1,
-    /* Modulo: nëse ditët janë më shumë se meditimet, cikli rinis — më mirë se
-       ndalesa boshe. */
-    meditation: source.length > 0 ? source[i % source.length] : null,
-  }));
+  /*
+   * Rendi i shkruar i ditëve (`data/programDays.js`), kur ekziston.
+   *
+   * Pishina mbetet rezervë për çdo ditë veç e veç: një titull i pagjetur ose
+   * një listë më e shkurtër se programi nuk e lë ndalesën bosh — ajo ditë
+   * kthehet te sjellja e vjetër.
+   */
+  const titles = PROGRAM_DAYS[program.intent];
+
+  return Array.from({ length: total }, (_, i) => {
+    const fallback = source.length > 0 ? source[i % source.length] : null;
+    const title = titles?.[i];
+    return {
+      day: i + 1,
+      /* Modulo te rezerva: nëse ditët janë më shumë se meditimet, cikli
+         rinis — më mirë se ndalesa boshe. */
+      meditation: (title ? findByTitle(title) : null) ?? fallback,
+    };
+  });
 }
 
 const findById = (id) =>
   id ? BLOCKS.find((b) => b.id === id) ?? MEDITATIONS.find((m) => m.id === id) ?? null : null;
+
+/*
+ * Krahasimi bëhet pa hapësira anash dhe pa dallim shkronje të madhe/vogël —
+ * lista shkruhet me dorë dhe një hapësirë e tepërt nuk duhet ta zbrazë ditën.
+ */
+const findByTitle = (title) => {
+  const key = title.trim().toLowerCase();
+  return MEDITATIONS.find((m) => (m.title ?? "").trim().toLowerCase() === key) ?? null;
+};
 
 /**
  * Gjendja e çdo ndalese.
