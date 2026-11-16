@@ -524,47 +524,12 @@ export function PlayerSheet({ sequence }) {
 
       {/* ---------- progresi ---------- */}
       <div style={{ width: "100%", maxWidth: layout.sheetMaxWidth }}>
-        <div style={{ position: "relative", height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 4 }}>
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: `${engine.blockPercent}%`,
-              background: "#fff",
-              borderRadius: 4,
-              transition: "width 1s linear",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: `${engine.blockPercent}%`,
-              top: "50%",
-              width: 16,
-              height: 16,
-              borderRadius: "50%",
-              background: "#fff",
-              transform: "translate(-50%,-50%)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-              transition: "left 1s linear",
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginTop: 10,
-            color: onDark.secondary,
-            fontSize: 14,
-          }}
-        >
-          <span>{fmt(engine.blockElapsed)}</span>
-          <span>{fmt(engine.blockSeconds)}</span>
-        </div>
+        <ProgressBar
+          percent={engine.blockPercent}
+          elapsed={engine.blockElapsed}
+          seconds={engine.blockSeconds}
+          onSeek={(fraction) => engine.seekTo(fraction * engine.blockSeconds)}
+        />
 
         {/* hapat e seancës, në proporcion me kohëzgjatjen */}
         <div style={{ display: "flex", gap: 3, marginTop: 12 }}>
@@ -588,6 +553,145 @@ export function PlayerSheet({ sequence }) {
         </div>
       </div>
     </div>
+  );
+}
+
+
+/**
+ * Shiriti i progresit — i prekshëm, jo vetëm pamje.
+ *
+ * Deri më 16 nëntor 2026 lëvizja bëhej vetëm me dy butonat ±15 s. Te një
+ * meditim nëntëminutësh, kthimi te një pjesë e dëgjuar më parë kërkonte
+ * dhjetëra prekje. Tani shiriti pranon edhe prekje të vetme (kërce aty) edhe
+ * zvarritje (lëviz me gisht), me të njëjtin kod — `pointer`-at i mbulojnë të
+ * dyja, maus e gisht.
+ *
+ * ⚠️  `touchAction: "none"` është i domosdoshëm te telefoni. Pa të, shfletuesi
+ *     e merr gjestin si rrëshqitje të faqes dhe `pointermove` nuk vjen kurrë:
+ *     shiriti do të kërcente te prekja, por nuk do të zvarritej dot.
+ *
+ * ⚠️  `setPointerCapture` mban gishtin të lidhur me shiritin edhe kur del
+ *     jashtë tij. Pa të, zvarritja pak më lart ose poshtë e humb ndjekjen në
+ *     mes, dhe koha mbetet aty ku ishte kur gishti doli.
+ *
+ * ⚠️  ZONA E PREKJES ËSHTË 34 px, JO 6. Shiriti vizatohet 6 px i hollë, por
+ *     `padding: "14px 0"` me `margin: "-14px 0"` e zgjeron zonën pa e lëvizur
+ *     asgjë në ekran. Gishti nuk e gjen dot një vijë gjashtëpikëshe.
+ *
+ * ⚠️  GJATË ZVARRITJES ANIMACIONI HIQET. Kalimi `1s linear` ekziston që
+ *     shiriti të rrjedhë butë me kohën; nën gisht ai do të bënte që koka të
+ *     ngelej një sekondë pas gishtit. Prandaj `transition` bëhet "none"
+ *     sapo nis prekja, dhe kthehet sapo lëshohet.
+ *
+ * Koha majtas ndjek gishtin ndërsa zvarrit — pa të, nuk dihet se ku po shkon
+ * derisa ta lëshosh.
+ */
+function ProgressBar({ percent, elapsed, seconds, onSeek }) {
+  const barRef = useRef(null);
+  /* 0–100 vetëm gjatë zvarritjes; `null` do të thotë "ndiq motorin". */
+  const [drag, setDrag] = useState(null);
+
+  const fractionAt = (clientX) => {
+    const r = barRef.current?.getBoundingClientRect();
+    if (!r || r.width === 0) return 0;
+    return Math.min(Math.max((clientX - r.left) / r.width, 0), 1);
+  };
+
+  const pos = drag ?? percent;
+  const koha = drag === null ? elapsed : (drag / 100) * seconds;
+  const kalim = drag === null ? "1s linear" : "none";
+
+  const hap = (delta) => {
+    const next = Math.min(Math.max(pos + delta, 0), 100);
+    setDrag(null);
+    onSeek(next / 100);
+  };
+
+  return (
+    <>
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label="Pozicioni i meditimit"
+        aria-valuemin={0}
+        aria-valuemax={Math.round(seconds)}
+        aria-valuenow={Math.round(koha)}
+        aria-valuetext={`${fmt(koha)} nga ${fmt(seconds)}`}
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+          e.preventDefault();
+          hap(e.key === "ArrowRight" ? 2 : -2);
+        }}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setDrag(fractionAt(e.clientX) * 100);
+        }}
+        onPointerMove={(e) => {
+          if (drag === null) return;
+          setDrag(fractionAt(e.clientX) * 100);
+        }}
+        onPointerUp={(e) => {
+          if (drag === null) return;
+          const f = fractionAt(e.clientX);
+          setDrag(null);
+          onSeek(f);
+        }}
+        onPointerCancel={() => setDrag(null)}
+        style={{
+          padding: "14px 0",
+          margin: "-14px 0",
+          cursor: "pointer",
+          touchAction: "none",
+          outline: "none",
+        }}
+      >
+        <div
+          ref={barRef}
+          style={{ position: "relative", height: 6, background: "rgba(255,255,255,0.2)", borderRadius: 4 }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: `${pos}%`,
+              background: "#fff",
+              borderRadius: 4,
+              transition: `width ${kalim}`,
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: `${pos}%`,
+              top: "50%",
+              /* koka rritet nën gisht — e vetmja shenjë që prekja u kap */
+              width: drag === null ? 16 : 20,
+              height: drag === null ? 16 : 20,
+              borderRadius: "50%",
+              background: "#fff",
+              transform: "translate(-50%,-50%)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              transition: `left ${kalim}, width 120ms, height 120ms`,
+            }}
+          />
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 10,
+          color: onDark.secondary,
+          fontSize: 14,
+        }}
+      >
+        <span>{fmt(koha)}</span>
+        <span>{fmt(seconds)}</span>
+      </div>
+    </>
   );
 }
 

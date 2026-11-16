@@ -68,6 +68,7 @@ export function usePlayerEngine(sequence, onComplete) {
     pause: pauseFile,
     reset: resetFile,
     seekBy: seekFile,
+    seekTo: seekFileTo,
     onEnded: onFileEnded,
     onSettled: onFileSettled,
     attachVideo,
@@ -224,6 +225,30 @@ export function usePlayerEngine(sequence, onComplete) {
     [real, seekFile, writeElapsed, blockSeconds]
   );
 
+  /**
+   * Kërcim te një sekondë e caktuar brenda hapit — shiriti i progresit.
+   *
+   * `seek` lëviz me hap (±15 s); kjo shkon aty ku e çon gishti. Të dyja i
+   * shërbejnë të njëjtit kufi: koha mbetet brenda hapit aktual, nuk kalon te
+   * hapi tjetër. Kalimi mes hapave bëhet vetëm nga `goNext` — përndryshe një
+   * zvarritje deri në fund do të niste hapin pasardhës pa e kërkuar askush.
+   *
+   * ⚠️  Te tingujt demo (`real === false`) nuk ka skedar fare: aty lëviz
+   *     numëruesi, dhe zëri vazhdon si ishte. Kjo është e qëllimshme — tonet
+   *     nuk kanë "pozicion", vetëm shiriti ka.
+   */
+  const seekTo = useCallback(
+    (seconds) => {
+      const target = clamp(seconds, 0, blockSeconds);
+      if (real) {
+        seekFileTo(target);
+        return;
+      }
+      writeElapsed(target);
+    },
+    [real, seekFileTo, writeElapsed, blockSeconds]
+  );
+
   /** Ndalon zërin pa e shënuar seancën si të përfunduar (mbyllje/minimizim). */
   const detach = useCallback(() => {
     continueRef.current = false;
@@ -247,6 +272,7 @@ export function usePlayerEngine(sequence, onComplete) {
     toggle,
     goNext,
     seek,
+    seekTo,
     seekStep: SEEK_STEP,
     detach,
     /* Për shiritin te fundi i ekranit: audio e vërtetë apo tinguj demo. */

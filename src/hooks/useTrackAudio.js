@@ -274,6 +274,28 @@ export function useTrackAudio(meditationId) {
   }, []);
 
   /**
+   * Kërcim te një sekondë e caktuar — jo me hap, por aty ku tregon gishti.
+   *
+   * ⚠️  `Number.isFinite(el.duration)` është kushti që nuk hiqet. Derisa të
+   *     vijnë metadata-t, `duration` është `NaN`; shkrimi i `currentTime`
+   *     atëherë hedh `InvalidStateError` dhe luajtësi ngec. Prandaj një prekje
+   *     mbi shirit para se skedari të hapet thjesht nuk bën gjë — më mirë pa
+   *     përgjigje se e prishur.
+   *
+   * ⚠️  `setCurrentTime` thirret menjëherë, pa pritur `timeupdate`. Shfletuesi
+   *     e dërgon atë ngjarje rreth katër herë në sekondë; pa këtë rresht,
+   *     shiriti do të kthehej për një çast aty ku ishte dhe do të dukej sikur
+   *     kërcimi dështoi.
+   */
+  const seekTo = useCallback((seconds) => {
+    const el = elRef.current;
+    if (!el || !Number.isFinite(el.duration)) return;
+    const next = Math.min(Math.max(seconds, 0), el.duration);
+    el.currentTime = next;
+    setCurrentTime(next);
+  }, []);
+
+  /**
    * Vendos dëgjuesin për fundin e skedarit.
    *
    * Mban një `ref` në vend që t'i shtojë një dëgjues elementit: kështu
@@ -339,6 +361,7 @@ export function useTrackAudio(meditationId) {
     pause,
     reset,
     seekBy,
+    seekTo,
     onEnded,
     onSettled,
   };
