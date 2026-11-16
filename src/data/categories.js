@@ -49,13 +49,13 @@ export const CATEGORIES = [
   { id: "c_zemra",       label: "Zemra plot",                                 intent: "heart", icon: "/ikona/zemra-plot.jpeg", cover: "/kopertina/kategoria-zemra-plot.jpeg" },
   { id: "c_vetebesim",   label: "Vetëbesim",                                  intent: "energy", icon: "/ikona/vetebesim.jpeg", cover: "/kopertina/kategoria-vetebesim.jpeg" },
   { id: "c_tru",         label: "Tru i fuqizuar",                             intent: "focus", icon: "/ikona/tru-i-fuqizuar.jpeg", cover: "/kopertina/kategoria-tru.jpeg" },
-  { id: "c_gjumi",       label: "Gjumi",                                      intent: "sleep", icon: "/ikona/gjumi.jpeg" },
+  { id: "c_gjumi",       label: "Gjumi",                                      intent: "sleep", icon: "/ikona/gjumi.jpeg", cover: "/kopertina/kategoria-gjumi.jpeg" },
   /* ⚠️  "Ndiej bollëkun" rri ME QËLLIM këtu, jo te fundi ku ishte "Bollëku".
          `groupBy` i vizaton grupet sipas RENDIT TË KËSAJ LISTE, ndaj te dosja
          Afirmime do të dilte poshtë "Faljes" dhe "Dashurisë ndaj vetes" —
          meditimi i vërtetë nën vendmbajtësit. Këtu del i pari. */
-  { id: "c_bolleku",     label: "Ndiej bollëkun",                             intent: "abundance", icon: "/ikona/bolleku.jpeg" },
-  { id: "c_energji",     label: "Energji e lartë",                            intent: "energy", icon: "/ikona/energji-e-larte.jpeg" },
+  { id: "c_bolleku",     label: "Ndiej bollëkun",                             intent: "abundance", icon: "/ikona/bolleku.jpeg", cover: "/kopertina/kategoria-bolleku.jpeg" },
+  { id: "c_energji",     label: "Energji e lartë",                            intent: "energy", icon: "/ikona/energji-e-larte.jpeg", cover: "/kopertina/kategoria-energji.jpeg" },
   { id: "c_manifestim",  label: "Manifestim",                                 intent: "abundance", icon: "/ikona/manifestim.jpeg" },
   { id: "c_stres",       label: "Liro stresin",                               intent: "stress", icon: "/ikona/stres.jpeg" },
   { id: "c_ankth",       label: "Ankth/Panik/Fobi",                           intent: "stress", icon: "/ikona/ankth-panik.jpeg" },
