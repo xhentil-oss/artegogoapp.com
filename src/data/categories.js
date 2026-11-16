@@ -56,9 +56,9 @@ export const CATEGORIES = [
          meditimi i vërtetë nën vendmbajtësit. Këtu del i pari. */
   { id: "c_bolleku",     label: "Ndiej bollëkun",                             intent: "abundance", icon: "/ikona/bolleku.jpeg", cover: "/kopertina/kategoria-bolleku.jpeg" },
   { id: "c_energji",     label: "Energji e lartë",                            intent: "energy", icon: "/ikona/energji-e-larte.jpeg", cover: "/kopertina/kategoria-energji.jpeg" },
-  { id: "c_manifestim",  label: "Manifestim",                                 intent: "abundance", icon: "/ikona/manifestim.jpeg" },
-  { id: "c_stres",       label: "Liro stresin",                               intent: "stress", icon: "/ikona/stres.jpeg" },
-  { id: "c_ankth",       label: "Ankth/Panik/Fobi",                           intent: "stress", icon: "/ikona/ankth-panik.jpeg" },
+  { id: "c_manifestim",  label: "Manifestim",                                 intent: "abundance", icon: "/ikona/manifestim.jpeg", cover: "/kopertina/kategoria-manifestim.jpeg" },
+  { id: "c_stres",       label: "Liro stresin",                               intent: "stress", icon: "/ikona/stres.jpeg", cover: "/kopertina/kategoria-stres.jpeg" },
+  { id: "c_ankth",       label: "Ankth/Panik/Fobi",                           intent: "stress", icon: "/ikona/ankth-panik.jpeg", cover: "/kopertina/kategoria-ankth.jpeg" },
   { id: "c_marredhenie", label: "Përmirësimi i marrëdhënieve",                intent: "heart", icon: "/ikona/marredheniet.jpeg" },
   { id: "c_varesi",      label: "Tejkalim i varësive dhe zakoneve të vjetra", intent: "transform" },
   { id: "c_fokus",       label: "Fokus dhe performancë",                      intent: "focus", icon: "/ikona/fokus.jpeg", cover: "/kopertina/kategoria-fokus.jpeg", coverPos: "center 20%" },
