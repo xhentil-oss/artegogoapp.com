@@ -67,4 +67,23 @@ export const PROGRAM_DAYS = {
     "Meditim për të manifestuar me dritë",
     "Meditim për të marrë bekime",
   ],
+
+  /*
+   * GJUMË I QETË — 10 ditë (lista e klientes, 16 nëntor 2026).
+   *
+   * Titujt përsëriten me qëllim: programi ka 10 ditë dhe katër meditime, dhe
+   * rendi i përsëritjes është i sajin — jo cikli automatik që kishim më parë.
+   */
+  sleep: [
+    "Fli shpejt",
+    "Liro stresin",
+    "Pushim meditativ për rigjenerim",
+    "Fli shpejt",
+    "Aktivizo dhembshurinë",
+    "Rikthe energjinë",
+    "Pushim meditativ për rigjenerim",
+    "Liro stresin",
+    "Rikthe energjinë",
+    "Fli shpejt",
+  ],
 };
