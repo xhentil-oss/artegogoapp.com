@@ -57,10 +57,17 @@ export function usePlayerEngine(sequence, onComplete) {
   /**
    * "Luaj vazhdimisht" — fundi e kthen seancën në fillim, pa e mbyllur.
    *
-   * ⚠️  NIS GJITHMONË E FIKUR, dhe fiket vetë sa herë hapet diçka tjetër
-   *     (kërkesë e klientes, 17 nëntor 2026). Nuk ruhet as te pajisja: një
-   *     meditim që përsëritet pa fund, pa e kërkuar askush, është kurth —
-   *     veçanërisht ai për gjumë, që dëgjohet në errësirë.
+   * ⚠️  NJË PËRSËRITJE, JO PAFUND. Sapo seanca kthehet në fillim,
+   *     ndërprerësi fiket vetë; të dëgjuarit e dytë mbaron si çdo i parë.
+   *     Kështu e kërkoi klientja (17 nëntor 2026), pasi e pa në punë: një
+   *     meditim që nuk ndalet kurrë është kurth — veçanërisht ai për gjumë,
+   *     që dëgjohet në errësirë, kur askush nuk e prek më telefonin.
+   *
+   *     Fikja është edhe e vetmja shenjë që përsëritja ndodhi: ndërprerësi
+   *     kthehet para syve, në çastin që zëri nis nga e para.
+   *
+   * ⚠️  NIS GJITHMONË E FIKUR, dhe fiket vetë sa herë hapet diçka tjetër.
+   *     Nuk ruhet as te pajisja.
    *
    * ⚠️  Edhe si ref, jo vetëm si gjendje. `advance` krijohet me `useCallback`
    *     dhe lidhet si dëgjues i `ended`; po ta lexonte gjendjen, do të kapte
@@ -175,8 +182,17 @@ export function usePlayerEngine(sequence, onComplete) {
 
   const advance = useCallback(
     (wasPlaying) => {
-      /* Fundi i seancës, me përsëritjen të ndezur, nuk është fund. */
+      /*
+       * Fundi i seancës, me përsëritjen të ndezur, nuk është fund.
+       *
+       * ⚠️  `loopingRef` shuhet KËTU, para `setLooping`. Gjendja përditësohet
+       *     në render-in tjetër, dhe një skedar shumë i shkurtër mund ta
+       *     nxirrte `ended` sërish para tij — pra një përsëritje e dytë që
+       *     askush nuk e kërkoi.
+       */
       if (!hasNext && loopingRef.current) {
+        loopingRef.current = false;
+        setLooping(false);
         restart(wasPlaying);
         return;
       }
