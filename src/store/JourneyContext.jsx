@@ -9,7 +9,7 @@ import {
 } from "../domain/journey.js";
 import { localDayKey } from "../lib/time.js";
 import { listPrograms } from "../services/contentRepository.js";
-import { api, hasToken } from "../services/api.js";
+import { api, hasToken, onTokenChange } from "../services/api.js";
 
 /**
  * RRUGËTIMI AKTIV DHE PROGRESI I PROGRAMEVE (seksioni 6.5)
@@ -55,17 +55,32 @@ export function JourneyProvider({ children }) {
   const [state, setState] = useState(EMPTY);
   const [ready, setReady] = useState(false);
 
+  /*
+   * Lexon rrugëtimin e llogarisë që është brenda TANI.
+   *
+   * ⚠️  Thirret edhe në montim edhe te çdo ndërrim token-i. Pa të dytën,
+   *     progresi lexohej VETËM një herë, kur aplikacioni hapej: kush dilte e
+   *     hynte me një llogari tjetër pa rifreskuar faqen mbetej me ditët e të
+   *     parit në ekran, dhe — sapo rifreskonte — i shihte të zhdukura, sepse
+   *     leximi i llogarisë së dytë i mbishkruante te pajisja. Rreshtat te
+   *     databaza nuk prekeshin kurrë; humbiste vetëm kopja lokale. Kjo është
+   *     e njëjta grackë që `ProgressContext` dhe `usePersistentMap` e kanë
+   *     mbyllur prej kohësh — shih shënimin te `services/api.js`.
+   */
   useEffect(() => {
     let cancelled = false;
 
-    (async () => {
-      /* Gjendja lokale shfaqet e para — ekrani nuk pret rrjetin. */
-      const saved = await storage.get(STORAGE_KEYS.journey, EMPTY);
-      if (cancelled) return;
-      setState({ ...EMPTY, ...(saved ?? {}) });
-      setReady(true);
-
-      if (!hasToken()) return;
+    const lexo = async () => {
+      /*
+       * Pa token nuk ka çfarë të lexohet, dhe çfarë rri në ekran i takon
+       * llogarisë që sapo doli. Gjendja zbrazet: ndryshe, hyrja e radhës do
+       * të shihte për një çast rrugëtimin e dikujt tjetër — dhe një prekje e
+       * vetme do ta bënte të sajin.
+       */
+      if (!hasToken()) {
+        if (!cancelled) setState(EMPTY);
+        return;
+      }
 
       /*
        * Ditët e kryera vijnë nga serveri; `activeId` mbetet lokal.
@@ -85,10 +100,22 @@ export function JourneyProvider({ children }) {
       } catch {
         /* Pa rrjet mbetet gjendja lokale — shih shënimin te `services/userData.js`. */
       }
+    };
+
+    (async () => {
+      /* Gjendja lokale shfaqet e para — ekrani nuk pret rrjetin. */
+      const saved = await storage.get(STORAGE_KEYS.journey, EMPTY);
+      if (cancelled) return;
+      setState({ ...EMPTY, ...(saved ?? {}) });
+      setReady(true);
+      await lexo();
     })();
+
+    const stop = onTokenChange(lexo);
 
     return () => {
       cancelled = true;
+      stop();
     };
   }, []);
 

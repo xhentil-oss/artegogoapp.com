@@ -233,6 +233,8 @@ export async function signOut() {
   /* Shpërblimet e llogarisë së mëparshme hiqen: përndryshe hyrja e radhës do
      të shihte për një çast medaljet e dikujt tjetër. */
   await storage.remove(STORAGE_KEYS.rewards);
+  /* Po ashtu rrugëtimi: ditët e kryera janë të llogarisë, jo të pajisjes. */
+  await storage.remove(STORAGE_KEYS.journey);
 }
 
 /**
