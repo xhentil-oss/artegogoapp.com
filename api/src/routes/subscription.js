@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const { pool, query, one } = require("../db");
 const { requireAuth, hasPremium } = require("../auth");
 const { verifyReceipt, RESULT } = require("../storeVerify");
@@ -23,6 +24,64 @@ router.use(requireAuth);
 
 /** 3 ditë provë falas — i njëjti numër si te `domain/subscription.js`. */
 const TRIAL_DAYS = 3;
+
+/* ═══════════════ GJURMA E PROVËS ═══════════════ */
+
+/**
+ * ⚠️  `trial_used_at` E RUAN LLOGARINË, JO NJERIUN.
+ *
+ *     Një llogari e re nuk e ka atë shenjë — ndaj deri tani tri ditët falas
+ *     merreshin sa herë të doje, mjaftonte një adresë tjetër. Kjo ishte vrima
+ *     që klientja kërkoi të mbyllet (17 nëntor 2026).
+ *
+ *     Shenja duhet të rrijë mbi diçka që nuk krijohet falas. Sot kemi
+ *     identifikuesin e pajisjes; kur të vendoset shërbimi i pagesave, do të
+ *     kemi edhe gjurmën e kartës — dhe kodi poshtë nuk ndryshon për të, sepse
+ *     të dyja kalojnë nga `claimTrial` me një `kind` tjetër.
+ *
+ * ⚠️  RUHET VETËM HASH-I, kurrë vlera burimore.
+ *
+ *     Një kopje e databazës nuk duhet të japë listën e pajisjeve të njerëzve.
+ *     "Piper"-i e bën hash-in të pakrahasueshëm me ndonjë tabelë të jashtme:
+ *     pa çelësin e serverit, i njëjti identifikues jep hash tjetër.
+ */
+const PEPPER = () => process.env.TRIAL_PEPPER || process.env.JWT_SECRET || "";
+
+const gjurma = (value) =>
+  crypto.createHash("sha256").update(`${PEPPER()}:${value}`).digest("hex");
+
+/**
+ * A e ka marrë tashmë provën kjo gjurmë — dhe nëse jo, e shënon.
+ *
+ * Thirret BRENDA transaksionit të provës, që shënimi dhe dhënia të jenë një
+ * veprim i vetëm: ose të dyja, ose asnjëra.
+ *
+ * @returns {Promise<boolean>} `true` kur gjurma është e lirë dhe u shënua
+ */
+async function claimTrial(connection, kind, value, userId) {
+  if (!value) return true; /* pa gjurmë nuk kemi çfarë të kontrollojmë */
+
+  const hash = gjurma(String(value).slice(0, 200));
+
+  const [[gjetur]] = await connection.query(
+    `SELECT user_id FROM trial_claims WHERE kind = ? AND fingerprint = ?`,
+    [kind, hash]
+  );
+
+  /* E njëjta llogari që rikërkon — nuk është abuzim, është përsëritje. */
+  if (gjetur && gjetur.user_id !== userId) return false;
+  if (gjetur) return true;
+
+  /*
+   * `IGNORE` sepse çelësi unik është gjykatësi i fundit: dy kërkesa në të
+   * njëjtin çast e lexojnë të dyja si të lirë, dhe vetëm njëra e shkruan dot.
+   */
+  await connection.query(
+    `INSERT IGNORE INTO trial_claims (kind, fingerprint, user_id) VALUES (?, ?, ?)`,
+    [kind, hash, userId]
+  );
+  return true;
+}
 
 const PLANS = {
   month: { db: "monthly", days: 30, price: 24 },
@@ -130,6 +189,25 @@ router.post("/trial", async (req, res, next) => {
     if (user.trial_used_at) {
       await connection.rollback();
       return res.status(409).json({ error: "Prova falas është përdorur tashmë.", ...shape(user) });
+    }
+
+    /*
+     * Pajisja, jo vetëm llogaria.
+     *
+     * ⚠️  Kontrollohet PASI `trial_used_at` del bosh, dhe brenda të njëjtit
+     *     transaksion: kështu gjurma shënohet vetëm kur prova jepet vërtet. Një
+     *     shënim i bërë më herët do të digjte pajisjen edhe kur dhënia dështon.
+     */
+    const eLire = await claimTrial(connection, "device", req.body?.deviceId, req.userId);
+    if (!eLire) {
+      await connection.rollback();
+      return res.status(409).json({
+        error:
+          "Prova falas është përdorur tashmë te kjo pajisje. " +
+          "Hyr me llogarinë e parë, ose zgjidh një abonim për të vazhduar.",
+        code: "trial_device_used",
+        ...shape(user),
+      });
     }
 
     await connection.query(

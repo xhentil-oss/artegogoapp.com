@@ -21,6 +21,7 @@
  */
 
 import { api, ApiError } from "./api.js";
+import { deviceId } from "./device.js";
 
 export const STORES = {
   APPLE: "appstore",
@@ -63,16 +64,31 @@ export function cancelPath(store = detectStore()) {
  *     një kërkesë të vetme — dhe serveri e refuzon rinisjen, sepse mban
  *     `trial_used_at`.
  *
+ * ⚠️  Dërgohet edhe identifikuesi i pajisjes, sepse `trial_used_at` rri mbi
+ *     LLOGARINË — dhe një llogari e re është falas. Pa të, tri ditët merreshin
+ *     sa herë të doje, me një adresë të re. Serveri e hash-on dhe mban vetëm
+ *     hash-in; shih `services/device.js`.
+ *
  * @returns {Promise<{ ok: boolean, state?: object, error?: string, used?: boolean }>}
  */
 export async function startTrial(planId = "year") {
   try {
-    const state = await api.post("/me/subscription/trial", { planId });
+    const state = await api.post("/me/subscription/trial", {
+      planId,
+      deviceId: deviceId(),
+    });
     return { ok: true, state, planId, store: detectStore() };
   } catch (err) {
-    /* 409 = prova është përdorur më parë. Nuk është gabim, është fakt. */
+    /* 409 = prova është përdorur më parë. Nuk është gabim, është fakt.
+       `device` e dallon "kjo llogari e ka marrë" nga "kjo pajisje e ka marrë":
+       e para zgjidhet me abonim, e dyta edhe me hyrje te llogaria e parë. */
     if (err instanceof ApiError && err.status === 409) {
-      return { ok: false, used: true, error: err.message };
+      return {
+        ok: false,
+        used: true,
+        device: err.code === "trial_device_used",
+        error: err.message,
+      };
     }
     return { ok: false, error: err?.message ?? "Nuk u nis dot prova." };
   }
