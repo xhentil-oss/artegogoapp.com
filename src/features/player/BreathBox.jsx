@@ -113,7 +113,7 @@ export function BreathBox({ pattern, elapsed, playing }) {
 }
 
 function BreathSquare({ pattern, state }) {
-  const { phase, progress, remaining, round, done } = state;
+  const { phase, progress, remaining, round, waiting, done } = state;
   const dot = dotAt(phase.side, progress);
 
   /** Faza që i takon kësaj brinje — nga ajo merret ngjyra dhe etiketa. */
@@ -223,13 +223,15 @@ function BreathSquare({ pattern, state }) {
           <>
             <div
               style={{
-                fontSize: "clamp(36px, 14vw, 50px)",
+                /* "GATI" është fjalë, jo numër — i duhet më pak lartësi. */
+                fontSize: waiting ? "clamp(17px, 7vw, 24px)" : "clamp(36px, 14vw, 50px)",
                 fontWeight: 800,
-                color: "#fff",
+                letterSpacing: waiting ? 3 : 0,
+                color: waiting ? "rgba(255,255,255,0.72)" : "#fff",
                 lineHeight: 1,
               }}
             >
-              {remaining}
+              {waiting ? "GATI" : remaining}
             </div>
             {/*
               Emri i shkurtër ("MERR"), jo i gjati ("MERR FRYMË").
@@ -307,7 +309,7 @@ function arcPath(from, to) {
 }
 
 function BreathCircle({ pattern, state }) {
-  const { phase, cycleProgress, phaseStart, remaining, round, done } = state;
+  const { phase, cycleProgress, phaseStart, remaining, round, waiting, done } = state;
   const [dx, dy] = pointAt(cycleProgress);
   const [sx0, sy0] = pointAt(phaseStart);
 
@@ -385,13 +387,14 @@ function BreathCircle({ pattern, state }) {
           <>
             <div
               style={{
-                fontSize: "clamp(38px, 15vw, 54px)",
+                fontSize: waiting ? "clamp(18px, 7vw, 26px)" : "clamp(38px, 15vw, 54px)",
                 fontWeight: 800,
-                color: "rgba(255,255,255,0.92)",
+                letterSpacing: waiting ? 3 : 0,
+                color: waiting ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.92)",
                 lineHeight: 1,
               }}
             >
-              {remaining}
+              {waiting ? "GATI" : remaining}
             </div>
             <div
               style={{

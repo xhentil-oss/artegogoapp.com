@@ -19,6 +19,19 @@
  *     të skedarit. Një kronometër i pavarur do të shmangej sapo dëgjuesi të
  *     ndalonte, të kthehej 15 sekonda prapa, ose rrjeti të vononte nisjen; dhe
  *     një udhëzues frymëmarrjeje i shmangur nga zëri është më keq se asnjë.
+ *
+ * ⚠️  `lead` — HYRJA PARA FJALËS SË PARË.
+ *
+ *     Asnjë nga regjistrimet nuk nis me "merr frymë" te sekonda zero: secili
+ *     ka pak muzikë përpara. Pa `lead`, pika nisej bashkë me skedarin dhe
+ *     zëri e zinte në mes të fazës së parë — pikërisht ankesa e klientes
+ *     (17 nëntor 2026): "kur audioja thotë merr frymë duhet të nisë direkt
+ *     ai topi lëvizës".
+ *
+ *     Vlerat janë të MATURA, jo të hamendësuara: zarfi i energjisë i çdo
+ *     skedari u nda në shenja zanore, dhe mbi to u përshtat `lead + k×cikël`.
+ *     Shih rreshtin "matur" te çdo ritëm. Sa herë ndërrohet një regjistrim,
+ *     matja duhet përsëritur — një `lead` i vjetër është më keq se zero.
  */
 
 /**
@@ -40,6 +53,8 @@ const BOX_4X4 = {
   /* Katror: katër faza, një për brinjë. */
   shape: "square",
   rounds: 4,
+  /* matur te `box-breathing.mp3`: 16 shenja, cikël 4 s, hyrje 1.01 s */
+  lead: 1.0,
   phases: [
     {
       id: "in",
@@ -96,6 +111,16 @@ const RITMIKE_4X6 = {
   id: "ritmike-4x6",
   shape: "circle",
   rounds: 6,
+  /*
+   * matur te `per-stres.mp3`: hyrje 1.6 s.
+   *
+   * ⚠️  POR AI SKEDAR NUK ËSHTË I KËTIJ USHTRIMI. `per-stres.mp3` është
+   *     byte për byte i njëjtë me `coherence-breathing.mp3`, dhe shenjat
+   *     zanore bien çdo 5.0 sekonda — pra është regjistrimi 5×5, jo 4×6.
+   *     Derisa të ngarkohet regjistrimi i vërtetë, figura do të ndjekë një
+   *     ritëm që zëri nuk e thotë; `lead` këtu e zbut, nuk e ndreq.
+   */
+  lead: 1.6,
   /* Rreshti i fundit te lista — udhëzim, jo fazë. Shih `BreathSteps`. */
   extraStep: {
     text: "Përsërite 6 herë (≈1 minutë) dhe vëre ndryshimin",
@@ -136,6 +161,8 @@ const KOHERENCA_5X5 = {
   id: "koherenca-5x5",
   shape: "circle",
   rounds: 6,
+  /* matur te `coherence-breathing.mp3`: 12 shenja, cikël 5 s, hyrje 1.55 s */
+  lead: 1.6,
   extraStep: {
     text: "Përsërite 6 herë (≈1 minutë) dhe vëre ndryshimin",
     color: "#8FD3C4",
@@ -182,6 +209,8 @@ const RELAKSIM_4X8 = {
   id: "relaksim-4x8",
   shape: "circle",
   rounds: 5,
+  /* matur te `per-panik.mp3`: 10 shenja, cikël 4+8 s, hyrje 0.94 s */
+  lead: 0.9,
   extraStep: {
     text: "Përsërite 5 herë (≈1 minutë) dhe vëre ndryshimin",
     color: "#8FD3C4",
@@ -225,6 +254,8 @@ const PARA_GJUMIT_478 = {
   id: "para-gjumit-4-7-8",
   shape: "circle",
   rounds: 4,
+  /* matur te `per-ankth.mp3`: 12 shenja, cikël 4+7+8 s, hyrje 2.78 s */
+  lead: 2.8,
   extraStep: {
     text: "Përsërite 4 herë (≈1 minutë) dhe vëre ndryshimin",
     color: "#8FD3C4",
@@ -295,8 +326,14 @@ export function breathingFor(item) {
 export const cycleSeconds = (pattern) =>
   pattern.phases.reduce((sum, phase) => sum + phase.seconds, 0);
 
-/** Sa zgjat i gjithë ushtrimi. */
-export const totalSeconds = (pattern) => cycleSeconds(pattern) * pattern.rounds;
+/**
+ * Sa zgjat i gjithë ushtrimi, hyrja brenda.
+ *
+ * ⚠️  Me `lead`, përndryshe shiriti poshtë figurës do ta shpallte ushtrimin
+ *     të mbaruar sa zgjat hyrja para fundit të zërit.
+ */
+export const totalSeconds = (pattern) =>
+  (pattern.lead ?? 0) + cycleSeconds(pattern) * pattern.rounds;
 
 /**
  * Ku ndodhemi brenda ushtrimit në sekondën `elapsed`.
@@ -306,17 +343,29 @@ export const totalSeconds = (pattern) => cycleSeconds(pattern) * pattern.rounds;
  * gjendje të vetën.
  *
  * @returns {{ index:number, phase:object, progress:number, remaining:number,
- *             round:number, done:boolean }}
+ *             round:number, waiting:boolean, done:boolean }}
  *          `progress` 0→1 brenda fazës; `remaining` sekondat që numërohen në
- *          ekran (4,3,2,1); `done` kur ushtrimi ka mbaruar dhe audioja vazhdon.
+ *          ekran (4,3,2,1); `waiting` gjatë hyrjes, para fjalës së parë;
+ *          `done` kur ushtrimi ka mbaruar dhe audioja vazhdon.
  */
 export function breathStateAt(pattern, elapsed) {
   const cycle = cycleSeconds(pattern);
   const total = cycle * pattern.rounds;
-  const done = elapsed >= total;
+
+  /*
+   * Ora e ushtrimit nis kur nis zëri, jo kur nis skedari.
+   *
+   * ⚠️  Zbritja bëhet KËTU dhe vetëm këtu. Po ta kishte bërë komponenti, çdo
+   *     formë e re do ta përsëriste — dhe e para që ta harronte do të dilte
+   *     e shmangur pa asnjë shenjë në kod.
+   */
+  const koha = elapsed - (pattern.lead ?? 0);
+
+  const waiting = koha < 0;
+  const done = koha >= total;
 
   /* Pas fundit mbetet korniza e fazës së fundit, jo një figurë e zbrazët. */
-  const t = Math.max(0, Math.min(elapsed, total - 0.001));
+  const t = Math.max(0, Math.min(koha, total - 0.001));
 
   const round = Math.floor(t / cycle) + 1;
   let within = t % cycle;
@@ -347,6 +396,7 @@ export function breathStateAt(pattern, elapsed) {
     /* Numërimi zbret: 4 në fillim të fazës, 1 në sekondën e fundit. */
     remaining: Math.max(1, Math.ceil(phase.seconds - within)),
     round: Math.min(round, pattern.rounds),
+    waiting,
     done,
   };
 }
