@@ -1,4 +1,4 @@
-import { Bookmark, Play, Sparkles, Trash2 } from "lucide-react";
+import { Bookmark, Lock, Play, Sparkles, Trash2 } from "lucide-react";
 import { T, radii } from "../../theme/tokens.js";
 import { sx, circle } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
@@ -16,7 +16,19 @@ import { CoverArt } from "../../components/art/CoverArt.jsx";
  */
 export function UserCollections() {
   const { savedSessions, removeSession, favoriteItems, downloadedItems } = useCollections();
-  const { playItems } = usePlayback();
+  const { playItems, isLocked } = usePlayback();
+
+  /*
+   * ⚠️  EDHE NJË MEDITIM I SHKARKUAR KA NEVOJË PËR ABONIM.
+   *
+   *     Skedari rri te pajisja, ndaj dëgjimi nuk kërkon as rrjet as server —
+   *     dhe pikërisht prandaj kyçja duhet të duket KËTU, mbi kartelë. Pa të,
+   *     një abonim i mbaruar linte një buton "luaj" që i hapte paywall-in
+   *     vetëm pasi shtypej: aksesi dukej i hapur dhe nuk ishte.
+   *
+   *     Shkarkimet NUK fshihen. Ato janë pune e përdoruesit, dhe nëse ai
+   *     ri-abonohet i gjen aty — fshirja do të ishte dënim, jo mbrojtje.
+   */
 
   const nothing =
     savedSessions.length === 0 && favoriteItems.length === 0 && downloadedItems.length === 0;
@@ -62,6 +74,7 @@ export function UserCollections() {
                 title={session.name}
                 meta={`${totalMinutes(session.blocks)} min · ${session.blocks.length} hapa`}
                 intent={session.blocks[0]?.intent}
+                locked={session.blocks.some(isLocked)}
                 onPlay={() => playItems(session.blocks)}
                 onRemove={() => removeSession(session.id)}
               />
@@ -82,6 +95,7 @@ export function UserCollections() {
                 meta={`${intentMeta(item.intent).label} · ${item.dur} min`}
                 cover={item.cover}
                 intent={item.intent}
+                locked={isLocked(item)}
                 onPlay={() => playItems(item)}
               />
             ))}
@@ -101,6 +115,7 @@ export function UserCollections() {
                 meta={`${intentMeta(item.intent).label} · ${item.dur} min`}
                 cover={item.cover}
                 intent={item.intent}
+                locked={isLocked(item)}
                 onPlay={() => playItems(item)}
               />
             ))}
@@ -149,7 +164,7 @@ function List({ children }) {
  * Rreshti i listës — e njëjta formë si meditimi i bashkangjitur te postimet:
  * kapak katror, mbishkrim i vogël, titull, dhe poshtë çasti me kohëzgjatjen.
  */
-function Item({ label, title, meta, cover, intent, onPlay, onRemove }) {
+function Item({ label, title, meta, cover, intent, locked = false, onPlay, onRemove }) {
   const colors = intentMeta(intent);
 
   return (
@@ -199,8 +214,20 @@ function Item({ label, title, meta, cover, intent, onPlay, onRemove }) {
           <div style={{ color: T.sub, fontSize: 12, marginTop: 2 }}>{meta}</div>
         </div>
 
-        <div style={{ ...circle(40, tile(colors.g)), ...sx.center, flexShrink: 0 }}>
-          <Play size={17} color="#fff" style={{ marginLeft: 2 }} />
+        {/* I kyçur: dryni zë vendin e trekëndëshit, dhe rrethi humb ngjyrën —
+            ndryshe e njëjta kartelë e ndezur do të premtonte dëgjim. */}
+        <div
+          style={{
+            ...circle(40, locked ? T.faint : tile(colors.g)),
+            ...sx.center,
+            flexShrink: 0,
+          }}
+        >
+          {locked ? (
+            <Lock size={16} color="#fff" />
+          ) : (
+            <Play size={17} color="#fff" style={{ marginLeft: 2 }} />
+          )}
         </div>
       </button>
 

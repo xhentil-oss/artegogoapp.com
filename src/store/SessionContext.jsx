@@ -510,10 +510,36 @@ export function SessionProvider({ children }) {
     const local = describeSubscription(subscription);
     if (typeof subscription?.serverIsPremium !== "boolean") return local;
 
+    /*
+     * ⚠️  FJALA E SERVERIT NUK VLEN MË GJATË SE DATA QË DHA VETË AI.
+     *
+     *     `serverIsPremium` është një `true` i ruajtur te pajisja, nga hera e
+     *     fundit që serveri u arrit. Pa kufi kohor, ai `true` nuk skadon kurrë:
+     *     mjaftonte të shkarkoheshin meditimet, të hiqej interneti, dhe
+     *     abonimi i mbaruar vazhdonte të hapte gjithçka — sepse `billing.current()`
+     *     dështon pa rrjet dhe vlera e vjetër mbetet ashtu siç ishte.
+     *
+     *     Kjo ishte vrima që kërkoi klientja të mbyllet (17 nëntor 2026): të
+     *     shkarkuarat hapeshin pa internet edhe pasi abonimi kishte mbaruar.
+     *
+     *     Tani `endsAt` — data që e dërgoi po ai server — e pret vetë atë
+     *     besim. Pa rrjet, aksesi mbaron saktësisht kur mbaron abonimi.
+     *
+     * ⚠️  DY DITË DUROHEN ME QËLLIM.
+     *
+     *     Një abonent që paguan dhe është pa internet ditën e rinovimit nuk
+     *     duhet mbyllur jashtë për diçka që e ka blerë. Dy ditë i mjaftojnë
+     *     çdo rilidhjeje të zakonshme, dhe nuk i mjaftojnë askujt si model
+     *     përdorimi falas.
+     */
+    const DUROJ_MS = 2 * 24 * 60 * 60 * 1000;
+    const fundi = subscription.endsAt ? new Date(subscription.endsAt).getTime() : NaN;
+    const skaduar = Number.isFinite(fundi) && Date.now() > fundi + DUROJ_MS;
+
     return {
       ...local,
-      isPremium: subscription.serverIsPremium,
-      status: subscription.serverStatus ?? local.status,
+      isPremium: subscription.serverIsPremium && !skaduar,
+      status: skaduar ? "expired" : subscription.serverStatus ?? local.status,
     };
   }, [subscription]);
 
