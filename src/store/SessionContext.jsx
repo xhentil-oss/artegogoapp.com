@@ -8,6 +8,17 @@ import { describeSubscription, fromServer } from "../domain/subscription.js";
 import { hasToken, onSessionEnded } from "../services/api.js";
 
 /**
+ * Të njëjtat çaste kujtese, por të gjitha të fikura.
+ *
+ * Përdoret kur profili rikthehet nga serveri: aty dihet emri, jo zgjedhja e
+ * kujtesave. Një listë bosh do ta prishte formën që presin ekranet.
+ */
+const fikur = (reminders) =>
+  Object.fromEntries(
+    Object.entries(reminders).map(([id, slot]) => [id, { ...slot, enabled: false }])
+  );
+
+/**
  * Sesioni i përdoruesit: identiteti, kujtesat, abonimi, të drejtat.
  *
  * `isPremium` NUK është më një çelës i thjeshtë — rrjedh nga gjendja e
@@ -120,14 +131,43 @@ export function SessionProvider({ children }) {
     setAdminView(Boolean(next?.isAdmin));
 
     const saved = await storage.get(STORAGE_KEYS.onboarding, null);
-    if (!saved?.name) return;
 
-    if (saved.email && saved.email === next.email) {
+    if (saved?.name && saved.email && saved.email === next.email) {
       setProfile(saved);
-    } else {
-      await storage.remove(STORAGE_KEYS.onboarding);
-      setProfile(null);
+      return;
     }
+
+    /* Profil i huaj ose i munguar — nuk mbahet. */
+    if (saved) await storage.remove(STORAGE_KEYS.onboarding);
+
+    /*
+     * Pajisja nuk e njeh këtë llogari, por SERVERI e njeh.
+     *
+     * ⚠️  Pa këtë, hyrja nga një telefon i dytë — ose nga i njëjti pas një
+     *     rivendosjeje fjalëkalimi, kur shfletuesi ishte pastruar — nisej nga
+     *     "Mirë se erdhe", sikur llogaria të ishte e re. Gjithçka tjetër
+     *     (seancat, zakonet, medaljet, të preferuarat) rrinte te databaza dhe
+     *     shfaqej menjëherë pas asaj porte; e vetmja gjë që mungonte ishte
+     *     profili, dhe pikërisht ai e mbante portën mbyllur.
+     *
+     * ⚠️  Kujtesat nisen TË FIKURA, jo me parazgjedhjet. `syncReminders`
+     *     menjëherë pas kësaj merr ato të serverit kur ekzistojnë; po t'i
+     *     kisha nisur të ndezura, një përdorues që i kishte fikur të gjitha
+     *     do t'i gjente të rikthyera.
+     */
+    if (next?.onboarded && next?.name) {
+      const restored = {
+        name: next.name,
+        reminders: fikur(defaultReminders()),
+        createdAt: next.createdAt ?? new Date().toISOString(),
+        email: next.email ?? null,
+      };
+      setProfile(restored);
+      await storage.set(STORAGE_KEYS.onboarding, restored);
+      return;
+    }
+
+    setProfile(null);
   }, []);
 
   /** Hyrje; kthen rezultatin, që ekrani të shfaqë gabimin. */
@@ -264,6 +304,18 @@ export function SessionProvider({ children }) {
       /* Trigger-i i regjistrimit i krijon të tria TË FIKURA; pa këtë shkrim,
          zgjedhja e onboarding-ut nuk do të mbërrinte kurrë te cron-i. */
       saveReminders(null, chosen);
+
+      /*
+       * Emri dhe flamuri shkojnë edhe te llogaria, jo vetëm te pajisja.
+       *
+       * ⚠️  Kjo është gjysma tjetër e rikthimit te `adoptAccount`: aty profili
+       *     ndërtohet nga `account.onboarded`, dhe ai flamur nuk ekziston pa
+       *     këtë shkrim. Pa të, hyrja e radhës nga një pajisje tjetër do të
+       *     niste sërish nga "Mirë se erdhe".
+       */
+      auth.saveProfile({ name: record.name }).then((updated) => {
+        if (updated) setAccount(updated);
+      });
     },
     [account]
   );

@@ -1,5 +1,5 @@
 import { storage, STORAGE_KEYS } from "./storage.js";
-import { api, setToken, clearToken } from "./api.js";
+import { api, setToken, clearToken, hasToken } from "./api.js";
 
 /**
  * LLOGARIA E PËRDORUESIT — kufiri me shërbimin e vërtetetimit.
@@ -63,6 +63,16 @@ async function establish({ token, user }, fallbackEmail) {
      *     ndaj një vlerë e ndryshuar me dorë nuk jep asnjë të drejtë.
      */
     isAdmin: Boolean(user?.is_admin),
+    /*
+     * ⚠️  A e ka kaluar onboarding-un — SIPAS SERVERIT.
+     *
+     *     Deri më 17 nëntor 2026 kjo pyetje i bëhej vetëm pajisjes: profili
+     *     rrinte te `localStorage` dhe asgjëkund tjetër. Kush hynte nga një
+     *     telefon i dytë, ose pasi kishte pastruar shfletuesin — p.sh. pas
+     *     një rivendosjeje fjalëkalimi — gjente sërish ekranin "Mirë se
+     *     erdhe", sikur të mos kishte përdorur kurrë aplikacionin.
+     */
+    onboarded: Boolean(user?.onboarding_completed),
     createdAt: user?.created_at ?? new Date().toISOString(),
   };
   await setToken(token);
@@ -173,6 +183,41 @@ export async function signIn({ email, password }) {
     /* `code` përcillet që ekrani të dallojë "pa verifikuar" nga një fjalëkalim
        i gabuar — i pari ka një rrugë dalëse, i dyti jo. */
     return { ok: false, error: err.message, code: err?.code ?? null };
+  }
+}
+
+/**
+ * Shënon te serveri se onboarding-u u krye, bashkë me emrin.
+ *
+ * ⚠️  Ky shkrim është i vetmi që e bën profilin të mbijetojë ndërrimin e
+ *     pajisjes. Pa të, `users.onboarding_completed` mbetet 0 përgjithmonë
+ *     dhe çdo hyrje e re nga një telefon tjetër nis nga "Mirë se erdhe".
+ *
+ * ⚠️  Nuk hedh kurrë. Onboarding-u ka mbaruar te pajisja pavarësisht nëse
+ *     rrjeti e pranoi shkrimin; një gabim këtu nuk duhet ta mbajë
+ *     përdoruesin jashtë aplikacionit. Llogaria e re e provon sërish te
+ *     hyrja e radhës, sepse `establish` e lexon flamurin nga serveri.
+ *
+ * @returns {Promise<object|null>} llogaria e rifreskuar, ose null
+ */
+export async function saveProfile({ name }) {
+  if (!hasToken()) return null;
+  try {
+    const data = await api.put("/auth/me", {
+      name: name?.trim() || null,
+      onboarding_completed: true,
+    });
+    const account = await currentAccount();
+    if (!account) return null;
+    const next = {
+      ...account,
+      name: data?.user?.name ?? name?.trim() ?? account.name,
+      onboarded: true,
+    };
+    await storage.set(STORAGE_KEYS.account, next);
+    return next;
+  } catch {
+    return null;
   }
 }
 
