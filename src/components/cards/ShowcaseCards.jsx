@@ -7,6 +7,7 @@ import { intentMeta } from "../../domain/intent.js";
 import { blocksByIntent, blocksForProgram } from "../../services/contentRepository.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { Leaf } from "../icons/BrandIcons.jsx";
+import { CoverArt } from "../art/CoverArt.jsx";
 import { RowItem } from "../ui/Row.jsx";
 
 /* Raportet e kapakëve — mbajnë proporcionin kur gjerësia tkurret. */
@@ -92,9 +93,21 @@ export function ProgramProgressCard({ program }) {
   );
 }
 
-/** Kartelë serie e kuruar — hap kategorinë përkatëse. */
+/**
+ * Kartelë serie e kuruar — luan seancën e gatshme.
+ *
+ * ⚠️  Më parë hapte kategorinë e `intent`-it: një rrugë e dytë drejt listave
+ *     që biblioteka i jep tashmë. Tani seria është vetë përmbajtje — katër
+ *     meditime të zgjedhura — ndaj prekja e saj e nis dëgjimin.
+ *
+ * Kapaku vizatohet me `CoverArt`, me të njëjtën hije si te kartelat e
+ * programeve: vetëm nga e majta, ku rri teksti i bardhë, që ana e djathtë e
+ * fotos të mbetet e pastër.
+ */
 export function SeriesCard({ series, onOpen }) {
   const meta = intentMeta(series.intent);
+  const cover = series.cover ?? null;
+
   return (
     <RowItem width={CARD_WIDTH.hero}>
       <button
@@ -114,7 +127,21 @@ export function SeriesCard({ series, onOpen }) {
           textAlign: "left",
         }}
       >
-        <div style={{ ...sx.absoluteFill, background: "linear-gradient(110deg, rgba(0,0,0,0.4), transparent)" }} />
+        {cover && (
+          <div style={sx.absoluteFill}>
+            <CoverArt intent={series.intent} image={cover} big />
+          </div>
+        )}
+
+        <div
+          style={{
+            ...sx.absoluteFill,
+            background: cover
+              ? "linear-gradient(to right, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.32) 46%, rgba(0,0,0,0) 74%)"
+              : "linear-gradient(110deg, rgba(0,0,0,0.4), transparent)",
+          }}
+        />
+
         <div style={{ position: "relative" }}>
           {/* titull hero — serif */}
           <div style={{ color: "#fff", fontFamily: fonts.display, fontSize: 23, fontWeight: 700, lineHeight: 1.15 }}>

@@ -227,6 +227,28 @@ export const programsByLifeArea = (areaId) => {
 
 /* ---------- vitrina ---------- */
 export const listSeries = () => SERIES;
+
+/**
+ * Meditimet e një serie, sipas titujve të shkruar te `data/catalog.js`.
+ *
+ * ⚠️  Krahasimi bëhet pa hapësira anash dhe pa dallim shkronje të madhe/vogël
+ *     — njësoj si te `domain/journey.js`. Lista shkruhet me dorë, dhe një
+ *     hapësirë e tepërt nuk duhet ta zbrazë seancën.
+ *
+ * ⚠️  Titujt që nuk gjenden thjesht hiqen. Para se katalogu të lexohet nga
+ *     serveri, `MEDITATIONS` mban vetëm fallback-un lokal — i cili nuk i ka
+ *     këta tituj — dhe kthehet listë bosh. Thirrësi e trajton atë rast; një
+ *     `null` në mes të sekuencës do ta rrëzonte player-in.
+ */
+export const seriesTracks = (series) => {
+  const titles = series?.titles ?? [];
+  const byTitle = new Map(
+    MEDITATIONS.map((m) => [(m.title ?? "").trim().toLowerCase(), m])
+  );
+  return titles
+    .map((title) => byTitle.get(title.trim().toLowerCase()))
+    .filter(Boolean);
+};
 export const listShorts = () => SHORTS;
 export const listSoundscapes = () => SOUNDSCAPES;
 

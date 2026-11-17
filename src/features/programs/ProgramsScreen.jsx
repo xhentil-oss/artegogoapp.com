@@ -7,7 +7,7 @@ import { CARD_WIDTH } from "../../theme/responsive.js";
 import { ALL_AREAS } from "../../data/lifeAreas.js";
 import { PROGRAM_COVERS } from "../../data/catalog.js";
 import { intentMeta } from "../../domain/intent.js";
-import { listSeries, programsByLifeArea } from "../../services/contentRepository.js";
+import { listSeries, programsByLifeArea, seriesTracks } from "../../services/contentRepository.js";
 import { useJourney } from "../../store/JourneyContext.jsx";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { usePlayback } from "../../hooks/usePlayback.js";
@@ -69,7 +69,7 @@ export function ProgramsScreen() {
 }
 
 /**
- * "Meditime të kuruara" — seritë, në fund të skedës "Programe".
+ * "Meditime të kuruara" — seancat e gatshme, në fund të skedës "Programe".
  *
  * ⚠️  Erdhën nga biblioteka (kërkesë e klientes, 8 tetor 2026). Atje rrinin
  *     poshtë dy pamjeve të klasifikimit dhe shtonin një rrugë të tretë hyrjeje
@@ -81,16 +81,31 @@ export function ProgramsScreen() {
  */
 function CuratedMeditations() {
   const { openCategory } = useNavigation();
+  const { playItems } = usePlayback();
   const series = listSeries();
 
   if (series.length === 0) return null;
+
+  /*
+   * Prekja luan meditimet e serisë me radhë.
+   *
+   * ⚠️  Kthimi te kategoria nuk është zbukurim: titujt gjenden vetëm pasi
+   *     katalogu të jetë lexuar nga serveri. Nëse preket para kësaj — ose
+   *     nëse një titull ndryshon te databaza — kartela do të ishte buton i
+   *     vdekur. Kështu të paktën hap diçka.
+   */
+  const open = (item) => {
+    const tracks = seriesTracks(item);
+    if (tracks.length === 0) return openCategory(item.intent);
+    playItems(tracks);
+  };
 
   return (
     <>
       <SectionHead title="Meditime të" accent="kuruara" hint={`${series.length}`} />
       <Row>
         {series.map((item) => (
-          <SeriesCard key={item.id} series={item} onOpen={() => openCategory(item.intent)} />
+          <SeriesCard key={item.id} series={item} onOpen={() => open(item)} />
         ))}
       </Row>
     </>

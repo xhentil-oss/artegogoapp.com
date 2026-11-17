@@ -3,11 +3,32 @@
  * Këto lista janë të vogla dhe redaksionale — kandidatët e parë për CMS.
  */
 
-/** Seri të kuruara që hapin një kategori të plotë. */
+/**
+ * Seri të kuruara — seanca të gatshme, jo kategori.
+ *
+ * ⚠️  Ishin tri kartela ("Seria e Zemrës", "Transformimi i Thellë", "Ritmi i
+ *     Gjumit") që thjesht hapnin një kategori — pra një rrugë e dytë drejt
+ *     listave që skeda "Bibliotekë" i jep tashmë. Klientja i hoqi (17 nëntor
+ *     2026) dhe la një të vetme, me meditimet e zgjedhura prej saj.
+ *
+ * ⚠️  `titles`, jo id — si te `data/programDays.js`. Meditimet vijnë nga
+ *     serveri me id të databazës; id-të lokale do ta zbraznin seancën sapo
+ *     katalogu të lexohej vërtet.
+ */
 export const SERIES = [
-  { id: "s1", title: "Seria e Zemrës",        sub: "FRYMËZIM SOMATIK",  intent: "heart" },
-  { id: "s2", title: "Transformimi i Thellë", sub: "ARKETIPET & THETA", intent: "transform" },
-  { id: "s3", title: "Ritmi i Gjumit",        sub: "DELTA & PUSHIM",    intent: "sleep" },
+  {
+    id: "s1",
+    title: "Meditim për gjumë",
+    sub: "4 MEDITIME · 34 MIN",
+    intent: "sleep",
+    cover: "/kopertina/meditim-per-gjume.jpeg",
+    titles: [
+      "Frymëmarrje ritmike 4x7x8 para gjumit për qetësim",
+      "Rikthe energjinë",
+      "Aktivizo dhembshurinë",
+      "Fli shpejt",
+    ],
+  },
 ];
 
 /**
