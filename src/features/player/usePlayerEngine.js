@@ -54,6 +54,29 @@ export function usePlayerEngine(sequence, onComplete) {
      pasi mbërrin lidhja e re. */
   const continueRef = useRef(false);
 
+  /**
+   * "Luaj vazhdimisht" — fundi e kthen seancën në fillim, pa e mbyllur.
+   *
+   * ⚠️  NIS GJITHMONË E FIKUR, dhe fiket vetë sa herë hapet diçka tjetër
+   *     (kërkesë e klientes, 17 nëntor 2026). Nuk ruhet as te pajisja: një
+   *     meditim që përsëritet pa fund, pa e kërkuar askush, është kurth —
+   *     veçanërisht ai për gjumë, që dëgjohet në errësirë.
+   *
+   * ⚠️  Edhe si ref, jo vetëm si gjendje. `advance` krijohet me `useCallback`
+   *     dhe lidhet si dëgjues i `ended`; po ta lexonte gjendjen, do të kapte
+   *     vlerën e çastit kur u lidh — pra atë të ndërprerësit përpara prekjes.
+   */
+  const [looping, setLooping] = useState(false);
+  const loopingRef = useRef(false);
+  useEffect(() => {
+    loopingRef.current = looping;
+  }, [looping]);
+
+  /* Sekuencë e re = meditim i ri: përsëritja kthehet e fikur. */
+  useEffect(() => {
+    setLooping(false);
+  }, [sequence]);
+
   const { play: playTone, stop: stopTone } = useDemoAudio();
 
   const current = sequence[index];
@@ -115,8 +138,49 @@ export function usePlayerEngine(sequence, onComplete) {
    *     ngarkohej si duhet dhe rrinte i heshtur, ndaj seanca nuk përfundonte
    *     kurrë. E kapur me gjurmë te banka e provës, jo me lexim kodi.
    */
+  /**
+   * Kthen seancën në fillim — zemra e "Luaj vazhdimisht".
+   *
+   * ⚠️  Dy rrugë, sepse `setIndex(0)` nuk bën asgjë kur indeksi është tashmë
+   *     zero — dhe pikërisht ai është rasti i zakonshëm: një meditim i vetëm.
+   *     Pa degën e dytë, ndërprerësi do të dukej se punon te seancat e
+   *     ndërtuara dhe se nuk bën asgjë kudo tjetër.
+   */
+  const restart = useCallback(
+    (wasPlaying) => {
+      if (index > 0) {
+        stopTone();
+        setTonePlaying(false);
+        resetFile();
+        /* Si te `advance`: vendimi ruhet para se `index` të ndryshojë. */
+        continueRef.current = wasPlaying;
+        setIndex(0);
+        writeElapsed(0);
+        return;
+      }
+
+      writeElapsed(0);
+
+      if (real) {
+        seekFileTo(0);
+        if (wasPlaying) playFile();
+        return;
+      }
+
+      /* Tonet: gjeneratori nuk ka fund — mjafton t'i kthehet ora, dhe
+         intervali vazhdon pa u prekur fare. */
+    },
+    [index, stopTone, resetFile, writeElapsed, real, seekFileTo, playFile]
+  );
+
   const advance = useCallback(
     (wasPlaying) => {
+      /* Fundi i seancës, me përsëritjen të ndezur, nuk është fund. */
+      if (!hasNext && loopingRef.current) {
+        restart(wasPlaying);
+        return;
+      }
+
       stopTone();
       setTonePlaying(false);
       resetFile();
@@ -132,7 +196,7 @@ export function usePlayerEngine(sequence, onComplete) {
       setIndex(index + 1);
       writeElapsed(0);
     },
-    [stopTone, resetFile, hasNext, finish, index, writeElapsed]
+    [stopTone, resetFile, hasNext, finish, index, writeElapsed, restart]
   );
 
   /** Butoni "Përpara" dhe timer-i: vazhdimi varet nga gjendja e tanishme. */
@@ -299,6 +363,9 @@ export function usePlayerEngine(sequence, onComplete) {
     toggle,
     goNext,
     goPrev,
+    /* "Luaj vazhdimisht" — gjendja dhe ndërprerësi. */
+    looping,
+    toggleLoop: () => setLooping((on) => !on),
     /* Shigjetat ⏮/⏭ te pamja: cila prej tyre ka ku të shkojë. */
     hasNext,
     hasPrev: index > 0,

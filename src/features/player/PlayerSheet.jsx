@@ -306,6 +306,26 @@ export function PlayerSheet({ sequence }) {
         </div>
       </div>
 
+      {/*
+        "Luaj vazhdimisht" — rresht më vete, jo pranë rrathëve.
+
+        ⚠️  Nuk hyn te shiriti i sipërm. Me mbushjen 26px, një telefon 360px
+            lë 308px: shigjeta 44 plus tre rrathë 42 me hapësira i hanë 198, dhe
+            etiketa me ndërprerësin kërkon ~180. Do të dilte jashtë buzës
+            pikërisht te pajisjet ku përdoret më shumë.
+      */}
+      <div
+        style={{
+          width: "100%",
+          maxWidth: layout.sheetMaxWidth,
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: 16,
+        }}
+      >
+        <LoopToggle on={engine.looping} onToggle={engine.toggleLoop} />
+      </div>
+
       {/* ---------- disku ---------- */}
       {/* përmasa relative ndaj fletës: 240px kur ka hapësirë, 74% kur ngushtohet */}
       {/*
@@ -819,6 +839,80 @@ function SkipButton({ onClick, icon, label, disabled = false }) {
       }}
     >
       {icon}
+    </button>
+  );
+}
+
+/**
+ * Ndërprerësi "Luaj vazhdimisht".
+ *
+ * ⚠️  Jeshile, jo ari. Ari është ngjyra e "të ruajtura/të shkarkuara" te
+ *     rrathët pak më lart, dhe mbi sfondin e artë të "Bollëk" do të humbiste
+ *     fare. Jeshilja ndahet nga çdo sfond i aplikacionit, dhe një ndërprerës
+ *     i gjelbër lexohet si "i ndezur" pa asnjë etiketë.
+ *
+ * `role="switch"` me `aria-checked`: lexuesi i ekranit e thotë gjendjen, dhe
+ * etiketa mbetet e njëjta në të dyja.
+ */
+const LOOP_ON = "#3FD0C9";
+
+function LoopToggle({ on, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      role="switch"
+      aria-checked={on}
+      aria-label="Luaj vazhdimisht"
+      className="ag-press"
+      style={{
+        ...sx.bareButton,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "7px 8px 7px 16px",
+        borderRadius: radii.pill,
+        background: "rgba(255,255,255,0.14)",
+        border: `1px solid ${onDark.hairline}`,
+        cursor: "pointer",
+        maxWidth: "100%",
+      }}
+    >
+      <span
+        style={{
+          color: "#fff",
+          fontSize: 13.5,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+          letterSpacing: 0.1,
+        }}
+      >
+        Luaj vazhdimisht
+      </span>
+      <span
+        style={{
+          position: "relative",
+          width: 40,
+          height: 23,
+          borderRadius: radii.pill,
+          background: on ? LOOP_ON : "rgba(255,255,255,0.28)",
+          transition: "background .2s",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: 2.5,
+            left: on ? 19.5 : 2.5,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            background: "#fff",
+            transition: "left .2s",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          }}
+        />
+      </span>
     </button>
   );
 }
