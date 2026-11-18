@@ -166,6 +166,9 @@ export const blocksByIds = (ids = []) => ids.map(blockById).filter(Boolean);
 
 export const blocksByIntent = (intent) => BLOCKS.filter((b) => b.intent === intent);
 
+/** Teknikat që NUK janë meditim i udhëhequr — vetëm dëgjim. */
+const PA_ZE_UDHEHEQES = new Set(["t_songs", "t_music"]);
+
 /**
  * Meditimi i ditës për një hap të ritmit ditor.
  *
@@ -179,12 +182,26 @@ export const blocksByIntent = (intent) => BLOCKS.filter((b) => b.intent === inte
  *     (`rhythmDay`) e zhvendos zgjedhjen me një hap — pra radha përsëritet
  *     vetëm kur të mbarojnë të gjitha meditimet e atij qëllimi.
  *
+ * ⚠️  PA KËNGË DHE PA MUZIKË. Nga 69 zërat e katalogut, 32 janë `t_songs`
+ *     (Këngë motivuese) dhe `t_music` (Muzikë meditimi) — pjesë dëgjimi, jo
+ *     praktika të udhëhequra. Ritmi ditor premton "Meditimi i drekës" dhe
+ *     jepte "Me sytë mbyllur", një pjesë muzikore 3-minutëshe pa zë
+ *     udhëheqës. Kërkesë e klientes, 18 nëntor 2026: te ky bllok hyjnë vetëm
+ *     meditimet.
+ *
+ *     Mbeten 37 meditime të vërteta, të gjitha me kopertinë, dhe të tre
+ *     qëllimet e hapave kanë ende lëndë: energy 5, calm 3, sleep 2. Pra asnjë
+ *     hap nuk mbetet bosh — por nëse një qëllim i ri shtohet te
+ *     `DAILY_RHYTHM_STEPS`, numërohet këtu i pari.
+ *
  * @param {string} intent qëllimi i hapit (`energy`, `calm`, `sleep`…)
  * @param {number} day dita e ritmit, duke nisur nga 1
  * @returns {object|null} meditimi, ose `null` kur nuk ka asgjë për atë qëllim
  */
 export const rhythmPick = (intent, day = 1) => {
-  const tePerQellimin = MEDITATIONS.filter((m) => m.intent === intent);
+  const tePerQellimin = MEDITATIONS.filter(
+    (m) => m.intent === intent && !PA_ZE_UDHEHEQES.has(m.techniqueId),
+  );
 
   /* Kopertina kërkohet, por nuk është kusht shkatërrues: po të mos kishte
      asnjë me foto, më mirë një meditim i vërtetë pa kopertinë sesa asgjë. */
