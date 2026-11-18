@@ -42,6 +42,20 @@ export function PlayerProvider({ children }) {
    */
   const activeRef = useRef(null);
 
+  /**
+   * A u regjistrua tashmë kjo seancë te progresi.
+   *
+   * ⚠️  E domosdoshme që kur "Luaj vazhdimisht" është i ndezur. Cikli nuk e
+   *     mbyll seancën, ndaj regjistrimi duhet bërë te kthimi i parë në fillim
+   *     — përndryshe një meditim i dëgjuar gjithë natën nuk numërohet kurrë,
+   *     as te streak-u, as te dita e programit.
+   *
+   *     Dhe duhet VETËM NJË HERË: dhjetë përsëritje nuk janë dhjetë seanca.
+   *     Pa këtë shenjë, ndërprerësi do të shndërrohej në një mënyrë për të
+   *     fryrë statistikat pa dëgjuar asgjë më shumë.
+   */
+  const recordedRef = useRef(false);
+
   const { goToTab } = useNavigation();
   const { recordSession, tagLastSession, completeRhythmStep } = useProgress();
   const { completeDay } = useJourney();
@@ -55,6 +69,8 @@ export function PlayerProvider({ children }) {
      * — pa asnjë prekje — dhe iOS-i nuk e lejon një kontekst të ri atëherë.
      */
     zgjoTingujt();
+    /* Seancë e re — shenja e regjistrimit kthehet e pastër. */
+    recordedRef.current = false;
     setMinimized(null);
     setSource(from);
     setMarker(onFinish);
@@ -93,6 +109,31 @@ export function PlayerProvider({ children }) {
    *     `POST /me/sessions` për një seancë të vetme, dhe një streak i fryrë pa
    *     asnjë shenjë se ku ndodhi.
    */
+  const regjistro = useCallback(
+    (sequence) => {
+      if (recordedRef.current) return;
+      recordedRef.current = true;
+
+      recordSession(sequence);
+
+      /* Shënimi bëhet KËTU, jo te ekrani i përmbylljes: përdoruesi mund ta
+         mbyllë atë ekran, dhe puna e bërë duhet të mbetet e regjistruar. */
+      if (marker?.programId) completeDay(marker.programId, marker.day);
+      if (marker?.ritualStep) completeRhythmStep(marker.ritualStep);
+    },
+    [recordSession, marker, completeDay, completeRhythmStep]
+  );
+
+  /**
+   * Seanca mbërriti në fund, por cikli vazhdon — regjistroje pa e mbyllur.
+   *
+   * Thirret nga `usePlayerEngine` kur "Luaj vazhdimisht" e kthen meditimin në
+   * fillim. Player-i mbetet i hapur dhe zëri nuk ndërpritet.
+   */
+  const recordNow = useCallback(() => {
+    if (activeRef.current) regjistro(activeRef.current);
+  }, [regjistro]);
+
   const complete = useCallback(() => {
     const current = activeRef.current;
     if (!current) return;
@@ -102,15 +143,10 @@ export function PlayerProvider({ children }) {
     setMinimized(null);
     setMarker(null);
 
-    recordSession(current);
+    regjistro(current);
     setCompleted(current);
     setCompletedSource(source);
-
-    /* Shënimi bëhet KËTU, jo te ekrani i përmbylljes: përdoruesi mund ta
-       mbyllë atë ekran, dhe puna e bërë duhet të mbetet e regjistruar. */
-    if (marker?.programId) completeDay(marker.programId, marker.day);
-    if (marker?.ritualStep) completeRhythmStep(marker.ritualStep);
-  }, [recordSession, source, marker, completeDay, completeRhythmStep]);
+  }, [regjistro, source]);
 
   /**
    * Mbyll përmbylljen, duke ruajtur etiketën emocionale nëse u zgjodh.
@@ -136,9 +172,10 @@ export function PlayerProvider({ children }) {
       resume,
       dismissMinimized,
       complete,
+      recordNow,
       dismissCompletion,
     }),
-    [active, minimized, completed, completedSource, play, minimize, resume, dismissMinimized, complete, dismissCompletion]
+    [active, minimized, completed, completedSource, play, minimize, resume, dismissMinimized, complete, recordNow, dismissCompletion]
   );
 
   return <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>;

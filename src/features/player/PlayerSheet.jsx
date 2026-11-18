@@ -36,8 +36,8 @@ import { BreathBox, BreathSteps } from "./BreathBox.jsx";
  * ky komponent është vetëm pamje.
  */
 export function PlayerSheet({ sequence }) {
-  const { minimize, complete } = usePlayer();
-  const engine = usePlayerEngine(sequence, complete);
+  const { minimize, complete, recordNow } = usePlayer();
+  const engine = usePlayerEngine(sequence, complete, recordNow);
   const { isFavorite, toggleFavorite, isDownloaded, toggleDownload } = useCollections();
   const { openUpsell } = useNavigation();
   useBodyScrollLock();

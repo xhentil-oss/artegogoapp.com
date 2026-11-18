@@ -42,8 +42,10 @@ const SEEK_STEP = 15;
  *
  * @param {object[]} sequence blloqet me `uid`
  * @param {() => void} onComplete thirret kur mbaron hapi i fundit
+ * @param {(() => void)|null} onLap thirret kur fundi NUK e mbyll seancën, sepse
+ *   "Luaj vazhdimisht" e kthen në fillim — që dëgjimi të numërohet gjithsesi
  */
-export function usePlayerEngine(sequence, onComplete) {
+export function usePlayerEngine(sequence, onComplete, onLap = null) {
   const [index, setIndex] = useState(0);
   const [tonePlaying, setTonePlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -57,14 +59,16 @@ export function usePlayerEngine(sequence, onComplete) {
   /**
    * "Luaj vazhdimisht" — fundi e kthen seancën në fillim, pa e mbyllur.
    *
-   * ⚠️  NJË PËRSËRITJE, JO PAFUND. Sapo seanca kthehet në fillim,
-   *     ndërprerësi fiket vetë; të dëgjuarit e dytë mbaron si çdo i parë.
-   *     Kështu e kërkoi klientja (17 nëntor 2026), pasi e pa në punë: një
-   *     meditim që nuk ndalet kurrë është kurth — veçanërisht ai për gjumë,
-   *     që dëgjohet në errësirë, kur askush nuk e prek më telefonin.
+   * ⚠️  PAFUND, DERISA TA FIKË VETË PËRDORUESI (vendim i klientes, 18 nëntor
+   *     2026, pasi e provoi variantin me një përsëritje të vetme).
    *
-   *     Fikja është edhe e vetmja shenjë që përsëritja ndodhi: ndërprerësi
-   *     kthehet para syve, në çastin që zëri nis nga e para.
+   *     Ndërprerësi nuk e ndryshon kurrë vetë gjendjen midis dëgjimeve: e
+   *     ndezi personi, e fik personi. Një fikje automatike do të thoshte që
+   *     dikush që e la për gjumë ta gjente meditimin të ndalur pikërisht
+   *     natën kur i duhej.
+   *
+   *     Për rrjedhojë përsëritja nuk ka shenjë pamore: ndërprerësi rri i
+   *     ndezur, dhe fillimi nga e para është vetë shenja.
    *
    * ⚠️  NIS GJITHMONË E FIKUR, dhe fiket vetë sa herë hapet diçka tjetër.
    *     Nuk ruhet as te pajisja.
@@ -185,14 +189,17 @@ export function usePlayerEngine(sequence, onComplete) {
       /*
        * Fundi i seancës, me përsëritjen të ndezur, nuk është fund.
        *
-       * ⚠️  `loopingRef` shuhet KËTU, para `setLooping`. Gjendja përditësohet
-       *     në render-in tjetër, dhe një skedar shumë i shkurtër mund ta
-       *     nxirrte `ended` sërish para tij — pra një përsëritje e dytë që
-       *     askush nuk e kërkoi.
+       * ⚠️  Lexohet `loopingRef`, jo gjendja: `advance` lidhet si dëgjues i
+       *     `ended` përmes `useCallback`, ndaj gjendja do të ishte ajo e
+       *     çastit kur u lidh — pra e ndërprerësit përpara prekjes.
+       *
+       * ⚠️  Asgjë nuk fiket këtu. Cikli vazhdon derisa ta ndalë vetë
+       *     përdoruesi, ose derisa të hapet një meditim tjetër.
        */
       if (!hasNext && loopingRef.current) {
-        loopingRef.current = false;
-        setLooping(false);
+        /* Dëgjimi mbërriti në fund — ai numërohet, edhe pse seanca nuk mbyllet.
+           Pritësi e regjistron vetëm një herë, sa herë që cikli të vijë. */
+        onLap?.();
         restart(wasPlaying);
         return;
       }
@@ -212,7 +219,7 @@ export function usePlayerEngine(sequence, onComplete) {
       setIndex(index + 1);
       writeElapsed(0);
     },
-    [stopTone, resetFile, hasNext, finish, index, writeElapsed, restart]
+    [stopTone, resetFile, hasNext, finish, index, writeElapsed, restart, onLap]
   );
 
   /** Butoni "Përpara" dhe timer-i: vazhdimi varet nga gjendja e tanishme. */
