@@ -27,7 +27,7 @@ export function UpsellSheet() {
   const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
   const [code, setCode] = useState("");
-  const { subscribe, redeemPromo, purchasePlan, restorePurchases, subscription } = useSession();
+  const { subscribe, redeemPromo, purchasePlan, restorePurchases, subscription, canAdmin } = useSession();
 
   /*
    * Kutia e kodit shfaqet VETËM brenda dritares së fushatës.
@@ -35,8 +35,12 @@ export function UpsellSheet() {
    * ⚠️  Jashtë saj nuk ka pse të ekzistojë: do të ishte një fushë që refuzon
    *     çdo gjë që shkruhet në të, dhe njerëzit do të kërkonin kode që askush
    *     nuk i jep më. Fjalën e fundit e ka serveri — kjo vendos vetëm pamjen.
+   *
+   * ⚠️  Administratorja e sheh edhe para 5 dhjetorit, që fushata të provohet
+   *     para se të nisë e jo ditën kur nis. Serveri e lejon po ashtu, vetëm
+   *     për `is_admin`.
    */
-  const promo = promoOpen();
+  const promo = promoOpen() || canAdmin;
 
   /**
    * A është përdorur tashmë prova?

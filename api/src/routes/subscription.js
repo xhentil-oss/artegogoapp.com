@@ -274,12 +274,22 @@ router.post("/promo", async (req, res, next) => {
     return res.status(400).json({ error: "Kodi ka 8 shenja, shkronja dhe numra." });
   }
 
+  /*
+   * ⚠️  ADMINI E PROVON EDHE JASHTË DRITARES.
+   *
+   *     Pa këtë, fushata nuk provohej dot derisa të vinte 5 dhjetori — pra do
+   *     të zbulohej e prishur pikërisht ditën kur treqind njerëz presin ta
+   *     përdorin. Vlen VETËM për llogari me `is_admin = 1` te databaza, dhe
+   *     kodi shlyhet vërtet: prova e djeg një kod, si çdo shlyerje tjetër.
+   */
   const now = new Date();
-  if (now < PROMO.from) {
-    return res.status(403).json({ error: "Oferta nis më 5 dhjetor. Provo sërish atëherë." });
-  }
-  if (now > PROMO.until) {
-    return res.status(403).json({ error: "Oferta ka mbaruar më 5 janar 2027." });
+  if (!req.user?.is_admin) {
+    if (now < PROMO.from) {
+      return res.status(403).json({ error: "Oferta nis më 5 dhjetor. Provo sërish atëherë." });
+    }
+    if (now > PROMO.until) {
+      return res.status(403).json({ error: "Oferta ka mbaruar më 5 janar 2027." });
+    }
   }
 
   const connection = await pool.getConnection();
