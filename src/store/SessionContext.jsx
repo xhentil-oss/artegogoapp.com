@@ -393,6 +393,22 @@ export function SessionProvider({ children }) {
   );
 
   /**
+   * Shlyen një kod të muajit falas.
+   *
+   * E ndarë nga `subscribe` me qëllim: ajo nis provën 3-ditore dhe e shënon
+   * atë si të përdorur. Kodi nuk e prek provën — janë dy dhurata të ndryshme,
+   * dhe ngatërrimi do t'ia hiqte njërën pa e thënë kurrë.
+   */
+  const redeemPromo = useCallback(
+    async (code) => {
+      const result = await billing.redeemPromo(code);
+      if (result.ok) persistSubscription(fromServer(result.state));
+      return result;
+    },
+    [persistSubscription]
+  );
+
+  /**
    * Blerje e vërtetë përmes App Store / Google Play.
    *
    * E ndarë nga `subscribe` me qëllim: e para jep një provë që e vendos vetë
@@ -584,6 +600,7 @@ export function SessionProvider({ children }) {
       isPremium: status.isPremium || canAdmin,
 
       subscribe,
+      redeemPromo,
       purchasePlan,
       restorePurchases,
       cancelSubscription,
@@ -620,6 +637,7 @@ export function SessionProvider({ children }) {
       subscription,
       status,
       subscribe,
+      redeemPromo,
       purchasePlan,
       restorePurchases,
       cancelSubscription,

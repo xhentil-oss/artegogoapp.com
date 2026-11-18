@@ -47,6 +47,8 @@ export function SubscriptionCard() {
 
   const trial = status === "trial";
   const cancelled = status === "cancelled";
+  /* Dhurata e dhjetorit: nuk faturohet, nuk rinovohet, nuk anulohet. */
+  const promo = status === "promo";
 
   return (
     <section
@@ -66,17 +68,31 @@ export function SubscriptionCard() {
             {STATUS_LABEL[status]}
           </div>
           <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 12.5, marginTop: 1 }}>
-            Plani {plan.label} · {plan.price}
+            {/* ⚠️  Te dhurata NUK shkruhet çmimi i planit. Ai numër do të
+                   premtonte një faturë që nuk vjen kurrë. */}
+            {promo ? "Dhuratë · nuk faturohesh" : `Plani ${plan.label} · ${plan.price}`}
           </div>
         </div>
       </header>
 
       <Line
-        label={trial ? "Prova mbaron pas" : cancelled ? "Aksesi mbaron pas" : "Rinovohet pas"}
+        label={
+          trial
+            ? "Prova mbaron pas"
+            : cancelled || promo
+              ? "Aksesi mbaron pas"
+              : "Rinovohet pas"
+        }
         value={`${daysLeft} ditë`}
       />
       <Line
-        label={cancelled ? "Aksesi deri më" : trial ? "Faturimi i parë" : "Faturimi i radhës"}
+        label={
+          cancelled || promo
+            ? "Aksesi deri më"
+            : trial
+              ? "Faturimi i parë"
+              : "Faturimi i radhës"
+        }
         value={formatDate(accessUntil ?? renewsAt)}
       />
 
@@ -92,7 +108,14 @@ export function SubscriptionCard() {
         </p>
       )}
 
-      {!cancelled && <ManageNotice />}
+      {promo && (
+        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, lineHeight: 1.55, margin: "12px 0 0" }}>
+          Muaji falas i dhjetorit. Nuk ka faturim dhe nuk ka çfarë të anulohet —
+          pas datës së mësipërme vendos vetë nëse do të vazhdosh.
+        </p>
+      )}
+
+      {!cancelled && !promo && <ManageNotice />}
     </section>
   );
 }

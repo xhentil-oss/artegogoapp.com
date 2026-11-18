@@ -95,6 +95,28 @@ export async function startTrial(planId = "year") {
 }
 
 /**
+ * Shlyen një kod të muajit falas (5 dhjetor 2026 – 5 janar 2027).
+ *
+ * ⚠️  Kodi NUK kontrollohet këtu, as lista e tij nuk ekziston te aplikacioni.
+ *     Treqind kode të shkruara brenda paketës do të ishin treqind kode publike:
+ *     çdo shfletues e sheh kodin burimor. Të vetmit që i dinë janë serveri dhe
+ *     njerëzit që i kanë marrë.
+ *
+ * @returns {Promise<{ ok: boolean, state?: object, error?: string }>}
+ */
+export async function redeemPromo(code) {
+  const pastruar = String(code ?? "").trim().toUpperCase();
+  if (!pastruar) return { ok: false, error: "Shkruaj kodin." };
+
+  try {
+    const state = await api.post("/me/subscription/promo", { code: pastruar });
+    return { ok: true, state };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Kodi nuk u pranua." };
+  }
+}
+
+/**
  * Blerje e vërtetë përmes dyqanit.
  *
  * Rendi është ai që kërkon seksioni 8: dyqani jep faturën, serveri e verifikon,

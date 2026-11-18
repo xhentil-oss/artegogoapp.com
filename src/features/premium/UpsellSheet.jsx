@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { AlertCircle, Bell, Check, CreditCard, Crown, Unlock } from "lucide-react";
+import { AlertCircle, Bell, Check, CreditCard, Crown, Gift, Unlock } from "lucide-react";
 import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
-import { PLANS, TRIAL_DAYS, planById, planNote, planPrice, trialTimeline } from "../../domain/subscription.js";
+import { PLANS, TRIAL_DAYS, planById, planNote, planPrice, promoOpen, trialTimeline } from "../../domain/subscription.js";
 import { cancelPath } from "../../services/billing.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
@@ -26,7 +26,17 @@ export function UpsellSheet() {
   const [busy, setBusy] = useState(null);
   const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
-  const { subscribe, purchasePlan, restorePurchases, subscription } = useSession();
+  const [code, setCode] = useState("");
+  const { subscribe, redeemPromo, purchasePlan, restorePurchases, subscription } = useSession();
+
+  /*
+   * Kutia e kodit shfaqet VETËM brenda dritares së fushatës.
+   *
+   * ⚠️  Jashtë saj nuk ka pse të ekzistojë: do të ishte një fushë që refuzon
+   *     çdo gjë që shkruhet në të, dhe njerëzit do të kërkonin kode që askush
+   *     nuk i jep më. Fjalën e fundit e ka serveri — kjo vendos vetëm pamjen.
+   */
+  const promo = promoOpen();
 
   /**
    * A është përdorur tashmë prova?
@@ -74,6 +84,17 @@ export function UpsellSheet() {
 
     if (result?.ok) closeUpsell();
     else setNotice(result?.error ?? "Pagesa nuk përfundoi. Provo sërish.");
+  };
+
+  const aktivizoKodin = async () => {
+    if (busy) return;
+    setBusy("promo");
+    setNotice(null);
+    const result = await redeemPromo(code);
+    setBusy(null);
+
+    if (result?.ok) closeUpsell();
+    else setNotice(result?.error ?? "Kodi nuk u pranua.");
   };
 
   const restore = async () => {
@@ -206,6 +227,77 @@ export function UpsellSheet() {
           >
             Paguaj tani · {planById(plan).price}
           </button>
+        )}
+
+        {promo && (
+          <div
+            style={{
+              marginTop: 16,
+              border: `1px solid ${T.line}`,
+              borderRadius: radii.md,
+              padding: 14,
+              background: T.bg,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <Gift size={16} color={T.gold} style={{ flexShrink: 0 }} />
+              <span style={{ color: T.ink, fontSize: 14, fontWeight: 700 }}>Ke një kod dhuratë?</span>
+            </div>
+            <p style={{ color: T.sub, fontSize: 12.5, lineHeight: 1.5, margin: "0 0 10px" }}>
+              Hap gjithçka falas deri më 5 janar 2027. Një kod, një llogari.
+            </p>
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <input
+                value={code}
+                /* Kodet janë me shkronja të mëdha; shkrimi i vogël nuk duhet
+                   të jetë arsye që dikush të dëgjojë "kod i pavlefshëm". */
+                onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 8))}
+                /* ⚠️  SHEMBULLI NUK ËSHTË KURRË NJË KOD I VËRTETË.
+                       Këtu qëndroi për pak `4657BAC8` — kodi i parë i listës —
+                       dhe ai do të shkonte te çdo telefon si dhuratë falas për
+                       të parin që e provonte. Vargu më poshtë nuk ekziston te
+                       asnjë nga 300 kodet. */
+                placeholder="P.SH. AB12CD34"
+                maxLength={8}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                aria-label="Kodi i muajit falas"
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  padding: "11px 12px",
+                  borderRadius: radii.md,
+                  border: `1px solid ${T.line}`,
+                  background: "#fff",
+                  color: T.ink,
+                  fontSize: 15,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  outline: "none",
+                }}
+              />
+              <button
+                onClick={aktivizoKodin}
+                disabled={Boolean(busy) || code.length < 8}
+                style={{
+                  ...sx.bareButton,
+                  padding: "11px 16px",
+                  borderRadius: radii.md,
+                  background: T.ink,
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                  opacity: busy || code.length < 8 ? 0.45 : 1,
+                  cursor: busy || code.length < 8 ? "default" : "pointer",
+                }}
+              >
+                {busy === "promo" ? "Pritni…" : "Aktivizo"}
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Kërkesë e Apple-it dhe e Google-it: kushtet duhen thënë pranë butonit,

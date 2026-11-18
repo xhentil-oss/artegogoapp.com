@@ -46,3 +46,6 @@ scripts/*.webm
 
 # Shkarkime te nderprera te Chrome-it — mbeturina, kurre te deshiruara.
 *.crdownload
+
+# Kodet e fushatave — sekret, kurre te depoja.
+*kode_alfanumerike*

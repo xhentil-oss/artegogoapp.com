@@ -235,6 +235,136 @@ router.post("/trial", async (req, res, next) => {
   }
 });
 
+/* ═══════════════ MUAJI FALAS ME KOD ═══════════════ */
+
+/**
+ * Fushata e vetme e dhjetorit 2026.
+ *
+ * ⚠️  DATAT JETOJNË KËTU, te serveri, jo te aplikacioni.
+ *     Aplikacioni i ka të vetat vetëm për të vendosur nëse e SHFAQ kutinë e
+ *     kodit (`src/domain/subscription.js`). Kush e ndryshon orën e telefonit
+ *     nuk fiton asgjë: kodi kalon ose bie këtu.
+ *
+ * ⚠️  Aksesi mbaron për të gjithë më 5 janar 2027, pavarësisht ditës që
+ *     shlyhet kodi — "një muaj falas, 5 dhjetor – 5 janar", siç u kërkua.
+ *     Nëse ndonjëherë duhet 30 ditë nga shlyerja, ndryshon vetëm `fundi()`.
+ */
+const PROMO = {
+  campaign: "dhjetor2026",
+  from: new Date("2026-12-05T00:00:00+01:00"),
+  until: new Date("2027-01-05T23:59:59+01:00"),
+};
+
+/** Deri kur vlen dhurata për dikë që e shlyen tani. */
+const fundi = () => PROMO.until;
+
+/**
+ * Shlyen një kod dhe hap muajin falas.
+ *
+ * Tri kushte, dhe secili ka arsyen e vet:
+ *   · kodi ekziston dhe nuk është përdorur   → "një kod, një herë"
+ *   · llogaria nuk ka marrë kod tjetër       → 300 kode, jo 300 muaj për një njeri
+ *   · jemi brenda dritares së fushatës       → dhuratë, jo derë e hapur përgjithmonë
+ */
+router.post("/promo", async (req, res, next) => {
+  const code = String(req.body?.code ?? "").trim().toUpperCase();
+
+  /* Forma kontrollohet para databazës: një varg i gjatë nuk ka pse ta prekë. */
+  if (!/^[A-Z0-9]{8}$/.test(code)) {
+    return res.status(400).json({ error: "Kodi ka 8 shenja, shkronja dhe numra." });
+  }
+
+  const now = new Date();
+  if (now < PROMO.from) {
+    return res.status(403).json({ error: "Oferta nis më 5 dhjetor. Provo sërish atëherë." });
+  }
+  if (now > PROMO.until) {
+    return res.status(403).json({ error: "Oferta ka mbaruar më 5 janar 2027." });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    /* `FOR UPDATE` e mbyll rreshtin: dy telefona me të njëjtin kod në të
+       njëjtin çast nuk e marrin dot të dy. */
+    const [[kodi]] = await connection.query(
+      `SELECT code, used_at FROM promo_codes WHERE code = ? AND campaign = ? FOR UPDATE`,
+      [code, PROMO.campaign]
+    );
+
+    if (!kodi) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Ky kod nuk ekziston." });
+    }
+    if (kodi.used_at) {
+      await connection.rollback();
+      return res.status(409).json({ error: "Ky kod është përdorur tashmë." });
+    }
+
+    const [[tashme]] = await connection.query(
+      `SELECT code FROM promo_codes WHERE used_by = ? AND campaign = ? LIMIT 1`,
+      [req.userId, PROMO.campaign]
+    );
+    if (tashme) {
+      await connection.rollback();
+      return res.status(409).json({ error: "Kjo llogari e ka marrë tashmë muajin falas." });
+    }
+
+    const [[user]] = await connection.query(
+      `SELECT id, ${FIELDS} FROM users WHERE id = ? FOR UPDATE`,
+      [req.userId]
+    );
+
+    /*
+     * ⚠️  Një abonim që shkon më larg se dhurata NUK shkurtohet.
+     *
+     *     Pa këtë, kush kishte paguar një vit do ta shkëmbente atë me një muaj
+     *     — dhe kodi do të digjej për asgjë. Më mirë të mos pranohet fare.
+     */
+    if (hasPremium(user) && new Date(user.subscription_end_at) >= fundi()) {
+      await connection.rollback();
+      return res.status(409).json({
+        error: "Ti ke tashmë akses përtej kësaj oferte. Kodi mbeti i papërdorur.",
+      });
+    }
+
+    await connection.query(
+      `UPDATE users
+          SET is_premium = 1,
+              subscription_status = 'promo',
+              subscription_plan = 'monthly',
+              subscription_price_eur = 0,
+              subscription_start_at = NOW(),
+              subscription_end_at = ?,
+              cancelled_at = NULL
+        WHERE id = ?`,
+      [fundi(), req.userId]
+    );
+
+    await connection.query(
+      `UPDATE promo_codes SET used_at = NOW(), used_by = ? WHERE code = ?`,
+      [req.userId, code]
+    );
+
+    /* Kodi shkruhet te shënimi: pa të, një ankesë "nuk m'u aktivizua" nuk
+       gjurmohet dot deri te rreshti që u shlye. */
+    await record(connection, req.userId, "promo_redeemed", {
+      plan: "monthly",
+      price: 0,
+      note: code,
+    });
+
+    await connection.commit();
+    res.status(201).json(shape(await readUser(req.userId)));
+  } catch (err) {
+    await connection.rollback().catch(() => {});
+    next(err);
+  } finally {
+    connection.release();
+  }
+});
+
 /* ═══════════════ FATURA E DYQANIT ═══════════════ */
 
 /**

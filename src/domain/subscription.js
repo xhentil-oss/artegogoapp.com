@@ -165,6 +165,23 @@ export function fromServer(state) {
   };
 }
 
+/* ─────────────── muaji falas i dhjetorit ─────────────── */
+
+/**
+ * Fushata e vetme: 5 dhjetor 2026 – 5 janar 2027, vetëm me kod.
+ *
+ * ⚠️  KËTO DATA JANË VETËM PËR PAMJEN — vendosin nëse shfaqet kutia e kodit.
+ *     Fjala e fundit është e serverit (`api/src/routes/subscription.js`), i
+ *     cili i ka të vetat: ora e telefonit nuk hap asgjë.
+ *
+ *     Nëse ndryshojnë, duhen ndryshuar te të dy vendet.
+ */
+export const PROMO_FROM = new Date("2026-12-05T00:00:00+01:00");
+export const PROMO_UNTIL = new Date("2027-01-05T23:59:59+01:00");
+
+/** A është kjo oferta ende e hapur? */
+export const promoOpen = (now = new Date()) => now >= PROMO_FROM && now <= PROMO_UNTIL;
+
 /** Krijon një abonim të ri, që nis me provën falas. */
 export function startSubscription(planId, now = new Date()) {
   const trialEndsAt = new Date(now.getTime() + TRIAL_DAYS * DAY_MS);
@@ -215,6 +232,28 @@ export function describeSubscription(subscription, now = new Date()) {
 
   const at = effectiveNow(subscription, now);
   const plan = planById(subscription.planId);
+
+  /*
+   * Muaji falas me kod — dhuratë, jo abonim.
+   *
+   * ⚠️  Degë më vete sepse llogaritja e zakonshme NUK e përshkruan dot: ajo
+   *     niset nga prova dhe shton periudha faturimi, ndaj do të premtonte një
+   *     "faturim i radhës" që nuk ekziston. Fundi e thotë serveri, dhe asgjë
+   *     nuk rinovohet pas tij.
+   */
+  if (subscription.serverStatus === "promo" && subscription.endsAt) {
+    const accessUntil = new Date(subscription.endsAt);
+    const stillValid = at < accessUntil;
+    return {
+      status: stillValid ? "promo" : "expired",
+      isPremium: stillValid,
+      plan,
+      daysLeft: stillValid ? daysBetween(at, accessUntil) : 0,
+      accessUntil,
+      renewsAt: null,
+    };
+  }
+
   const trialEnds = new Date(subscription.trialEndsAt);
   const inTrial = at < trialEnds;
 
@@ -252,6 +291,7 @@ export const STATUS_LABEL = {
   none: "Llogari Falas",
   trial: "Provë falas",
   active: "Premium aktiv",
+  promo: "Muaji falas",
   cancelled: "Anuluar",
   expired: "Skaduar",
 };
