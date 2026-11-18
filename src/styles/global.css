@@ -115,6 +115,26 @@ textarea {
   font-size: 16px;
 }
 
+/*
+ * X-i i dytë te kërkimi.
+ *
+ * ⚠️  `type="search"` mbahet me qëllim — ai e kthen tastin e tastierës në
+ *     "Kërko" te telefoni. Por shfletuesit desktop i shtojnë vetvetiu një
+ *     buton "pastro" brenda fushës, dhe ai dilte krah atij që vizatojmë ne:
+ *     dy X-a njëri pas tjetrit, njëri i yni dhe tjetri i shfletuesit.
+ *
+ *     Te telefoni nuk dukej kurrë, ndaj doli vetëm kur faqja u hap te
+ *     kompjuteri (18 nëntor 2026).
+ *
+ *     Hiqet ai i shfletuesit, jo i yni: i yni e di ku rri gjendja dhe ka
+ *     etiketë për lexuesit e ekranit.
+ */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 input[type="range"] {
   height: 4px;
   /* rrëshqitja e slider-it nuk duhet të scroll-ojë faqen */
