@@ -37,12 +37,29 @@ desktop.ini
 # duke mos i shtuar me dorë — një `git add -A` i vetëm e prish depon, dhe
 # pastaj skedari duhet nxjerrë nga i gjithë historiku, jo thjesht fshirë.
 #
-# Audiot (`.mp3`) NUK janë këtu me qëllim: ato janë nën 20MB dhe ndodhen
-# tashmë te depoja. Një rregull që i fshihte do të bënte që i radhës të
-# harrohej pa u vënë re.
+# ⚠️  EDHE AUDIOT, QË NGA 18 NËNTORI 2026.
+#
+# Rreshti këtu thoshte më parë se `.mp3` rrinin me qëllim JASHTË kësaj liste,
+# "sepse ndodhen tashmë te depoja". Ai arsyetim u shkrua pa marrë parasysh se
+# depoja është PUBLIKE: 43 skedarë audio, rreth 488MB, shkarkohen sot nga
+# `raw.githubusercontent.com` pa llogari dhe pa fjalëkalim. Audioja ËSHTË
+# produkti — ajo për të cilën paguhet 228€/vit.
+#
+# Prandaj rregulli u kthye: asnjë audio e re nuk hyn më këtu. Audiot shkojnë
+# te cPanel-i, si videot.
+#
+# ⚠️  KJO NUK I HEQ TË 43-TAT. Ato janë te historiku; `git rm --cached` i heq
+#     nga pema e sotme, por adresat e commit-eve të vjetra vazhdojnë të
+#     punojnë. I vetmi veprim që i mbyll të gjitha menjëherë është kalimi i
+#     depos te "Private" — Settings → General → Danger Zone.
 scripts/*.mp4
 scripts/*.mov
 scripts/*.webm
+scripts/*.mp3
+scripts/*.m4a
+scripts/*.wav
+scripts/*.mpeg
+scripts/*.zip
 
 # Shkarkime te nderprera te Chrome-it — mbeturina, kurre te deshiruara.
 *.crdownload
