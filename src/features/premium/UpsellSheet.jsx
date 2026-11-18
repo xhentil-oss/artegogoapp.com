@@ -4,7 +4,6 @@ import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { padBottom } from "../../theme/responsive.js";
 import { PLANS, TRIAL_DAYS, planById, planNote, planPrice, promoOpen, trialTimeline } from "../../domain/subscription.js";
-import { cancelPath } from "../../services/billing.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
@@ -304,12 +303,19 @@ export function UpsellSheet() {
           </div>
         )}
 
-        {/* Kërkesë e Apple-it dhe e Google-it: kushtet duhen thënë pranë butonit,
-            jo të fshehura pas një lidhjeje. */}
-        <p style={{ color: T.faint, fontSize: 11.5, textAlign: "center", margin: "12px 0 0", lineHeight: 1.6 }}>
-          Anulo kurdo nga {cancelPath()}, të paktën 24 orë para përfundimit.
-          Pa anulim, abonimi rinovohet vetvetiu.
-        </p>
+        {/*
+          ⚠️  KUSHTET E ANULIMIT U HOQËN (kërkesë e klientes, 18 nëntor 2026).
+
+              Ato thoshin "anulo nga Abonimet në Google Play… abonimi rinovohet
+              vetvetiu" — një premtim për një faturim që sot nuk ekziston:
+              `services/billing.purchase` e thotë vetë se pagesat nuk kalojnë
+              ende nga dyqani. Pra teksti përshkruante diçka që nuk ndodh.
+
+              ⚠️  DUHET TË KTHEHET PARA BOTIMIT ME PAGESA TË VËRTETA. Apple dhe
+                  Google e kërkojnë kohëzgjatjen, çmimin dhe rinovimin të
+                  shkruara pranë butonit të blerjes, jo pas një lidhjeje — dhe
+                  mungesa e tyre është shkak refuzimi te dyqani.
+        */}
 
         {/* Apple e kërkon si veprim më vete: kush ndërron telefon duhet ta
             rifitojë aksesin pa paguar dy herë. */}
