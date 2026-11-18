@@ -41,6 +41,31 @@ import {
 /* ---------- qëllime ---------- */
 export const listIntentions = () => INTENTIONS;
 
+/**
+ * Qëllimet që kanë vërtet përmbajtje sot.
+ *
+ * ⚠️  Të dhjetat ekzistojnë te taksonomia, por jo të dhjetat kanë meditime.
+ *     Një kategori e shfaqur dhe e zbrazët është premtim i thyer: përdoruesi
+ *     e hap dhe gjen asgjë. Kërkesë e klientes, 18 nëntor 2026.
+ *
+ * ⚠️  Kërkohet edhe kopertina, sepse ajo ndan katalogun e vërtetë nga
+ *     vendmbajtësit. Nëse asnjë meditim nuk do të kishte kopertinë — p.sh.
+ *     katalogu ende i pangarkuar — kushti zbutet, që lista të mos dalë bosh
+ *     dhe aplikacioni të mos duket pa përmbajtje.
+ *
+ * ⚠️  NUK përdoret te paneli i admin-it: aty duhen të gjitha, përndryshe një
+ *     kategori bosh nuk mbushet dot kurrë. Admin-i pyet `listIntentions`.
+ */
+export const activeIntentions = () => {
+  const meKopertine = new Set(MEDITATIONS.filter((m) => m.cover).map((m) => m.intent));
+  const meCfaredo = new Set(MEDITATIONS.map((m) => m.intent));
+  const burimi = meKopertine.size > 0 ? meKopertine : meCfaredo;
+
+  const gjetur = INTENTIONS.filter((i) => burimi.has(i.id));
+  /* Katalogu i pangarkuar — më mirë të gjitha sesa asnjë. */
+  return gjetur.length > 0 ? gjetur : INTENTIONS;
+};
+
 /* ---------- përshëndetja dhe citati ---------- */
 export const greetingFor = (part) => GREETINGS[part] ?? GREETINGS[DAY_PARTS.MORNING];
 
@@ -144,9 +169,13 @@ export const rhythmPick = (intent, day = 1) => {
  * ditor dhe të shkurtrat, ku duhet një njësi e shkurtër e luajtshme.
  */
 export const blocksForCategory = (intent) => {
-  const matches = listBuilderLibrary().filter((item) => item.intent === intent);
-  /* Mbrojtje nga një ekran bosh nëse një qëllim mbetet pa përmbajtje. */
-  return matches.length > 0 ? matches : BLOCKS.slice(0, 4);
+  /*
+   * ⚠️  PA RËNIE TE `BLOCKS`. Më parë një kategori bosh mbushej me katër
+   *     vendmbajtës — pa zë dhe pa kopertinë — vetëm që ekrani të mos dukej
+   *     bosh. Tani kategoritë bosh nuk shfaqen fare (`activeIntentions`),
+   *     ndaj kjo rrugë nuk arrihet; dhe po të arrihet, bosh është e vërteta.
+   */
+  return listBuilderLibrary().filter((item) => item.intent === intent);
 };
 
 /** Rekomandimet sipas pjesës së ditës (`lib/time.js` → `dayPart()`). */

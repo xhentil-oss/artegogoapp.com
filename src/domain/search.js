@@ -1,4 +1,4 @@
-import { INTENTIONS } from "../data/intentions.js";
+import { activeIntentions } from "../services/contentRepository.js";
 import { MEDITATIONS } from "./classification.js";
 import { intentMeta } from "./intent.js";
 
@@ -96,7 +96,9 @@ export function searchContent(rawQuery) {
        pozicioni në listën e rezultateve, si më parë. */
     .map(({ item }, index) => ({ block: item, index }));
 
-  const intents = INTENTIONS.filter((i) => i.label.toLowerCase().includes(query));
+  /* Vetëm qëllimet që kanë vërtet meditime — një kategori e zbrazët te
+     rezultatet është ftesë drejt një ekrani bosh. */
+  const intents = activeIntentions().filter((i) => i.label.toLowerCase().includes(query));
 
   return { blocks, intents, total: hits.length };
 }

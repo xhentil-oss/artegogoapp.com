@@ -5,7 +5,7 @@ import { sx } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
 import { padTop, padBottom } from "../../theme/responsive.js";
 import { searchContent } from "../../domain/search.js";
-import { listIntentions } from "../../services/contentRepository.js";
+import { activeIntentions } from "../../services/contentRepository.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { useRecentSearches } from "../../hooks/useRecentSearches.js";
@@ -165,7 +165,7 @@ function EmptyState({ recent, onClearRecent, onPickRecent, onPickIntent }) {
 
       <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 14 }}>Eksploro sipas qëllimit</div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 9 }}>
-        {listIntentions().map((intention) => (
+        {activeIntentions().map((intention) => (
           <button
             key={intention.id}
             onClick={() => onPickIntent(intention.id)}

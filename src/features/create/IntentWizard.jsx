@@ -4,7 +4,7 @@ import { T, layout, radii } from "../../theme/tokens.js";
 import { sx } from "../../theme/styles.js";
 import { tile } from "../../theme/gradients.js";
 import { autoGrid } from "../../theme/responsive.js";
-import { listIntentions } from "../../services/contentRepository.js";
+import { activeIntentions } from "../../services/contentRepository.js";
 import { buildGuidedSequence } from "../../domain/sequence.js";
 import { PrimaryButton } from "../../components/ui/Controls.jsx";
 
@@ -100,7 +100,7 @@ function IntentStep({ value, onChange }) {
       </p>
       {/* 100px minimum: 2 kolona edhe brenda panelit në ekran 320px */}
       <div style={{ ...autoGrid(100, 10), marginTop: 16 }}>
-        {listIntentions().map((intention) => {
+        {activeIntentions().map((intention) => {
           const Icon = intention.icon;
           const selected = value === intention.id;
           return (
