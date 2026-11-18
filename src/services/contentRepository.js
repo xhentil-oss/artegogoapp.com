@@ -56,6 +56,48 @@ export const listIntentions = () => INTENTIONS;
  * ⚠️  NUK përdoret te paneli i admin-it: aty duhen të gjitha, përndryshe një
  *     kategori bosh nuk mbushet dot kurrë. Admin-i pyet `listIntentions`.
  */
+/**
+ * Fotoja e kokës për një qëllim.
+ *
+ * ⚠️  Qëllimet (`INTENTIONS`) nuk kanë foto — ato kanë vetëm gradient. Prandaj
+ *     ekrani i një kategorie, i hapur nga kërkimi, dilte si brez ngjyre i
+ *     zhveshur, ndërsa i njëjti emër i hapur nga "Eksploro kategoritë" vinte me
+ *     foto. Dy rrugë drejt së njëjtës gjë, me dy pamje — dhe ajo ndryshe dukej
+ *     si mangësi. Kërkesë e klientes, 18 nëntor 2026.
+ *
+ *     Fotoja merret hua nga kategoria e parë e atij qëllimi që ka një të tillë:
+ *     ato janë prerë posaçërisht si breza të gjerë, bashkë me `coverPos`.
+ *
+ * @returns {{cover: string, coverPos: string|undefined}|null}
+ */
+const INTENT_HERO = {
+  calm: "c_qetesim",
+  heart: "c_zemra",
+  heal: "c_shendeti",
+  focus: "c_fokus",
+  sleep: "c_gjumi",
+  energy: "c_energji",
+  stress: "c_stres",
+  /* Nga tri kategoritë e transformimit, vetëm Intuita ka foto. */
+  transform: "c_intuita",
+  abundance: "c_bolleku",
+  selflove: "c_dashuria",
+};
+
+export const intentCover = (intent) => {
+  /*
+   * Zgjedhja është e shkruar, jo e rastësishme.
+   *
+   * ⚠️  "Merr kategorinë e parë me foto" jepte rezultate të çuditshme, sepse
+   *     rendi te `CATEGORIES` ndjek specifikimin, jo kuptimin: "Fokus" merrte
+   *     foton e "Tru i fuqizuar", "Energji" atë të "Vetëbesim", dhe "Dashuri
+   *     për Veten" atë të "Faljes". Të gjitha të afërta, asnjëra e saktë.
+   */
+  const zgjedhur = CATEGORIES.find((c) => c.id === INTENT_HERO[intent] && c.cover);
+  const gjetur = zgjedhur ?? CATEGORIES.find((c) => c.intent === intent && c.cover);
+  return gjetur ? { cover: gjetur.cover, coverPos: gjetur.coverPos } : null;
+};
+
 export const activeIntentions = () => {
   const meKopertine = new Set(MEDITATIONS.filter((m) => m.cover).map((m) => m.intent));
   const meCfaredo = new Set(MEDITATIONS.map((m) => m.intent));
