@@ -8,8 +8,15 @@ import { useNavigation } from "../../store/NavigationContext.jsx";
 import { CoverArt } from "../art/CoverArt.jsx";
 
 /**
- * Rresht listë për një meditim — varianti me ikonë gradient.
- * Përdoret në pamjen e një kategorie.
+ * Rresht listë për një meditim — pamja e një kategorie.
+ *
+ * ⚠️  Më parë majtas rrinte vetëm një katror gradient me një trekëndësh, i
+ *     njëjtë për çdo meditim të asaj kategorie. Kopertinat ekzistonin dhe
+ *     hapeshin — vetëm ky rresht nuk i kërkonte. Pasoja e vërtetë nuk ishte
+ *     estetike: klientja hapi "Hapje Zemre", pa tri rreshta pa foto, dhe
+ *     nxori përfundimin se ato meditime nuk kanë as zë as kopertinë (18
+ *     nëntor 2026). Një ekran që nuk tregon përmbajtjen e bën atë të duket
+ *     e munguar.
  */
 export function MeditationRow({ block }) {
   const { isLocked } = usePlayback();
@@ -31,8 +38,9 @@ export function MeditationRow({ block }) {
         textAlign: "left",
       }}
     >
-      <div style={iconBox(56, tile(meta.g))}>
-        {locked ? <Lock size={20} color="#fff" /> : <Play size={20} color="#fff" />}
+      {/* Kopertina e vërtetë; pa foto, `CoverArt` vizaton peizazhin procedural. */}
+      <div style={{ width: 56, height: 56, borderRadius: radii.md, overflow: "hidden", position: "relative", flexShrink: 0 }}>
+        <CoverArt intent={block.intent} image={block.cover} />
       </div>
 
       <div style={sx.flexText}>
@@ -43,6 +51,12 @@ export function MeditationRow({ block }) {
         <div style={{ color: T.sub, fontSize: 13, marginTop: 3, display: "flex", alignItems: "center", gap: 5 }}>
           {meta.label} · {block.dur}m
         </div>
+      </div>
+
+      {/* Drejtuesi i veprimit kalon djathtas, si te rezultatet e kërkimit —
+          kështu kopertina zë vendin e vet dhe dryni mbetet i dukshëm. */}
+      <div style={{ ...circle(42, locked ? T.faint : tile(meta.g)), flexShrink: 0 }}>
+        {locked ? <Lock size={16} color="#fff" /> : <Play size={16} color="#fff" style={{ marginLeft: 2 }} />}
       </div>
     </button>
   );
