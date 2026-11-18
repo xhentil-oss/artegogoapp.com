@@ -1,4 +1,3 @@
-import { BLOCKS } from "../data/blocks.js";
 import { INTENTIONS } from "../data/intentions.js";
 import { MEDITATIONS } from "./classification.js";
 import { intentMeta } from "./intent.js";
@@ -6,9 +5,16 @@ import { intentMeta } from "./intent.js";
 /**
  * KËRKIMI NË KATALOG
  *
- * Kërkon në të 259 zërat — 15 mini-blloqet plus 244 meditimet e katalogut.
- * Më parë shikonte vetëm blloqet, ndaj "Gjumë" kthente një rezultat në vend
- * të gjashtëmbëdhjetëve që ekzistojnë.
+ * ⚠️  VETËM KATALOGU. Mini-blloqet (`BLOCKS`) u hoqën nga kërkimi me kërkesë
+ *     të klientes (18 nëntor 2026): ato janë vendmbajtës — asnjëri nuk ka as
+ *     zë as kopertinë. Dhe rrinin TË PARËT te rezultatet, sepse te barazimi i
+ *     pikëve renditeshin para meditimeve. Pra "Zjarri i Energjisë" dhe
+ *     "Shtegu i Gjumit" dilnin lart mbi meditimet e vërteta, dhe shtypja e
+ *     tyre hapte tone demo mbi një kartë bosh.
+ *
+ *     E njëjta heqje si te ndërtuesi (16 nëntor) dhe te ritmi ditor (18
+ *     nëntor). Blloqet nuk u fshinë: seancat e ruajtura u referohen me id.
+ *     Kur të marrin zë e kopertinë, kthimi është një rresht te `pool`.
  *
  * Logjikë e pastër: pa DOM, pa React — dhe zëvendësohet me një endpoint
  * `/search` kur të vijë backend-i, pa prekur asnjë ekran.
@@ -74,9 +80,7 @@ export function searchContent(rawQuery) {
   const query = rawQuery.trim().toLowerCase();
   if (!query) return { blocks: [], intents: [], total: 0 };
 
-  /* Blloqet para meditimeve: në barazim pikësh, një bllok i shkurtër i
-     ndërtuesit është përgjigjja më e dobishme. */
-  const pool = [...BLOCKS, ...MEDITATIONS];
+  const pool = MEDITATIONS;
 
   const hits = [];
   for (const item of pool) {
