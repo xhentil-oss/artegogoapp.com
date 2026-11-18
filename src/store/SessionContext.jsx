@@ -5,7 +5,7 @@ import * as billing from "../services/billing.js";
 import { defaultReminders } from "../data/reminders.js";
 import { saveReminders, syncReminders } from "../services/reminders.js";
 import { describeSubscription, fromServer } from "../domain/subscription.js";
-import { hasToken, onSessionEnded } from "../services/api.js";
+import { hasToken, onSessionEnded, onTokenChange } from "../services/api.js";
 
 /**
  * Të njëjtat çaste kujtese, por të gjitha të fikura.
@@ -55,6 +55,14 @@ export function SessionProvider({ children }) {
    * bën rregullin të kuptueshëm.
    */
   const [sessionNotice, setSessionNotice] = useState(null);
+
+  /**
+   * A po ikën përdoruesi me vullnetin e vet (dalje ose fshirje llogarie)?
+   *
+   * `ref`, jo `state`: lexohet brenda një dëgjuesi që regjistrohet një herë
+   * dhe nuk e sheh kurrë gjendjen e re.
+   */
+  const dalaVullnetare = useRef(false);
 
 
   useEffect(() => {
@@ -231,9 +239,17 @@ export function SessionProvider({ children }) {
    * fshijë punën e javëve.
    */
   const signOut = useCallback(async () => {
-    await auth.signOut();
-    setAccount(null);
-    setAdminView(false);
+    /* Shih `dalaVullnetare` te efekti poshtë: pa këtë flamur, `clearToken()`
+       brenda `auth.signOut()` do të ngrinte njoftimin "Sesioni mbaroi" mbi
+       një dalje që e kërkoi vetë përdoruesi. */
+    dalaVullnetare.current = true;
+    try {
+      await auth.signOut();
+      setAccount(null);
+      setAdminView(false);
+    } finally {
+      dalaVullnetare.current = false;
+    }
   }, []);
 
   /**
@@ -244,6 +260,38 @@ export function SessionProvider({ children }) {
    * këtë, aplikacioni do të mbetej i hapur në pamje, me çdo kërkesë që
    * dështon në heshtje — më keq se një dalje e qartë.
    */
+  /**
+   * TOKEN-I I HUMBUR ËSHTË DALJE, JO HESHTJE.
+   *
+   * ⚠️  Kjo ishte vrima që nxori "Mungon token-i i hyrjes." te paywall-i
+   *     (18 nëntor 2026). `services/api` e heq token-in te ÇDO 401 — i
+   *     skaduar, i pavlefshëm, llogari e fshirë — por vetëm njëri prej tyre,
+   *     `session_replaced`, e njoftonte këtë ekran. Për të gjitha të tjerat
+   *     token-i zhdukej dhe `account` mbetej te ruajtja.
+   *
+   *     Pasoja: `App.jsx` sheh `hasAccount === true`, nuk e tregon
+   *     `AuthScreen`, dhe aplikacioni duket plotësisht i futur — ndërsa çdo
+   *     kërkesë e mbrojtur shkon pa `Authorization` dhe kthen 401. Përdoruesi
+   *     shtyp "Fillo provën 3-ditore falas" dhe merr një mesazh serveri që
+   *     nuk i thotë asgjë, pa asnjë rrugë përpara.
+   *
+   *     Tani humbja e token-it e kthen ekranin te hyrja, me arsyen përpara
+   *     syve. `session_replaced` mbetet veç: ai fiket pas këtij dhe e
+   *     mbishkruan njoftimin e përgjithshëm me arsyen e vërtetë — rendi te
+   *     `request()` është `clearToken()` para `announceSessionEnded()`.
+   */
+  useEffect(() => {
+    return onTokenChange((value) => {
+      if (value || dalaVullnetare.current) return;
+      setSessionNotice("Sesioni mbaroi. Hyr sërish për të vazhduar.");
+      setAccount(null);
+      setAdminView(false);
+      storage.remove(STORAGE_KEYS.account);
+      setSubscription(null);
+      storage.remove(STORAGE_KEYS.subscription);
+    });
+  }, []);
+
   useEffect(() => {
     return onSessionEnded((reason) => {
       setSessionNotice(reason ?? "Llogaria u hap në një pajisje tjetër.");
@@ -476,7 +524,13 @@ export function SessionProvider({ children }) {
    */
   const deleteAccount = useCallback(
     async (password) => {
-      const result = await auth.deleteAccount(password);
+      dalaVullnetare.current = true;
+      let result;
+      try {
+        result = await auth.deleteAccount(password);
+      } finally {
+        dalaVullnetare.current = false;
+      }
       if (!result.ok) return result;
 
       setAccount(null);
