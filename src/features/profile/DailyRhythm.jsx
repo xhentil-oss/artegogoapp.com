@@ -4,11 +4,12 @@ import { circle } from "../../theme/styles.js";
 import { hourLabel } from "../../lib/format.js";
 import { DAILY_RHYTHM_STEPS } from "../../data/greetings.js";
 import { intentMeta } from "../../domain/intent.js";
-import { blocksByIntent } from "../../services/contentRepository.js";
+import { rhythmPick } from "../../services/contentRepository.js";
 import { usePlayback } from "../../hooks/usePlayback.js";
 import { useProgress } from "../../store/ProgressContext.jsx";
 import { SunriseMark } from "../../components/icons/BrandIcons.jsx";
 import { ProgressRing } from "../../components/ui/Charts.jsx";
+import { CoverArt } from "../../components/art/CoverArt.jsx";
 
 /* Yje dekorative — pozicione fikse në përqindje. */
 const STARS = [[20, 30], [80, 20], [60, 60], [88, 70], [14, 80]];
@@ -36,8 +37,9 @@ export function DailyRhythm() {
    *     kalohet player-it, dhe `complete()` e shënon — pra numëron praktika e
    *     bërë, jo butoni i shtypur.
    */
-  const runStep = (step) => {
-    playItems(blocksByIntent(step.intent).slice(0, 1), { ritualStep: step.id });
+  const runStep = (item, step) => {
+    if (!item) return;
+    playItems([item], { ritualStep: step.id });
   };
 
   return (
@@ -85,24 +87,40 @@ export function DailyRhythm() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
-        {DAILY_RHYTHM_STEPS.map((step) => (
-          <StepRow
-            key={step.id}
-            step={step}
-            unlocked={hour >= step.fromHour}
-            done={Boolean(rhythmToday[step.id])}
-            onRun={() => runStep(step)}
-          />
-        ))}
+        {DAILY_RHYTHM_STEPS.map((step) => {
+          /* Meditimi i vërtetë i këtij hapi, për këtë ditë të ciklit. */
+          const item = rhythmPick(step.intent, rhythmDay);
+
+          return (
+            <StepRow
+              key={step.id}
+              step={step}
+              item={item}
+              unlocked={hour >= step.fromHour}
+              done={Boolean(rhythmToday[step.id])}
+              onRun={() => runStep(item, step)}
+            />
+          );
+        })}
       </div>
 
     </section>
   );
 }
 
-function StepRow({ step, unlocked, done, onRun }) {
+/**
+ * Një hap i ditës.
+ *
+ * ⚠️  Titulli i madh është i MEDITIMIT, jo i hapit. "Meditimi i mëngjesit"
+ *     rri sipër si etiketë e vogël, sepse ai emër nuk thotë asgjë për atë që
+ *     do të dëgjohet — dhe pikërisht ajo ishte ankesa: tre kartela të njëjta
+ *     çdo ditë, pa foto dhe pa emër.
+ */
+function StepRow({ step, item, unlocked, done, onRun }) {
   const meta = intentMeta(step.intent);
   const color = unlocked ? meta.g[1] : T.faint;
+  const titulli = item?.title ?? step.title;
+  const nenTitulli = item?.dur ? `${meta.label} · ${item.dur} min` : step.sub;
 
   return (
     <div
@@ -121,11 +139,53 @@ function StepRow({ step, unlocked, done, onRun }) {
         transition: "all .2s",
       }}
     >
-      <StepIcon kind={step.icon} color={color} />
+      {/* Kopertina e vërtetë; pa foto, `CoverArt` vizaton peizazhin procedural. */}
+      <div
+        style={{
+          width: 54,
+          height: 54,
+          borderRadius: 14,
+          overflow: "hidden",
+          flexShrink: 0,
+          position: "relative",
+          opacity: unlocked ? 1 : 0.55,
+        }}
+      >
+        <CoverArt intent={step.intent} image={item?.cover} />
+      </div>
 
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 17, fontWeight: 800, color: unlocked ? T.ink : T.faint }}>{step.title}</div>
-        <div style={{ fontSize: 13.5, color: unlocked ? T.sub : T.faint, marginTop: 2 }}>{step.sub}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
+            color: unlocked ? T.sub : T.faint,
+            fontSize: 10.5,
+            fontWeight: 700,
+            letterSpacing: 0.9,
+            textTransform: "uppercase",
+          }}
+        >
+          <StepIcon kind={step.icon} color={color} />
+          {step.title}
+        </div>
+        <div
+          style={{
+            fontSize: 15.5,
+            fontWeight: 800,
+            color: unlocked ? T.ink : T.faint,
+            marginTop: 3,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {titulli}
+        </div>
+        <div style={{ fontSize: 12.5, color: unlocked ? T.sub : T.faint, marginTop: 1 }}>
+          {nenTitulli}
+        </div>
       </div>
 
       {done ? (
@@ -148,8 +208,9 @@ function StepRow({ step, unlocked, done, onRun }) {
   );
 }
 
+/* I zvogëluar: tani rri brenda etiketës së vogël, jo si ikonë e vetme majtas. */
 function StepIcon({ kind, color }) {
-  if (kind === "sunrise") return <SunriseMark size={30} color={color} />;
-  if (kind === "sun") return <Sun size={28} color={color} />;
-  return <Moon size={26} color={color} />;
+  if (kind === "sunrise") return <SunriseMark size={14} color={color} />;
+  if (kind === "sun") return <Sun size={13} color={color} />;
+  return <Moon size={13} color={color} />;
 }

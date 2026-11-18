@@ -100,6 +100,40 @@ export const blocksByIds = (ids = []) => ids.map(blockById).filter(Boolean);
 export const blocksByIntent = (intent) => BLOCKS.filter((b) => b.intent === intent);
 
 /**
+ * Meditimi i ditës për një hap të ritmit ditor.
+ *
+ * ⚠️  NUK merret nga `BLOCKS`. Ritmi ditor lexonte prej tyre, dhe ata janë
+ *     vendmbajtës: pa zë dhe pa kopertinë (shih `listBuilderLibrary`). Pra
+ *     tre hapat e ditës hapnin tone demo mbi një kartë bosh, ndërsa katalogu
+ *     ishte plot. Kërkesë e klientes, 18 nëntor 2026.
+ *
+ * ⚠️  NDRYSHON ME DITËN, me qëllim. Një "ritëm ditor" që jep të njëjtat tre
+ *     meditime për 365 ditë nuk është ritëm, është listë. Dita e ciklit
+ *     (`rhythmDay`) e zhvendos zgjedhjen me një hap — pra radha përsëritet
+ *     vetëm kur të mbarojnë të gjitha meditimet e atij qëllimi.
+ *
+ * @param {string} intent qëllimi i hapit (`energy`, `calm`, `sleep`…)
+ * @param {number} day dita e ritmit, duke nisur nga 1
+ * @returns {object|null} meditimi, ose `null` kur nuk ka asgjë për atë qëllim
+ */
+export const rhythmPick = (intent, day = 1) => {
+  const tePerQellimin = MEDITATIONS.filter((m) => m.intent === intent);
+
+  /* Kopertina kërkohet, por nuk është kusht shkatërrues: po të mos kishte
+     asnjë me foto, më mirë një meditim i vërtetë pa kopertinë sesa asgjë. */
+  const meKopertine = tePerQellimin.filter((m) => m.cover);
+  const burimi = meKopertine.length > 0 ? meKopertine : tePerQellimin;
+
+  /* Katalogu ende i pangarkuar — rreshti kthehet te bllok, si më parë. */
+  if (burimi.length === 0) return blocksByIntent(intent)[0] ?? null;
+
+  /* `% length` dy herë: `day` vjen nga serveri dhe një vlerë e papritur
+     negative do të jepte indeks jashtë listës. */
+  const i = (((day - 1) % burimi.length) + burimi.length) % burimi.length;
+  return burimi[i];
+};
+
+/**
  * Gjithçka e një qëllimi — për ekranin e kategorisë.
  *
  * Lexon TË GJITHË bibliotekën, jo vetëm 15 mini-blloqet. Më parë filtronte
