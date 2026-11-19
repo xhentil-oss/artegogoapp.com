@@ -58,6 +58,27 @@ const live = optional("./src/routes/live");
 const app = express();
 
 app.disable("x-powered-by");
+
+/*
+ * ⚠️  WEBHOOK-U I STRIPE-IT MONTOHET PARA `express.json`, DHE KY RADHITJE NUK
+ *     ËSHTË ÇËSHTJE SHIJEje.
+ *
+ *     Stripe e nënshkruan çdo njoftim mbi bajtët e saktë të trupit. Sapo
+ *     `express.json` e lexon dhe e analizon atë trup, bajtët origjinalë
+ *     humbasin përgjithmonë — dhe nënshkrimi nuk verifikohet dot më. Pasoja
+ *     nuk është një gabim i dukshëm: është një webhook që kthen gjithmonë 400,
+ *     pra rinovime dhe anulime që nuk mbërrijnë kurrë te databaza.
+ *
+ *     Montohet te të dy prefikset, si `api` më poshtë: cPanel-i ndonjëherë e
+ *     heq `/api` para se kërkesa të arrijë te Passenger-i.
+ */
+const stripeHook = optional("./src/routes/stripeHook");
+if (stripeHook) {
+  const raw = express.raw({ type: "application/json", limit: "1mb" });
+  app.use("/stripe/webhook", raw, stripeHook);
+  app.use("/api/stripe/webhook", raw, stripeHook);
+}
+
 app.use(express.json({ limit: "256kb" }));
 
 /*

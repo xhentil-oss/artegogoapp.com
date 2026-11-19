@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const { pool, query, one } = require("../db");
 const { requireAuth, hasPremium } = require("../auth");
 const { verifyReceipt, RESULT } = require("../storeVerify");
+const stripe = require("../stripe");
+const { applySubscription, record } = require("../subscriptionSync");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -92,7 +94,8 @@ const PLANS = {
 const PLAN_ID = { monthly: "month", yearly: "year", lifetime: "lifetime" };
 
 const FIELDS = `is_premium, subscription_status, subscription_plan, subscription_price_eur,
-                subscription_start_at, subscription_end_at, trial_used_at, cancelled_at`;
+                subscription_start_at, subscription_end_at, trial_used_at, cancelled_at,
+                stripe_customer_id, stripe_subscription_id, cancel_at_period_end`;
 
 /** Gjendja e abonimit, në formën që pret aplikacioni. */
 function shape(user) {
@@ -107,27 +110,27 @@ function shape(user) {
     cancelled: Boolean(user.cancelled_at),
     cancelledAt: user.cancelled_at,
     trialUsed: Boolean(user.trial_used_at),
+
+    /*
+     * ⚠️  `cancelled` dhe `renewsAtEnd` NUK janë e njëjta gjë, dhe ekrani i
+     *     duhen të dyja. E para thotë "u shtyp anulimi", e dyta "karta do të
+     *     tarifohet sërish". Ndahen kur anulimi bëhet jashtë aplikacionit, ose
+     *     kur një pagesë e dështuar e mbyll abonimin pa e prekur askush.
+     */
+    renewsAtEnd: !Boolean(user.cancel_at_period_end),
+
+    /* Kush e mban faturimin — ekrani i anulimit ndryshon sipas tij. */
+    provider: user.stripe_subscription_id ? "stripe" : null,
   };
 }
 
-/** Regjistron ndryshimin. Historiku është pjesë e veprimit, jo shtojcë. */
-async function record(connection, userId, event, extra = {}) {
-  await connection.query(
-    `INSERT INTO subscription_events
-       (user_id, event, store, plan, price_eur, transaction_id, source, note)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      userId,
-      event,
-      extra.store ?? "none",
-      extra.plan ?? null,
-      extra.price ?? null,
-      extra.transactionId ?? null,
-      extra.source ?? "app",
-      extra.note ?? null,
-    ]
-  );
-}
+/*
+ * `record` jeton te `../subscriptionSync`.
+ *
+ * ⚠️  Ishte i shkruar dy herë — një herë këtu, një herë te rruga e Stripe-it.
+ *     Dy kopje të të njëjtit `INSERT` devijojnë sapo tabela merr një kolonë,
+ *     dhe njëra rrugë pushon së shkruari historik pa asnjë gabim të dukshëm.
+ */
 
 const readUser = (userId) => one(`SELECT id, ${FIELDS} FROM users WHERE id = ?`, [userId]);
 
@@ -434,20 +437,262 @@ router.post("/verify", async (req, res, next) => {
   }
 });
 
+/* ═══════════════ STRIPE ═══════════════ */
+
+/**
+ * Çmimet te Stripe, sipas planit që njeh aplikacioni.
+ *
+ * ⚠️  NUK SHKRUHEN TE KODI. Një `price_…` i ngulitur do të thoshte se çdo
+ *     ndryshim çmimi kërkon ringarkim serveri; këtu mjafton fusha te cPanel.
+ *     Dhe gjatë provave, çelësi `sk_test_` shkon me çmime provash — po të
+ *     ishin te kodi, provat do të preknin çmimet e vërteta.
+ */
+const PRICE_FOR = (planId) => {
+  const raw = planId === "month" ? process.env.STRIPE_PRICE_MONTH : process.env.STRIPE_PRICE_YEAR;
+  return String(raw ?? "").trim();
+};
+
+/** Origjina e aplikacionit — e para e listës `APP_ORIGIN`. */
+const APP_URL = () =>
+  (process.env.APP_ORIGIN || "").split(",")[0].trim() || "https://app.drartegogo.com";
+
+/**
+ * Klienti i Stripe-it për këtë llogari — krijohet një herë e ripërdoret.
+ *
+ * ⚠️  `idempotencyKey` i lidhur me id-në e përdoruesit. Dy kërkesa njëkohëse
+ *     (dy skeda të hapura) do të krijonin dy klientë për të njëjtin njeri;
+ *     i dyti do ta mbishkruante të parin te `users`, dhe abonimi i blerë me
+ *     të parin do të bëhej i paarritshëm — pagesë që ekziston, akses që jo.
+ */
+async function ensureCustomer(userId, user, profile) {
+  if (user.stripe_customer_id) return user.stripe_customer_id;
+
+  const customer = await stripe.customers.create(
+    {
+      email: profile?.email ?? undefined,
+      name: profile?.name ?? undefined,
+      metadata: { user_id: userId },
+    },
+    { idempotencyKey: `customer:${userId}` }
+  );
+
+  await query(`UPDATE users SET stripe_customer_id = ? WHERE id = ?`, [customer.id, userId]);
+  return customer.id;
+}
+
+/** Përgjigjja kur çelësat ende nuk janë vendosur — gjendje e ditur, jo defekt. */
+const notConfigured = (res) =>
+  res.status(501).json({
+    error: "Pagesat nuk janë aktivizuar ende.",
+    code: "not_configured",
+  });
+
+/**
+ * Hap seancën e pagesës.
+ *
+ * Rrjedha që kërkoi klientja: karta jepet që në fillim, tri ditët nisin
+ * menjëherë, dhe tarifimi ndodh ditën e katërt vetëm nëse nuk është anuluar.
+ *
+ * ⚠️  PROVA JEPET VETËM NJË HERË. `trial_used_at` e mban shenjën përtej
+ *     anulimit dhe përtej skadimit; pa të, anulim-rinisja do të jepte tri ditë
+ *     falas pa fund te e njëjta llogari.
+ *
+ * ⚠️  AKSESI NUK HAPET KËTU. Kjo rrugë kthen vetëm një adresë. Gjendja
+ *     ndryshon kur Stripe konfirmon — me webhook, ose me `/checkout/confirm`
+ *     kur njeriu kthehet te faqja. Po ta hapnim aksesin te kjo rrugë, do të
+ *     mjaftonte ta thirrje dhe ta mbyllje faqen për të fituar një vit falas.
+ */
+router.post("/checkout", async (req, res, next) => {
+  try {
+    if (!stripe.configured()) return notConfigured(res);
+
+    const planId = req.body?.planId === "month" ? "month" : "year";
+    const price = PRICE_FOR(planId);
+    if (!price) return notConfigured(res);
+
+    const user = await readUser(req.userId);
+    if (hasPremium(user)) {
+      return res.status(409).json({ error: "Kjo llogari ka tashmë një abonim aktiv." });
+    }
+
+    const customer = await ensureCustomer(req.userId, user, req.user);
+    const trialDays = user.trial_used_at ? null : TRIAL_DAYS;
+
+    const session = await stripe.checkout.createSession(
+      {
+        mode: "subscription",
+        customer,
+        client_reference_id: req.userId,
+        line_items: [{ price, quantity: 1 }],
+        locale: "auto",
+        /* Karta kërkohet edhe kur shuma e parë është zero — kjo është e gjithë
+           pika e provës me kartë. */
+        payment_method_collection: "always",
+        subscription_data: {
+          metadata: { user_id: req.userId },
+          ...(trialDays
+            ? {
+                trial_period_days: trialDays,
+                /* Pa kartë në fund të provës, abonimi mbyllet — jo të mbetet
+                   i hapur dhe i papaguar. */
+                trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
+              }
+            : {}),
+        },
+        metadata: { user_id: req.userId },
+        success_url: `${APP_URL()}/?pagesa=sukses&seanca={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${APP_URL()}/?pagesa=anuluar`,
+      },
+      /*
+       * Çelësi ndryshon çdo minutë, me qëllim.
+       *
+       * Brenda minutës, dy shtypje të butonit kthejnë TË NJËJTËN seancë — pra
+       * një klikim i dyfishtë nuk hap dy abonime. Pas minutës, një përpjekje e
+       * re e meriton një seancë të re: e para mund të ketë skaduar, ose njeriu
+       * mund të ketë ndërruar planin.
+       */
+      { idempotencyKey: `checkout:${req.userId}:${planId}:${Math.floor(Date.now() / 60000)}` }
+    );
+
+    res.json({ url: session.url, sessionId: session.id, testMode: stripe.isTestMode() });
+  } catch (err) {
+    if (err instanceof stripe.StripeError && err.code === "not_configured") {
+      return notConfigured(res);
+    }
+    next(err);
+  }
+});
+
+/**
+ * Kthimi nga Stripe — zbatohet menjëherë, pa pritur webhook-un.
+ *
+ * ⚠️  NUK E ZËVENDËSON WEBHOOK-UN, E PLOTËSON. Webhook-u është burimi i
+ *     vërtetë, sepse arrin edhe kur njeriu e mbyll skedën. Por ai mund të
+ *     vonohet disa sekonda, dhe gjatë atyre sekondave ekrani do t'i thoshte
+ *     "nuk ke abonim" dikujt që sapo pagoi. Kjo rrugë e mbyll atë boshllëk.
+ *
+ * ⚠️  SEANCA KONTROLLOHET SE KUJT I PËRKET. Pa atë kontroll, mjaftonte të
+ *     merrje me mend — ose të kopjoje — një `cs_…` të dikujt tjetër për t'i
+ *     marrë abonimin. Prandaj krahasohet `metadata.user_id`.
+ */
+router.post("/checkout/confirm", async (req, res, next) => {
+  try {
+    if (!stripe.configured()) return notConfigured(res);
+
+    const sessionId = String(req.body?.sessionId ?? "").trim();
+    if (!sessionId.startsWith("cs_")) {
+      return res.status(400).json({ error: "Seanca e pagesës mungon." });
+    }
+
+    const session = await stripe.checkout.retrieveSession(sessionId);
+    const owner = session?.metadata?.user_id ?? session?.client_reference_id;
+    if (owner !== req.userId) {
+      return res.status(403).json({ error: "Kjo pagesë nuk i përket kësaj llogarie." });
+    }
+
+    const subscription =
+      session?.subscription && typeof session.subscription === "object"
+        ? session.subscription
+        : session?.subscription
+          ? await stripe.subscriptions.retrieve(session.subscription)
+          : null;
+
+    if (!subscription) {
+      /* Pagesa ende nuk ka mbaruar — nuk është gabim, është "prit pak". */
+      return res.status(202).json({ pending: true, ...shape(await readUser(req.userId)) });
+    }
+
+    await applySubscription(subscription, { source: "app", eventId: null });
+    res.json(shape(await readUser(req.userId)));
+  } catch (err) {
+    if (err instanceof stripe.StripeError && err.code === "not_configured") {
+      return notConfigured(res);
+    }
+    next(err);
+  }
+});
+
+/**
+ * Paneli i faturimit te Stripe — kartë e re, fatura, anulim.
+ *
+ * Anulimin e bën edhe `/cancel` brenda aplikacionit, siç kërkoi klientja. Ky
+ * panel ekziston për atë që aplikacioni nuk e mbulon dot vetë: ndërrimin e
+ * kartës së skaduar dhe shkarkimin e faturave, të cilat ligji i kërkon.
+ */
+router.post("/portal", async (req, res, next) => {
+  try {
+    if (!stripe.configured()) return notConfigured(res);
+
+    const user = await readUser(req.userId);
+    if (!user.stripe_customer_id) {
+      return res.status(409).json({ error: "Kjo llogari nuk ka pagesa te Stripe." });
+    }
+
+    const session = await stripe.billingPortal.createSession({
+      customer: user.stripe_customer_id,
+      return_url: `${APP_URL()}/?pagesa=kthim`,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    if (err instanceof stripe.StripeError && err.code === "not_configured") {
+      return notConfigured(res);
+    }
+    next(err);
+  }
+});
+
 /* ═══════════════ ANULIMI DHE RIKTHIMI ═══════════════ */
 
 /**
- * Shënon anulimin.
+ * Anulon abonimin.
  *
  * ⚠️  Aksesi NUK pritet menjëherë: `subscription_end_at` mbetet siç është,
- *     sepse periudha është paguar. Prerja e menjëhershme do t'i merrte
- *     përdoruesit ditë që i ka blerë.
+ *     sepse periudha është paguar. Kush anulon një abonim vjetor në muajin e
+ *     dytë e mban deri në fund të vitit — kërkesë e shprehur e klientes, dhe
+ *     e drejtë: ato ditë janë blerë.
  *
- *     Anulimi i vërtetë ndodh te Cilësimet e telefonit — kjo është rregull e
- *     Apple/Google. Këtu regjistrohet vetëm vullneti, që aplikacioni të mos
- *     premtojë një rinovim që s'do të vijë.
+ * ⚠️  DY RRUGË TË NDRYSHME, SIPAS ASAJ QË MBAN FATURIMIN.
+ *
+ *     Te Stripe, anulimi është veprim i vërtetë: `cancel_at_period_end = true`
+ *     e ndalon tarifimin e radhës. Pa të, databaza jonë do të shkruante
+ *     'cancelled' ndërsa karta vazhdonte të paguante — dhe përdoruesi do të
+ *     kishte të drejtë të plotë të ankohej.
+ *
+ *     Te App Store dhe Google Play anulimi bëhet vetëm nga Cilësimet e
+ *     telefonit; atje mbetet rruga e vjetër, ku regjistrohet vullneti.
  */
 router.post("/cancel", async (req, res, next) => {
+  /*
+   * Stripe-i trajtohet PARA transaksionit, jo brenda tij.
+   *
+   * Një thirrje rrjeti brenda një transaksioni e mban rreshtin të kyçur sa
+   * zgjat ajo — dhe `FOR UPDATE` mbi `users` do të bllokonte çdo kërkesë
+   * tjetër të atij njeriu derisa Stripe të përgjigjej.
+   */
+  try {
+    const current = await readUser(req.userId);
+    if (current?.stripe_subscription_id) {
+      if (!hasPremium(current)) {
+        return res.status(409).json({ error: "Nuk ka abonim aktiv." });
+      }
+
+      const updated = await stripe.subscriptions.update(current.stripe_subscription_id, {
+        cancel_at_period_end: true,
+      });
+      await applySubscription(updated, { source: "app", eventId: null });
+      return res.json(shape(await readUser(req.userId)));
+    }
+  } catch (err) {
+    if (!(err instanceof stripe.StripeError)) return next(err);
+    /* Stripe nuk u arrit ose abonimi nuk ekziston më atje. NUK shkruajmë
+       'cancelled' lokalisht: do të ishte premtim që nuk e mban dot kush. */
+    return res.status(err.status === 404 ? 409 : 502).json({
+      error: "Anulimi nuk u konfirmua nga Stripe. Provo sërish për pak.",
+      code: err.code,
+    });
+  }
+
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
@@ -477,8 +722,35 @@ router.post("/cancel", async (req, res, next) => {
   }
 });
 
-/** Rikthen një abonim të anuluar, sa kohë periudha nuk ka mbaruar. */
+/**
+ * Rikthen një abonim të anuluar, sa kohë periudha nuk ka mbaruar.
+ *
+ * Te Stripe kjo është thjesht e kundërta e anulimit — `cancel_at_period_end`
+ * kthehet te `false` dhe tarifimi i radhës rikthehet. Pas fundit të periudhës
+ * nuk ka çfarë të rikthehet: abonimi atje është mbyllur dhe duhet një i ri.
+ */
 router.post("/resume", async (req, res, next) => {
+  try {
+    const current = await readUser(req.userId);
+    if (current?.stripe_subscription_id) {
+      if (!hasPremium(current)) {
+        return res.status(409).json({ error: "Periudha ka mbaruar. Duhet një abonim i ri." });
+      }
+
+      const updated = await stripe.subscriptions.update(current.stripe_subscription_id, {
+        cancel_at_period_end: false,
+      });
+      await applySubscription(updated, { source: "app", eventId: null });
+      return res.json(shape(await readUser(req.userId)));
+    }
+  } catch (err) {
+    if (!(err instanceof stripe.StripeError)) return next(err);
+    return res.status(err.status === 404 ? 409 : 502).json({
+      error: "Rikthimi nuk u konfirmua nga Stripe. Provo sërish për pak.",
+      code: err.code,
+    });
+  }
+
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();

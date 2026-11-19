@@ -162,6 +162,20 @@ export function fromServer(state) {
     serverStatus: state.status ?? null,
     trialUsed: Boolean(state.trialUsed),
     endsAt: state.endsAt ?? null,
+
+    /*
+     * ⚠️  `cancelled` dhe `renewsAtEnd` nuk janë e njëjta gjë.
+     *
+     *     E para thotë "u shtyp anulimi te ky aplikacion". E dyta thotë "karta
+     *     do të tarifohet sërish", dhe e di vetëm Stripe. Ndahen kur anulimi
+     *     bëhet nga paneli i faturimit, ose kur një pagesë e dështuar e mbyll
+     *     abonimin pa e prekur askush butonin — dhe pikërisht atëherë ekrani
+     *     duhet të thotë të vërtetën, jo atë që mban mend databaza jonë.
+     */
+    renewsAtEnd: state.renewsAtEnd !== false,
+
+    /* Kush e mban faturimin: `stripe`, ose `null` kur abonimi s'ka kaluar atje. */
+    provider: state.provider ?? null,
   };
 }
 

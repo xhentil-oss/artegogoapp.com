@@ -336,6 +336,47 @@ export function SessionProvider({ children }) {
     };
   }, [ready, account, persistSubscription]);
 
+  /**
+   * Kthimi nga Stripe, pasi pagesa mbaroi.
+   *
+   * ⚠️  RRJEDH VETËM NJË HERË, dhe kjo është e qëllimshme. `confirmReturn` e
+   *     pastron adresën me `replaceState`, ndaj një rrjedhje e dytë nuk do të
+   *     gjente asgjë — por do të ishte një kërkesë e kotë te çdo ndryshim
+   *     llogarie. Lista bosh e varësive e mban te hapja e faqes, ku edhe duhet.
+   *
+   * ⚠️  NUK ËSHTË I VETMI VEND KU HAPET AKSESI, dhe nuk duhet të jetë. Njeriu
+   *     mund ta mbyllë skedën para kthimit, ose rrjeti mund të bjerë pikërisht
+   *     atëherë. Webhook-u i Stripe-it e shkruan gjendjen pavarësisht nga kjo;
+   *     kjo rrugë thjesht e bën të dukshme menjëherë, që ekrani të mos i thotë
+   *     "nuk ke abonim" dikujt që sapo pagoi.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    billing.confirmReturn().then(({ state, outcome }) => {
+      if (cancelled || !outcome) return;
+
+      if (state) persistSubscription(fromServer(state));
+
+      /*
+       * `pending`: Stripe e pranoi pagesën, por konfirmimi ynë nuk mbërriti në
+       * kohë. Lexohet sërish pas pak — pa këtë, njeriu do të shihte paywall-in
+       * për disa sekonda menjëherë pas pagesës.
+       */
+      if (outcome === "pending") {
+        setTimeout(() => {
+          billing.current().then((fresh) => {
+            if (!cancelled) persistSubscription(fromServer(fresh));
+          });
+        }, 4000);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const completeOnboarding = useCallback(
     ({ name, reminders }) => {
       const chosen = reminders ?? defaultReminders();
@@ -427,10 +468,25 @@ export function SessionProvider({ children }) {
   const subscribe = useCallback(
     async (planId = "year") => {
       /*
-       * Butoni i paywall-it është "Fillo provën 3-ditore falas" — pra veprimi
-       * është nisja e provës, jo një blerje. Datat i llogarit serveri, dhe ai
-       * refuzon rinisjen sepse mban `trial_used_at`.
+       * ⚠️  TE FAQJA, PROVA NIS ME KARTË — pra kalon nga e njëjta rrugë si
+       *     pagesa (kërkesë e klientes, 19 nëntor 2026).
+       *
+       *     Stripe e hap abonimin me `trial_period_days: 3`: tri ditët janë
+       *     falas, karta regjistrohet që në fillim dhe tarifohet ditën e
+       *     katërt vetëm nëse nuk është anuluar. Serveri e shton provën vetëm
+       *     kur `trial_used_at` është bosh, ndaj ky buton nuk ka si të japë dy
+       *     prova.
+       *
+       *     Prova pa kartë (`/subscription/trial`) mbetet VETËM për
+       *     aplikacionin e paketuar, ku Stripe nuk lejohet të hyjë fare — shih
+       *     `services/billing.isNative`.
        */
+      if (!billing.isNative()) {
+        const bought = await billing.purchase(planId);
+        if (bought.ok && bought.state) persistSubscription(fromServer(bought.state));
+        return bought;
+      }
+
       const result = await billing.startTrial(planId);
       if (result.ok) persistSubscription(fromServer(result.state));
       /* Nëse prova është konsumuar, rruga e vetme mbetet dyqani. */

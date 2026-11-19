@@ -49,6 +49,10 @@ export function UpsellSheet() {
    *     "Fillo provën falas" — dhe shtypja e tij kthente një gabim pa dalje.
    */
   const provaEPerdorur = Boolean(subscription?.trialUsed);
+
+  /* "çdo muaj" / "çdo vit" — kushtet poshtë butonit e ndjekin planin e zgjedhur. */
+  const perioda = plan === "month" ? "çdo muaj" : "çdo vit";
+
   useBodyScrollLock();
 
   /*
@@ -203,7 +207,7 @@ export function UpsellSheet() {
           style={{ ...goldButton, padding: 15, fontSize: 15, opacity: busy ? 0.6 : 1 }}
         >
           {busy === "buy"
-            ? "Duke u lidhur me dyqanin…"
+            ? "Duke hapur pagesën…"
             : provaEPerdorur
               ? `Paguaj tani · ${planById(plan).price}`
               : `Fillo provën ${TRIAL_DAYS}-ditore falas`}
@@ -304,18 +308,35 @@ export function UpsellSheet() {
         )}
 
         {/*
-          ⚠️  KUSHTET E ANULIMIT U HOQËN (kërkesë e klientes, 18 nëntor 2026).
+          KUSHTET — pranë butonit, jo pas një lidhjeje.
 
-              Ato thoshin "anulo nga Abonimet në Google Play… abonimi rinovohet
-              vetvetiu" — një premtim për një faturim që sot nuk ekziston:
-              `services/billing.purchase` e thotë vetë se pagesat nuk kalojnë
-              ende nga dyqani. Pra teksti përshkruante diçka që nuk ndodh.
+          ⚠️  U HOQËN më 18 nëntor 2026 sepse premtonin një faturim që ende nuk
+              ekzistonte, dhe KTHEHEN tani që ekziston (19 nëntor 2026).
 
-              ⚠️  DUHET TË KTHEHET PARA BOTIMIT ME PAGESA TË VËRTETA. Apple dhe
-                  Google e kërkojnë kohëzgjatjen, çmimin dhe rinovimin të
-                  shkruara pranë butonit të blerjes, jo pas një lidhjeje — dhe
-                  mungesa e tyre është shkak refuzimi te dyqani.
+          ⚠️  NUK ËSHTË ZBUKURIM LIGJOR. Tri gjëra duhen të dukshme para
+              shtypjes: sa zgjat prova, sa tarifohet pastaj, dhe se rinovohet
+              vetvetiu. Mungesa e tyre është shkak refuzimi te dyqanet, dhe te
+              BE-ja e bën abonimin të anulueshëm pa afat. Teksti ndjek planin e
+              zgjedhur — një fjali e ngurtë "228€" mbi një plan mujor do të
+              ishte e pavërtetë.
         */}
+        <p
+          style={{
+            color: T.faint,
+            fontSize: 11.5,
+            lineHeight: 1.5,
+            margin: "14px 0 0",
+            textAlign: "center",
+          }}
+        >
+          {provaEPerdorur
+            ? `Tarifohesh ${planById(plan).price} dhe abonimi rinovohet vetvetiu ${perioda}.`
+            : `Prova zgjat ${TRIAL_DAYS} ditë. Karta regjistrohet tani, por tarifohet ` +
+              `${planById(plan).price} vetëm ditën e ${TRIAL_DAYS + 1}-të, nëse nuk e ke ` +
+              `anuluar. Pastaj rinovohet vetvetiu ${perioda}.`}
+          <br />
+          Anulo kurdo te Profili — aksesi vazhdon deri në fund të periudhës së paguar.
+        </p>
 
         {/* Apple e kërkon si veprim më vete: kush ndërron telefon duhet ta
             rifitojë aksesin pa paguar dy herë. */}

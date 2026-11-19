@@ -117,40 +117,142 @@ export async function redeemPromo(code) {
 }
 
 /**
- * Blerje e vërtetë përmes dyqanit.
+ * A po ekzekutohemi brenda aplikacionit të paketuar (Capacitor)?
  *
- * Rendi është ai që kërkon seksioni 8: dyqani jep faturën, serveri e verifikon,
- * dhe VETËM pastaj hapet aksesi. Aplikacioni nuk e shkruan kurrë vetë.
+ * ⚠️  NDAN DY BOTË PAGESASH, JO DY PAMJE.
  *
- * ⚠️  Sot serveri kthen `501 not_configured`, sepse kredencialet e Apple/Google
- *     nuk janë vendosur ende — dhe `src/storeVerify.js` dështon i mbyllur me
- *     qëllim. Prova falas mbetet rruga e vetme drejt aksesit deri atëherë.
- *
- * @returns {Promise<{ ok: boolean, state?: object, error?: string, notConfigured?: boolean }>}
+ *     Google Play dhe App Store e kërkojnë që abonimet dixhitale të
+ *     konsumuara brenda aplikacionit të kalojnë nga faturimi i tyre. Një
+ *     aplikacion që hap Stripe-in brenda vetes hiqet nga dyqani. Pra Stripe
+ *     vlen për faqen, dhe vetëm për të.
  */
-export async function purchase(planId) {
+export const isNative = () =>
+  typeof window !== "undefined" && Boolean(window.Capacitor?.isNativePlatform?.());
+
+/**
+ * Blerje e vërtetë.
+ *
+ * Dy rrugë, sipas vendit ku ndodhemi:
+ *
+ *   · FAQJA  → Stripe Checkout. Karta jepet atje, kurrë këtu — shih më poshtë.
+ *   · APP-I  → StoreKit / Play Billing. Ende e pakonfiguruar, dhe butoni e
+ *              thotë në vend që të dështojë në heshtje.
+ *
+ * ⚠️  ASNJË SHIFËR KARTE NUK E PREK KODIN TONË, DHE KJO ËSHTË E QËLLIMSHME.
+ *     Të dhënat shkruhen te faqja e Stripe-it, nën domenin e tij. Po t'i
+ *     mblidhnim ne — qoftë edhe vetëm për t'ia dërguar atij — do të hynim nën
+ *     detyrimet e plota PCI-DSS, me auditim vjetor dhe përgjegjësi ligjore për
+ *     çdo rrjedhje.
+ *
+ * ⚠️  AKSESI NUK HAPET KËTU. Kjo funksion vetëm e dërgon shfletuesin te
+ *     Stripe. Gjendja kthehet nga serveri pas konfirmimit — shih
+ *     `confirmReturn` dhe webhook-un.
+ *
+ * @returns {Promise<{ ok: boolean, state?: object, error?: string,
+ *                     notConfigured?: boolean, redirecting?: boolean }>}
+ */
+export async function purchase(planId = "year") {
   const store = detectStore();
 
-  /* PROD: këtu thirret StoreKit / Play Billing dhe merret fatura e vërtetë. */
-  const receipt = null;
-
-  if (!receipt) {
+  if (isNative()) {
+    /* PROD: këtu thirret StoreKit / Play Billing dhe merret fatura e vërtetë,
+       e cila pastaj shkon te `POST /me/subscription/verify`. */
     return {
       ok: false,
       notConfigured: true,
       store,
-      error: "Pagesat kalojnë përmes App Store / Google Play — jo te versioni web.",
+      error: `Pagesat te aplikacioni kalojnë përmes ${STORE_LABEL[store]}.`,
     };
   }
 
   try {
-    const state = await api.post("/me/subscription/verify", { store, receipt, planId });
-    return { ok: true, state, planId, store };
+    const { url } = await api.post("/me/subscription/checkout", { planId });
+    if (!url) return { ok: false, error: "Stripe nuk ktheu adresën e pagesës." };
+
+    /*
+     * `assign`, jo `replace`: shfletuesi e mban faqen tonë te historiku, ndaj
+     * butoni «Prapa» te Stripe e kthen njeriun aty ku ishte — e jo jashtë
+     * aplikacionit.
+     */
+    window.location.assign(url);
+    return { ok: true, redirecting: true, planId };
   } catch (err) {
     if (err instanceof ApiError && err.status === 501) {
-      return { ok: false, notConfigured: true, store, error: err.message };
+      return { ok: false, notConfigured: true, error: err.message };
     }
-    return { ok: false, store, error: err?.message ?? "Blerja nuk u verifikua." };
+    return { ok: false, error: err?.message ?? "Pagesa nuk u hap." };
+  }
+}
+
+/* ─────────────── kthimi nga Stripe ─────────────── */
+
+/** Emrat e parametrave që vendos vetë serveri te `success_url`. */
+const KTHIMI = { flag: "pagesa", session: "seanca" };
+
+/**
+ * Pas pagesës: lexon adresën, konfirmon te serveri dhe e pastron adresën.
+ *
+ * ⚠️  NUK I BESON ADRESËS. `?pagesa=sukses` e shkruan dot kushdo te shiriti i
+ *     adresës; ajo është vetëm shenjë se ia vlen të pyesim serverin. Aksesin e
+ *     jep serveri pasi e lexon seancën te Stripe dhe sheh se i përket
+ *     pikërisht kësaj llogarie.
+ *
+ * ⚠️  ADRESA PASTROHET GJITHMONË, edhe kur konfirmimi dështon. Përndryshe
+ *     identifikuesi i seancës mbetet te shiriti, kopjohet bashkë me lidhjen
+ *     dhe ndonjëherë përfundon te historiku i përbashkët i shfletuesit.
+ *
+ * @returns {Promise<{ state: object|null, outcome: "sukses"|"anuluar"|"pending"|null }>}
+ */
+export async function confirmReturn() {
+  if (typeof window === "undefined") return { state: null, outcome: null };
+
+  const params = new URLSearchParams(window.location.search);
+  const flag = params.get(KTHIMI.flag);
+  if (!flag) return { state: null, outcome: null };
+
+  const sessionId = params.get(KTHIMI.session);
+
+  /* Pastrimi bëhet para kërkesës: një rifreskim gjatë pritjes nuk duhet ta
+     nisë konfirmimin për të dytën herë. */
+  params.delete(KTHIMI.flag);
+  params.delete(KTHIMI.session);
+  const query = params.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`
+  );
+
+  if (flag !== "sukses" || !sessionId) {
+    return { state: null, outcome: flag === "anuluar" ? "anuluar" : null };
+  }
+
+  try {
+    const state = await api.post("/me/subscription/checkout/confirm", { sessionId });
+    /* `202` do të thotë se Stripe ende nuk e ka mbyllur; webhook-u do ta
+       mbarojë punën vetë brenda pak sekondash. */
+    return { state, outcome: state?.pending ? "pending" : "sukses" };
+  } catch {
+    /* Dështimi këtu nuk është humbje: webhook-u e shkruan gjendjen gjithsesi. */
+    return { state: null, outcome: "pending" };
+  }
+}
+
+/**
+ * Hap panelin e faturimit të Stripe-it — kartë e re, fatura, anulim.
+ *
+ * Anulimi bëhet edhe brenda aplikacionit (`cancel`), siç kërkoi klientja. Ky
+ * panel mbulon atë që ne nuk e bëjmë dot: ndërrimin e një karte të skaduar dhe
+ * shkarkimin e faturave, që ligji ia njeh blerësit.
+ */
+export async function openPortal() {
+  try {
+    const { url } = await api.post("/me/subscription/portal");
+    if (!url) return { ok: false, error: "Paneli nuk u hap." };
+    window.location.assign(url);
+    return { ok: true, redirecting: true };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? "Paneli nuk u hap." };
   }
 }
 
