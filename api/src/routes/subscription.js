@@ -121,6 +121,18 @@ function shape(user) {
 
     /* Kush e mban faturimin — ekrani i anulimit ndryshon sipas tij. */
     provider: user.stripe_subscription_id ? "stripe" : null,
+
+    /*
+     * ⚠️  A PUNOJNË PAGESAT SOT? Teksti i paywall-it varet nga kjo.
+     *
+     *     Gjatë javëve derisa kompania jashtë Shqipërisë të regjistrohet dhe
+     *     çelësat e Stripe-it të vijnë, prova jepet ende pa kartë. Po ta
+     *     shkruante ekrani gjithsesi "Karta regjistrohet tani", do të ishte
+     *     premtim i rremë — dhe pikërisht te fjalia që ligji e kërkon të jetë
+     *     e saktë. Flaget e serverit, jo ekrani: vetëm ai e di nëse çelësi
+     *     ekziston.
+     */
+    paymentsReady: stripe.configured(),
   };
 }
 

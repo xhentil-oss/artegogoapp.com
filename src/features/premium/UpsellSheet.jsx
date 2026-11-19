@@ -26,7 +26,8 @@ export function UpsellSheet() {
   const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
   const [code, setCode] = useState("");
-  const { subscribe, redeemPromo, purchasePlan, restorePurchases, subscription, canAdmin } = useSession();
+  const { subscribe, redeemPromo, purchasePlan, restorePurchases, subscription, canAdmin, paymentsReady } =
+    useSession();
 
   /*
    * Kutia e kodit shfaqet VETËM brenda dritares së fushatës.
@@ -329,13 +330,19 @@ export function UpsellSheet() {
             textAlign: "center",
           }}
         >
-          {provaEPerdorur
-            ? `Tarifohesh ${planById(plan).price} dhe abonimi rinovohet vetvetiu ${perioda}.`
-            : `Prova zgjat ${TRIAL_DAYS} ditë. Karta regjistrohet tani, por tarifohet ` +
-              `${planById(plan).price} vetëm ditën e ${TRIAL_DAYS + 1}-të, nëse nuk e ke ` +
-              `anuluar. Pastaj rinovohet vetvetiu ${perioda}.`}
-          <br />
-          Anulo kurdo te Profili — aksesi vazhdon deri në fund të periudhës së paguar.
+          {!paymentsReady
+            ? `Prova zgjat ${TRIAL_DAYS} ditë dhe nuk kërkon kartë. Pagesat hapen së shpejti.`
+            : provaEPerdorur
+              ? `Tarifohesh ${planById(plan).price} dhe abonimi rinovohet vetvetiu ${perioda}.`
+              : `Prova zgjat ${TRIAL_DAYS} ditë. Karta regjistrohet tani, por tarifohet ` +
+                `${planById(plan).price} vetëm ditën e ${TRIAL_DAYS + 1}-të, nëse nuk e ke ` +
+                `anuluar. Pastaj rinovohet vetvetiu ${perioda}.`}
+          {paymentsReady && (
+            <>
+              <br />
+              Anulo kurdo te Profili — aksesi vazhdon deri në fund të periudhës së paguar.
+            </>
+          )}
         </p>
 
         {/* Apple e kërkon si veprim më vete: kush ndërron telefon duhet ta

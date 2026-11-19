@@ -177,7 +177,16 @@ export async function purchase(planId = "year") {
     window.location.assign(url);
     return { ok: true, redirecting: true, planId };
   } catch (err) {
-    if (err instanceof ApiError && err.status === 501) {
+    /*
+     * ⚠️  `404` TRAJTOHET SI `501`, ME QËLLIM.
+     *
+     *     `501` do të thotë "serveri e njeh pagesën, por çelësat mungojnë".
+     *     `404` do të thotë "ky server ende nuk e njeh fare këtë rrugë" — pra
+     *     API-ja te cPanel-i nuk është ringarkuar. Për përdoruesin të dyja
+     *     janë e njëjta gjë: pagesat nuk punojnë ende. Dhe duke i barazuar,
+     *     faqja mund të ngarkohet para serverit pa e prishur provën falas.
+     */
+    if (err instanceof ApiError && (err.status === 501 || err.status === 404)) {
       return { ok: false, notConfigured: true, error: err.message };
     }
     return { ok: false, error: err?.message ?? "Pagesa nuk u hap." };

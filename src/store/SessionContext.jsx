@@ -32,6 +32,15 @@ export function SessionProvider({ children }) {
   const [account, setAccount] = useState(null);
   const [profile, setProfile] = useState(null);
   const [subscription, setSubscription] = useState(null);
+
+  /**
+   * A i ka serveri çelësat e Stripe-it?
+   *
+   * Nis me `false`: derisa të përgjigjet serveri, ekrani nuk duhet të premtojë
+   * një tarifim që nuk e di nëse ndodh. Gabimi në këtë drejtim është i
+   * padëmshëm; i kundërti jo.
+   */
+  const [paymentsReady, setPaymentsReady] = useState(false);
   const [ready, setReady] = useState(false);
   /**
    * Dy gjëra të ndryshme, dhe ngatërrimi i tyre ishte defekt i vërtetë.
@@ -329,7 +338,16 @@ export function SessionProvider({ children }) {
 
     let cancelled = false;
     billing.current().then((state) => {
-      if (!cancelled) persistSubscription(fromServer(state));
+      if (cancelled) return;
+      persistSubscription(fromServer(state));
+      /*
+       * ⚠️  LEXOHET VEÇMAS NGA `fromServer`, dhe duhet. Ajo kthen `null` për
+       *     një llogari pa abonim — pikërisht llogaritë që e shohin paywall-in
+       *     dhe që kanë më shumë nevojë ta dinë nëse pagesat punojnë. Po ta
+       *     fusnim brenda regjistrimit të abonimit, flamuri do të humbiste
+       *     saktësisht aty ku shfrytëzohet.
+       */
+      setPaymentsReady(Boolean(state?.paymentsReady));
     });
     return () => {
       cancelled = true;
@@ -483,8 +501,27 @@ export function SessionProvider({ children }) {
        */
       if (!billing.isNative()) {
         const bought = await billing.purchase(planId);
-        if (bought.ok && bought.state) persistSubscription(fromServer(bought.state));
-        return bought;
+
+        /*
+         * ⚠️  RËNIA TE PROVA PA KARTË KUR STRIPE ENDE NUK ËSHTË VENDOSUR.
+         *
+         *     Çelësat e Stripe-it vijnë pasi të regjistrohet kompania jashtë
+         *     Shqipërisë — javë, jo ditë (19 nëntor 2026). Pa këtë rresht,
+         *     ngarkimi i faqes do ta prishte provën falas për këdo që e përdor
+         *     sot: butoni do të kthente "Pagesat nuk janë aktivizuar ende" në
+         *     vend që të jepte tri ditët, siç bën tani.
+         *
+         *     `notConfigured` e jep serveri me `501`, jo ne — pra sapo çelësat
+         *     të vendosen, kjo rrugë pushon vetvetiu dhe prova nis të kërkojë
+         *     kartën, pa prekur asnjë rresht kodi.
+         *
+         *     ⚠️  HIQET kur Stripe të jetë i gjallë te prodhimi. Deri atëherë
+         *         është e vetmja gjë që mban një paywall funksional.
+         */
+        if (!bought.notConfigured) {
+          if (bought.ok && bought.state) persistSubscription(fromServer(bought.state));
+          return bought;
+        }
       }
 
       const result = await billing.startTrial(planId);
@@ -691,6 +728,7 @@ export function SessionProvider({ children }) {
       deleteAccount,
 
       subscription,
+      paymentsReady,
       /* Gjendja e vërtetë e abonimit — e paprekur nga rregulli i admin-it më
          poshtë, që karta e abonimit të mos i thotë adminit se ka blerë diçka. */
       subscriptionStatus: status,
@@ -745,6 +783,7 @@ export function SessionProvider({ children }) {
       signOut,
       deleteAccount,
       subscription,
+      paymentsReady,
       status,
       subscribe,
       redeemPromo,
