@@ -475,9 +475,44 @@ const APP_URL = () =>
  *     (dy skeda të hapura) do të krijonin dy klientë për të njëjtin njeri;
  *     i dyti do ta mbishkruante të parin te `users`, dhe abonimi i blerë me
  *     të parin do të bëhej i paarritshëm — pagesë që ekziston, akses që jo.
+ *
+ * ⚠️  ID-JA E RUAJTUR VERIFIKOHET PARA SE TË PËRDORET.
+ *
+ *     Një id klienti vlen vetëm brenda llogarisë që e krijoi. Kur çelësi
+ *     ndërrohet — sandbox në vend të llogarisë kryesore, ose test në vend të
+ *     live — klienti i ruajtur nuk ekziston më dhe çdo arkë e mëtejshme bie me
+ *     "No such customer". Ndodhi më 19 nëntor 2026 gjatë vendosjes së parë.
+ *
+ *     Pa verifikim kjo nuk shërohet vetvetiu: id-ja e vdekur rri te `users`
+ *     përgjithmonë dhe përdoruesi nuk blen dot kurrë më. Një kërkesë GET para
+ *     arkës e zgjidh, dhe paguhet vetëm në çastin e blerjes.
+ *
+ *     Çelësi i idempotencës e mban brenda id-në e vjetër, që rikrijimi pas një
+ *     pastrimi të mos kthejë sërish atë që sapo u hodh.
  */
+async function customerAlive(id) {
+  try {
+    const customer = await stripe.customers.retrieve(id);
+    /* Një klient i fshirë kthehet me status 200 dhe `deleted: true`. */
+    return !customer?.deleted;
+  } catch (err) {
+    if (err instanceof stripe.StripeError && (err.code === "resource_missing" || err.status === 404)) {
+      return false;
+    }
+    throw err;
+  }
+}
+
 async function ensureCustomer(userId, user, profile) {
-  if (user.stripe_customer_id) return user.stripe_customer_id;
+  const stored = user.stripe_customer_id;
+  if (stored && (await customerAlive(stored))) return stored;
+
+  if (stored) {
+    await query(
+      `UPDATE users SET stripe_customer_id = NULL, stripe_subscription_id = NULL WHERE id = ?`,
+      [userId]
+    );
+  }
 
   const customer = await stripe.customers.create(
     {
@@ -485,7 +520,7 @@ async function ensureCustomer(userId, user, profile) {
       name: profile?.name ?? undefined,
       metadata: { user_id: userId },
     },
-    { idempotencyKey: `customer:${userId}` }
+    { idempotencyKey: stored ? `customer:${userId}:${stored}` : `customer:${userId}` }
   );
 
   await query(`UPDATE users SET stripe_customer_id = ? WHERE id = ?`, [customer.id, userId]);
