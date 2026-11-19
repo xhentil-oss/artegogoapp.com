@@ -8,6 +8,7 @@ import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 import { goldButton } from "./Paywall.jsx";
+import { CheckoutSheet } from "./CheckoutSheet.jsx";
 
 /** Ikona e secilit hap të timeline-it, sipas radhës së `trialTimeline()`. */
 const STEP_ICONS = { start: Unlock, remind: Bell, bill: CreditCard };
@@ -26,8 +27,25 @@ export function UpsellSheet() {
   const [notice, setNotice] = useState(null);
   const { closeUpsell } = useNavigation();
   const [code, setCode] = useState("");
-  const { subscribe, redeemPromo, purchasePlan, restorePurchases, subscription, canAdmin, paymentsReady } =
-    useSession();
+  const {
+    subscribe,
+    redeemPromo,
+    purchasePlan,
+    confirmCheckout,
+    restorePurchases,
+    subscription,
+    canAdmin,
+    paymentsReady,
+  } = useSession();
+
+  /**
+   * Seanca e arkës, kur fushat e kartës janë hapur.
+   *
+   * ⚠️  Kërkesë e klientes (19 nëntor 2026): pagesa nuk duhet ta nxjerrë
+   *     njeriun nga aplikacioni. Butoni nuk e mbyll më fletën me sukses — e
+   *     ndërron me arkën, dhe mbyllja vjen vetëm pasi Stripe e konfirmon.
+   */
+  const [arka, setArka] = useState(null);
 
   /*
    * Kutia e kodit shfaqet VETËM brenda dritares së fushatës.
@@ -71,7 +89,8 @@ export function UpsellSheet() {
     const result = await subscribe(plan);
     setBusy(null);
 
-    if (result?.ok) closeUpsell();
+    if (result?.clientSecret) setArka(result);
+    else if (result?.ok) closeUpsell();
     else setNotice(result?.error ?? "Blerja nuk përfundoi. Provo sërish.");
   };
 
@@ -90,7 +109,8 @@ export function UpsellSheet() {
     const result = await purchasePlan(plan);
     setBusy(null);
 
-    if (result?.ok) closeUpsell();
+    if (result?.clientSecret) setArka(result);
+    else if (result?.ok) closeUpsell();
     else setNotice(result?.error ?? "Pagesa nuk përfundoi. Provo sërish.");
   };
 
@@ -115,6 +135,31 @@ export function UpsellSheet() {
     if (result?.ok) closeUpsell();
     else setNotice(result?.reason ?? "Nuk u gjet asnjë abonim për këtë llogari.");
   };
+
+  /*
+   * Arka merr tërë fletën, nuk shtohet poshtë saj.
+   *
+   * ⚠️  Planet, timeline-i dhe kutia e kodit zhduken me qëllim: dy vendime të
+   *     hapura njëkohësisht — "cilin plan" dhe "cila kartë" — e rrisin
+   *     braktisjen pikërisht te hapi i fundit. Shigjeta mbrapa i kthen.
+   */
+  if (arka) {
+    return (
+      <CheckoutSheet
+        session={arka}
+        plan={
+          provaEPerdorur
+            ? `${planById(plan).price} · anulo kurdo te Profili`
+            : `${TRIAL_DAYS} ditë falas, pastaj ${planById(plan).price} · anulo kurdo te Profili`
+        }
+        onBack={() => setArka(null)}
+        onDone={async (sessionId) => {
+          await confirmCheckout(sessionId);
+          closeUpsell();
+        }}
+      />
+    );
+  }
 
   return (
     <div

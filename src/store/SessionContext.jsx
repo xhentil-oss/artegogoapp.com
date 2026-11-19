@@ -559,8 +559,35 @@ export function SessionProvider({ children }) {
   const purchasePlan = useCallback(
     async (planId = "year") => {
       const result = await billing.purchase(planId);
-      if (result.ok) persistSubscription(fromServer(result.state));
+      /* ⚠️  `result.state` KONTROLLOHET VEÇ. Me arkën brenda fletës, `ok` do
+             të thotë "seanca u hap", jo "u pagua" — gjendja vjen më pas, nga
+             `confirmCheckout`. Pa këtë kusht, `fromServer(undefined)` do të
+             fshinte abonimin e dikujt që sapo shtypi butonin. */
+      if (result.ok && result.state) persistSubscription(fromServer(result.state));
       return result;
+    },
+    [persistSubscription]
+  );
+
+  /**
+   * Mbyllja e arkës: lexon gjendjen e re dhe e shkruan.
+   *
+   * ⚠️  NUK ËSHTË BURIMI I VËRTETË. Webhook-u i Stripe-it e shkruan abonimin
+   *     edhe nëse kjo kërkesë dështon ose faqja mbyllet. Kjo vetëm e heq
+   *     pritjen nga ekrani — pa të, njeriu që sapo pagoi do të shihte
+   *     paywall-in edhe për disa sekonda.
+   */
+  const confirmCheckout = useCallback(
+    async (sessionId) => {
+      const { state, outcome } = await billing.confirmSession(sessionId);
+      if (state) persistSubscription(fromServer(state));
+
+      if (outcome === "pending") {
+        setTimeout(() => {
+          billing.current().then((fresh) => persistSubscription(fromServer(fresh)));
+        }, 4000);
+      }
+      return outcome;
     },
     [persistSubscription]
   );
@@ -750,6 +777,7 @@ export function SessionProvider({ children }) {
       subscribe,
       redeemPromo,
       purchasePlan,
+      confirmCheckout,
       restorePurchases,
       cancelSubscription,
       resumeSubscription,
@@ -788,6 +816,7 @@ export function SessionProvider({ children }) {
       subscribe,
       redeemPromo,
       purchasePlan,
+      confirmCheckout,
       restorePurchases,
       cancelSubscription,
       resumeSubscription,

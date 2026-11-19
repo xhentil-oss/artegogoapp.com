@@ -132,7 +132,8 @@ function shape(user) {
      *     e saktë. Flaget e serverit, jo ekrani: vetëm ai e di nëse çelësi
      *     ekziston.
      */
-    paymentsReady: stripe.configured(),
+    paymentsReady: stripe.ready(),
+    publishableKey: stripe.ready() ? stripe.publishableKey() : null,
   };
 }
 
@@ -573,14 +574,34 @@ function stripeFail(res, err, next) {
  *     anulimit dhe përtej skadimit; pa të, anulim-rinisja do të jepte tri ditë
  *     falas pa fund te e njëjta llogari.
  *
- * ⚠️  AKSESI NUK HAPET KËTU. Kjo rrugë kthen vetëm një adresë. Gjendja
- *     ndryshon kur Stripe konfirmon — me webhook, ose me `/checkout/confirm`
- *     kur njeriu kthehet te faqja. Po ta hapnim aksesin te kjo rrugë, do të
- *     mjaftonte ta thirrje dhe ta mbyllje faqen për të fituar një vit falas.
+ * ⚠️  AKSESI NUK HAPET KËTU. Kjo rrugë kthen vetëm një fjalëkalim seance.
+ *     Gjendja ndryshon kur Stripe konfirmon — me webhook, ose me
+ *     `/checkout/confirm` kur njeriu kthehet te faqja. Po ta hapnim aksesin te
+ *     kjo rrugë, do të mjaftonte ta thirrje dhe ta mbyllje faqen për të fituar
+ *     një vit falas.
+ *
+ * ⚠️  ARKA RRI BRENDA APLIKACIONIT (`ui_mode: "embedded"`).
+ *
+ *     Fushat e kartës vizatohen nga Stripe brenda një kornize të mbyllur te
+ *     fleta e abonimit; shifrat nuk kalojnë kurrë nga serveri ynë dhe
+ *     përdoruesi nuk e lë kurrë NDIEJ-in. Kthehet `client_secret`, jo një
+ *     adresë — `session.url` është bosh te kjo mënyrë.
+ *
+ * ⚠️  `redirect_on_completion: "never"` — PA RINGARKIM FAQEJE.
+ *
+ *     Me sjelljen e parazgjedhur, Stripe e çon dritaren te `return_url` pasi
+ *     karta pranohet. Adresa do të ishte e jona, por ringarkimi i plotë e
+ *     nxjerr njeriun nga fleta, e kthen te nisja dhe i humb vendin ku ishte.
+ *     Me `never`, arka mbyllet brenda dhe aplikacioni vazhdon aty ku ishte;
+ *     konfirmimi bëhet me `/checkout/confirm`, të thirrur nga `onComplete`.
+ *
+ *     Prandaj `return_url` nuk dërgohet fare — Stripe e refuzon bashkë me
+ *     `never`. `cancel_url` as nuk pranohet këtu dhe as nuk duhet: anulimi
+ *     është mbyllja e fletës.
  */
 router.post("/checkout", async (req, res, next) => {
   try {
-    if (!stripe.configured()) return notConfigured(res);
+    if (!stripe.ready()) return notConfigured(res);
 
     const planId = req.body?.planId === "month" ? "month" : "year";
     const price = PRICE_FOR(planId);
@@ -616,8 +637,8 @@ router.post("/checkout", async (req, res, next) => {
             : {}),
         },
         metadata: { user_id: req.userId },
-        success_url: `${APP_URL()}/?pagesa=sukses&seanca={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${APP_URL()}/?pagesa=anuluar`,
+        ui_mode: "embedded",
+        redirect_on_completion: "never",
       },
       /*
        * Çelësi ndryshon çdo minutë, me qëllim.
@@ -630,7 +651,12 @@ router.post("/checkout", async (req, res, next) => {
       { idempotencyKey: `checkout:${req.userId}:${planId}:${Math.floor(Date.now() / 60000)}` }
     );
 
-    res.json({ url: session.url, sessionId: session.id, testMode: stripe.isTestMode() });
+    res.json({
+      clientSecret: session.client_secret,
+      sessionId: session.id,
+      publishableKey: stripe.publishableKey(),
+      testMode: stripe.isTestMode(),
+    });
   } catch (err) {
     stripeFail(res, err, next);
   }

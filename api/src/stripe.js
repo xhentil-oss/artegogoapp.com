@@ -20,10 +20,16 @@ const crypto = require("crypto");
  * ⚠️  ÇELËSI RRI TE VARIABLAT E MJEDISIT, KURRË TE KODI.
  *
  *     cPanel → Setup Node.js App → Environment variables:
- *       `STRIPE_SECRET_KEY`     — `sk_live_…` (ose `sk_test_…` gjatë provave)
- *       `STRIPE_WEBHOOK_SECRET` — `whsec_…`, nga Developers → Webhooks
- *       `STRIPE_PRICE_MONTH`    — `price_…` për 24 €/muaj
- *       `STRIPE_PRICE_YEAR`     — `price_…` për 228 €/vit
+ *       `STRIPE_SECRET_KEY`      — `sk_live_…` (ose `sk_test_…` gjatë provave)
+ *       `STRIPE_PUBLISHABLE_KEY` — `pk_live_…`, shkon te shfletuesi
+ *       `STRIPE_WEBHOOK_SECRET`  — `whsec_…`, nga Developers → Webhooks
+ *       `STRIPE_PRICE_MONTH`     — `price_…` për 24 €/muaj
+ *       `STRIPE_PRICE_YEAR`      — `price_…` për 228 €/vit
+ *
+ *     `STRIPE_PUBLISHABLE_KEY` nuk është sekret dhe i dërgohet çdo shfletuesi
+ *     që hap paywall-in — pa të, arka nuk vizatohet dot brenda faqes. Rri
+ *     bashkë me të tjerët te mjedisi vetëm që të ndërrohet në një vend të
+ *     vetëm kur kalojmë nga sandbox-i te llogaria e vërtetë.
  *
  *     Depoja është publike (shih `.gitignore`). Një `sk_live_` i shkruar te
  *     kodi lexohet nga kushdo brenda sekondash dhe jep të drejtë të plotë mbi
@@ -45,6 +51,21 @@ const configured = () => /^sk_(test|live)_/.test(KEY());
 
 /** A jemi te çelësi i provave? Ekranet e thonë me zë, që të mos ngatërrohet. */
 const isTestMode = () => KEY().startsWith("sk_test_");
+
+/** Çelësi publik — i vetmi që del jashtë serverit. */
+const publishableKey = () => (process.env.STRIPE_PUBLISHABLE_KEY || "").trim();
+
+/**
+ * A mund të shfaqen fushat e kartës?
+ *
+ * ⚠️  TË DY ÇELËSAT, JO VETËM SEKRETI.
+ *
+ *     Arka vizatohet brenda faqes nga `stripe.js`, dhe ai niset me çelësin
+ *     publik. Me vetëm sekretin, serveri e krijon seancën pa gabim por ekrani
+ *     mbetet bosh — dhe përdoruesi ka shtypur tashmë butonin. Prandaj ekrani
+ *     e pyet këtë, jo `configured()`.
+ */
+const ready = () => configured() && /^pk_(test|live)_/.test(publishableKey());
 
 /* ─────────────── kodimi i parametrave ─────────────── */
 
@@ -289,6 +310,8 @@ module.exports = {
   StripeError,
   configured,
   isTestMode,
+  publishableKey,
+  ready,
   call,
   customers,
   checkout,

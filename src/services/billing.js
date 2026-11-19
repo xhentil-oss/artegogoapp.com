@@ -130,26 +130,28 @@ export const isNative = () =>
   typeof window !== "undefined" && Boolean(window.Capacitor?.isNativePlatform?.());
 
 /**
- * Blerje e vërtetë.
+ * Hap seancën e pagesës.
  *
  * Dy rrugë, sipas vendit ku ndodhemi:
  *
- *   · FAQJA  → Stripe Checkout. Karta jepet atje, kurrë këtu — shih më poshtë.
+ *   · FAQJA  → Stripe Checkout, i vizatuar BRENDA fletës — shih `mountCheckout`.
  *   · APP-I  → StoreKit / Play Billing. Ende e pakonfiguruar, dhe butoni e
  *              thotë në vend që të dështojë në heshtje.
  *
  * ⚠️  ASNJË SHIFËR KARTE NUK E PREK KODIN TONË, DHE KJO ËSHTË E QËLLIMSHME.
- *     Të dhënat shkruhen te faqja e Stripe-it, nën domenin e tij. Po t'i
- *     mblidhnim ne — qoftë edhe vetëm për t'ia dërguar atij — do të hynim nën
+ *     Fushat duken brenda aplikacionit, por janë një kornizë e mbyllur e
+ *     Stripe-it, nën domenin e tij; JavaScript-i ynë nuk i lexon dot. Po t'i
+ *     mblidhnim vetë — qoftë edhe vetëm për t'ia dërguar atij — do të hynim nën
  *     detyrimet e plota PCI-DSS, me auditim vjetor dhe përgjegjësi ligjore për
  *     çdo rrjedhje.
  *
- * ⚠️  AKSESI NUK HAPET KËTU. Kjo funksion vetëm e dërgon shfletuesin te
- *     Stripe. Gjendja kthehet nga serveri pas konfirmimit — shih
- *     `confirmReturn` dhe webhook-un.
+ * ⚠️  AKSESI NUK HAPET KËTU. Kthehet vetëm një `client_secret` me të cilin
+ *     vizatohet arka. Gjendja vjen nga serveri pas konfirmimit — shih
+ *     `confirmSession` dhe webhook-un.
  *
- * @returns {Promise<{ ok: boolean, state?: object, error?: string,
- *                     notConfigured?: boolean, redirecting?: boolean }>}
+ * @returns {Promise<{ ok: boolean, clientSecret?: string, sessionId?: string,
+ *                     publishableKey?: string, error?: string,
+ *                     notConfigured?: boolean }>}
  */
 export async function purchase(planId = "year") {
   const store = detectStore();
@@ -166,16 +168,18 @@ export async function purchase(planId = "year") {
   }
 
   try {
-    const { url } = await api.post("/me/subscription/checkout", { planId });
-    if (!url) return { ok: false, error: "Stripe nuk ktheu adresën e pagesës." };
-
-    /*
-     * `assign`, jo `replace`: shfletuesi e mban faqen tonë te historiku, ndaj
-     * butoni «Prapa» te Stripe e kthen njeriun aty ku ishte — e jo jashtë
-     * aplikacionit.
-     */
-    window.location.assign(url);
-    return { ok: true, redirecting: true, planId };
+    const seanca = await api.post("/me/subscription/checkout", { planId });
+    if (!seanca?.clientSecret || !seanca?.publishableKey) {
+      return { ok: false, error: "Stripe nuk ktheu seancën e pagesës." };
+    }
+    return {
+      ok: true,
+      planId,
+      clientSecret: seanca.clientSecret,
+      sessionId: seanca.sessionId,
+      publishableKey: seanca.publishableKey,
+      testMode: Boolean(seanca.testMode),
+    };
   } catch (err) {
     /*
      * ⚠️  `404` TRAJTOHET SI `501`, ME QËLLIM.
@@ -190,6 +194,83 @@ export async function purchase(planId = "year") {
       return { ok: false, notConfigured: true, error: err.message };
     }
     return { ok: false, error: err?.message ?? "Pagesa nuk u hap." };
+  }
+}
+
+/* ─────────────── arka brenda fletës ─────────────── */
+
+/**
+ * Sjell `stripe.js` dhe e mban të sjellë.
+ *
+ * ⚠️  NGARKOHET KUR DUHET, JO TE `index.html`.
+ *
+ *     Skripti i Stripe-it është mbi 100 KB dhe hap lidhje me domenin e tij.
+ *     Shumica e njerëzve që hapin NDIEJ-in nuk e shohin kurrë paywall-in;
+ *     t'ua ngarkonim të gjithëve do të thoshte të ngadalësonim nisjen e
+ *     meditimit për hir të një ekrani që nuk vjen.
+ *
+ * ⚠️  DOMENI I STRIPE-IT, JO KOPJE E JONA. Skripti duhet marrë çdo herë nga
+ *     `js.stripe.com`; një kopje e vetë-strehuar e nxjerr arkën jashtë
+ *     mbulimit PCI të Stripe-it dhe nuk merr arnimet e sigurisë.
+ */
+let stripeJsPremtim = null;
+
+export function loadStripeJs() {
+  if (typeof window === "undefined") return Promise.reject(new Error("Pa shfletues."));
+  if (window.Stripe) return Promise.resolve(window.Stripe);
+  if (stripeJsPremtim) return stripeJsPremtim;
+
+  stripeJsPremtim = new Promise((resolve, reject) => {
+    const skript = document.createElement("script");
+    skript.src = "https://js.stripe.com/v3/";
+    skript.async = true;
+    skript.onload = () =>
+      window.Stripe
+        ? resolve(window.Stripe)
+        : reject(new Error("Stripe u ngarkua por nuk u nis."));
+    skript.onerror = () => {
+      /* Harrohet, që një rrjet i rënë të mos e bllokojë provën e dytë. */
+      stripeJsPremtim = null;
+      skript.remove();
+      reject(new Error("Stripe nuk u ngarkua. Kontrollo lidhjen."));
+    };
+    document.head.appendChild(skript);
+  });
+
+  return stripeJsPremtim;
+}
+
+/**
+ * Vizaton arkën brenda një elementi të faqes.
+ *
+ * @param {HTMLElement} node ku të vendoset korniza
+ * @param {{ clientSecret: string, publishableKey: string, onComplete?: () => void }} opsionet
+ * @returns {Promise<{ destroy: () => void }>} thirre `destroy` kur mbyllet fleta
+ */
+export async function mountCheckout(node, { clientSecret, publishableKey, onComplete }) {
+  const Stripe = await loadStripeJs();
+  const stripe = Stripe(publishableKey);
+  const arka = await stripe.initEmbeddedCheckout({ clientSecret, onComplete });
+  arka.mount(node);
+  return arka;
+}
+
+/**
+ * Konfirmon seancën sapo Stripe e mbyll arkën.
+ *
+ * ⚠️  NUK E ZËVENDËSON WEBHOOK-UN. Nëse kjo kërkesë bie — rrjeti, faqja e
+ *     mbyllur — abonimi hapet gjithsesi, sepse Stripe ia dërgon serverit të
+ *     njëjtën ngjarje. Kjo vetëm e shkurton pritjen te ekrani.
+ *
+ * @returns {Promise<{ state: object|null, outcome: "sukses"|"pending" }>}
+ */
+export async function confirmSession(sessionId) {
+  if (!sessionId) return { state: null, outcome: "pending" };
+  try {
+    const state = await api.post("/me/subscription/checkout/confirm", { sessionId });
+    return { state, outcome: state?.pending ? "pending" : "sukses" };
+  } catch {
+    return { state: null, outcome: "pending" };
   }
 }
 
