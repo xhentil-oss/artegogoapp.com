@@ -500,6 +500,35 @@ const notConfigured = (res) =>
   });
 
 /**
+ * Dështimet e Stripe-it, të dukshme.
+ *
+ * ⚠️  MESAZHI I STRIPE-IT KTHEHET I PLOTË, NDRYSHE NGA RREGULLI I SHTËPISË.
+ *
+ *     Trajtuesi i përgjithshëm te `app.js` i fsheh gabimet me qëllim: mesazhet
+ *     e MySQL-së përmbajnë emra tabelash dhe kolonash, dhe ato i japin
+ *     sulmuesit hartën e databazës. Për Stripe-in ai rregull nuk vlen, dhe
+ *     kostoja e tij u pa menjëherë: një `price_…` i krijuar te Test mode
+ *     ndërsa çelësi ishte `sk_live_` dilte te ekrani si "Gabim i brendshëm" —
+ *     pra pikërisht gabimi më i zakonshëm i vendosjes nuk kishte asnjë shenjë
+ *     se ku ishte.
+ *
+ *     Mesazhet e Stripe-it janë përshkruese dhe jo të fshehta ("No such
+ *     price"), dhe vetë Stripe i mbulon çelësat brenda tyre. Shifrat e kartës
+ *     nuk kalojnë kurrë nga këtu — shih `services/billing.purchase`.
+ *
+ *     Këto janë gabime konfigurimi; pasi vendosja të jetë e saktë, një
+ *     përdorues i vërtetë nuk i sheh. Refuzimi i kartës nuk vjen deri këtu:
+ *     atë e trajton vetë faqja e Stripe-it.
+ */
+function stripeFail(res, err, next) {
+  if (!(err instanceof stripe.StripeError)) return next(err);
+  if (err.code === "not_configured") return notConfigured(res);
+
+  console.error(`[artegogo] Stripe ${err.code}: ${err.message}`);
+  return res.status(502).json({ error: `Stripe: ${err.message}`, code: err.code });
+}
+
+/**
  * Hap seancën e pagesës.
  *
  * Rrjedha që kërkoi klientja: karta jepet që në fillim, tri ditët nisin
@@ -568,10 +597,7 @@ router.post("/checkout", async (req, res, next) => {
 
     res.json({ url: session.url, sessionId: session.id, testMode: stripe.isTestMode() });
   } catch (err) {
-    if (err instanceof stripe.StripeError && err.code === "not_configured") {
-      return notConfigured(res);
-    }
-    next(err);
+    stripeFail(res, err, next);
   }
 });
 
@@ -617,10 +643,7 @@ router.post("/checkout/confirm", async (req, res, next) => {
     await applySubscription(subscription, { source: "app", eventId: null });
     res.json(shape(await readUser(req.userId)));
   } catch (err) {
-    if (err instanceof stripe.StripeError && err.code === "not_configured") {
-      return notConfigured(res);
-    }
-    next(err);
+    stripeFail(res, err, next);
   }
 });
 
@@ -647,10 +670,7 @@ router.post("/portal", async (req, res, next) => {
 
     res.json({ url: session.url });
   } catch (err) {
-    if (err instanceof stripe.StripeError && err.code === "not_configured") {
-      return notConfigured(res);
-    }
-    next(err);
+    stripeFail(res, err, next);
   }
 });
 
