@@ -147,9 +147,12 @@ export function UpsellSheet() {
     return (
       <CheckoutSheet
         session={arka}
+        /* ⚠️  LEXOHET NGA SEANCA, JO NGA `provaEPerdorur`. Dy butona hapin të
+               njëjtën arkë me kushte të ndryshme; teksti duhet të tregojë atë
+               që sapo u shtyp, jo atë që llogaria mund të kishte. */
         plan={
-          provaEPerdorur
-            ? `${planById(plan).price} · anulo kurdo te Profili`
+          arka.skipTrial
+            ? `${planById(plan).price} · tarifohet sot · anulo kurdo te Profili`
             : `${TRIAL_DAYS} ditë falas, pastaj ${planById(plan).price} · anulo kurdo te Profili`
         }
         onBack={() => setArka(null)}
@@ -192,8 +195,15 @@ export function UpsellSheet() {
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <Crown size={34} color={T.gold} style={{ marginBottom: 10 }} />
+          {/*
+            ⚠️  NUK E PËRMEND PROVËN KUR ËSHTË PËRDORUR. Titulli rrinte
+                «Provoje 3 ditë falas» edhe për dikë që i kishte marrë tashmë
+                tri ditët — një ofertë që serveri do ta refuzonte me 409.
+                Klientja e kërkoi më 20 nëntor 2026: pasi prova të jetë
+                konsumuar, ekrani çon drejt te abonimi.
+          */}
           <h2 style={{ color: T.ink, fontSize: 24, fontWeight: 700, margin: "0 0 6px" }}>
-            Provoje {TRIAL_DAYS} ditë falas
+            {provaEPerdorur ? "Hap gjithë katalogun" : `Provoje ${TRIAL_DAYS} ditë falas`}
           </h2>
           {/*
             ⚠️  PA NUMËR. Këtu shkruhej "244 meditime" — numër i ngurtë që nuk e
@@ -207,7 +217,9 @@ export function UpsellSheet() {
           </p>
         </div>
 
-        <Timeline subscription={subscription} />
+        {/* Timeline-i tregon tri ditët dhe ditën e tarifimit. Për një llogari
+            që e ka përdorur provën, ai nuk përshkruan asgjë që do të ndodhë. */}
+        {!provaEPerdorur && <Timeline subscription={subscription} />}
 
         <div style={{ display: "flex", gap: 10, margin: "24px 0 16px" }}>
           {PLANS.map((option) => (

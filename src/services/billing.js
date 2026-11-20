@@ -149,11 +149,18 @@ export const isNative = () =>
  *     vizatohet arka. Gjendja vjen nga serveri pas konfirmimit — shih
  *     `confirmSession` dhe webhook-un.
  *
+ * ⚠️  `skipTrial` NUK ËSHTË ZBUKURIM. Serveri nuk e di dot nga gjendja cilin
+ *     buton shtypi njeriu: «Fillo provën» dhe «Paguaj tani» kanë saktësisht
+ *     të njëjtën gjendje para shtypjes. Pa këtë, «Paguaj tani» jepte tri ditë
+ *     falas dhe nuk tarifonte asgjë (20 nëntor 2026).
+ *
+ * @param {string} planId
+ * @param {{ skipTrial?: boolean }} [opsionet] `skipTrial` = paguaj menjëherë
  * @returns {Promise<{ ok: boolean, clientSecret?: string, sessionId?: string,
- *                     publishableKey?: string, error?: string,
- *                     notConfigured?: boolean }>}
+ *                     publishableKey?: string, skipTrial?: boolean,
+ *                     error?: string, notConfigured?: boolean }>}
  */
-export async function purchase(planId = "year") {
+export async function purchase(planId = "year", { skipTrial = false } = {}) {
   const store = detectStore();
 
   if (isNative()) {
@@ -168,13 +175,14 @@ export async function purchase(planId = "year") {
   }
 
   try {
-    const seanca = await api.post("/me/subscription/checkout", { planId });
+    const seanca = await api.post("/me/subscription/checkout", { planId, skipTrial });
     if (!seanca?.clientSecret || !seanca?.publishableKey) {
       return { ok: false, error: "Stripe nuk ktheu seancën e pagesës." };
     }
     return {
       ok: true,
       planId,
+      skipTrial,
       clientSecret: seanca.clientSecret,
       sessionId: seanca.sessionId,
       publishableKey: seanca.publishableKey,

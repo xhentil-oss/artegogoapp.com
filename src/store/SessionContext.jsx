@@ -500,7 +500,7 @@ export function SessionProvider({ children }) {
        *     `services/billing.isNative`.
        */
       if (!billing.isNative()) {
-        const bought = await billing.purchase(planId);
+        const bought = await billing.purchase(planId, { skipTrial: false });
 
         /*
          * ⚠️  RËNIA TE PROVA PA KARTË KUR STRIPE ENDE NUK ËSHTË VENDOSUR.
@@ -558,7 +558,11 @@ export function SessionProvider({ children }) {
    */
   const purchasePlan = useCallback(
     async (planId = "year") => {
-      const result = await billing.purchase(planId);
+      /* ⚠️  `skipTrial` E DALLON NGA `subscribe`, dhe kjo është e gjithë pika.
+             «Paguaj tani» do të thotë tarifim sot. Pa këtë, serveri e shihte
+             si të njëjtën kërkesë me provën dhe jepte tri ditë falas — një
+             klientes i doli «Rinovohet pas 3 ditë» në vend të një muaji. */
+      const result = await billing.purchase(planId, { skipTrial: true });
       /* ⚠️  `result.state` KONTROLLOHET VEÇ. Me arkën brenda fletës, `ok` do
              të thotë "seanca u hap", jo "u pagua" — gjendja vjen më pas, nga
              `confirmCheckout`. Pa këtë kusht, `fromServer(undefined)` do të

@@ -574,6 +574,22 @@ function stripeFail(res, err, next) {
  *     anulimit dhe përtej skadimit; pa të, anulim-rinisja do të jepte tri ditë
  *     falas pa fund te e njëjta llogari.
  *
+ * ⚠️  `skipTrial` VJEN NGA BUTONI, DHE DUHET.
+ *
+ *     Paywall-i ka dy butona: «Fillo provën 3-ditore falas» dhe «Paguaj tani».
+ *     Deri më 20 nëntor 2026 të dy dërgonin të njëjtën kërkesë, dhe serveri e
+ *     vendoste provën vetëm nga `trial_used_at`. Pasoja: kush shtypte «Paguaj
+ *     tani» pa e pasur përdorur provën, merrte tri ditë falas dhe nuk
+ *     tarifohej fare. Një klientes i doli «Rinovohet pas 3 ditë» në vend të
+ *     një muaji, dhe llogaria mbeti pa pagesë.
+ *
+ *     Kërkesa e dytë nuk mund të nxirret nga gjendja — janë dy vendime të
+ *     ndryshme të të njëjtit njeri me të njëjtën gjendje. Prandaj vjen nga
+ *     ekrani.
+ *
+ *     Asnjë rrezik nga ana tjetër: `skipTrial` vetëm HEQ një favor. Një
+ *     kërkesë e shtrembëruar me `skipTrial: true` tarifon dërguesin e saj.
+ *
  * ⚠️  AKSESI NUK HAPET KËTU. Kjo rrugë kthen vetëm një fjalëkalim seance.
  *     Gjendja ndryshon kur Stripe konfirmon — me webhook, ose me
  *     `/checkout/confirm` kur njeriu kthehet te faqja. Po ta hapnim aksesin te
@@ -613,7 +629,8 @@ router.post("/checkout", async (req, res, next) => {
     }
 
     const customer = await ensureCustomer(req.userId, user, req.user);
-    const trialDays = user.trial_used_at ? null : TRIAL_DAYS;
+    const skipTrial = req.body?.skipTrial === true;
+    const trialDays = user.trial_used_at || skipTrial ? null : TRIAL_DAYS;
 
     const session = await stripe.checkout.createSession(
       {
