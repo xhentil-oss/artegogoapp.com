@@ -89,7 +89,7 @@ export function DailyRhythm() {
       <div style={{ display: "flex", flexDirection: "column", gap: 12, position: "relative" }}>
         {DAILY_RHYTHM_STEPS.map((step) => {
           /* Meditimi i vërtetë i këtij hapi, për këtë ditë të ciklit. */
-          const item = rhythmPick(step.intent, rhythmDay);
+          const item = rhythmPick(step, rhythmDay);
 
           return (
             <StepRow

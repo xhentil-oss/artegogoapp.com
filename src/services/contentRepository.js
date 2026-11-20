@@ -12,6 +12,7 @@ import { SERIES, PROGRAMS, SHORTS, SOUNDSCAPES, LIVE_SESSIONS } from "../data/ca
 import { LIFE_AREAS, ALL_AREAS } from "../data/lifeAreas.js";
 import { adminState } from "./adminStore.js";
 import { feedFromServer, liveFromServer, programsFromServer } from "./catalog.js";
+import { RHYTHM_ORDER } from "../data/dailyRhythmOrder.js";
 import {
   MEDITATIONS,
   listTechniques,
@@ -194,11 +195,66 @@ const PA_ZE_UDHEHEQES = new Set(["t_songs", "t_music"]);
  *     hap nuk mbetet bosh — por nëse një qëllim i ri shtohet te
  *     `DAILY_RHYTHM_STEPS`, numërohet këtu i pari.
  *
- * @param {string} intent qëllimi i hapit (`energy`, `calm`, `sleep`…)
+ * ⚠️  QË MË 20 NËNTOR 2026, RRUGA E PARË ËSHTË `RHYTHM_ORDER` — një listë e
+ *     caktuar nga klientja për secilin hap. Gjithçka poshtë saj mbetet si
+ *     rrugë rezervë, për kur katalogu nuk është ngarkuar ende ose kur një hap
+ *     i ri shtohet pa listë të vetën.
+ *
+ * @param {object|string} step hapi i ritmit (ose vetëm qëllimi, si më parë)
  * @param {number} day dita e ritmit, duke nisur nga 1
  * @returns {object|null} meditimi, ose `null` kur nuk ka asgjë për atë qëllim
  */
-export const rhythmPick = (intent, day = 1) => {
+const pastro = (titull) =>
+  String(titull ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+/**
+ * Zëri i listës së caktuar, i gjetur te katalogu.
+ *
+ * Identifikuesi provohet i pari; titulli është rrjeta kur katalogu rimbushet
+ * dhe identifikuesit ndryshojnë.
+ */
+const gjejZerin = (hyrje) => {
+  if (!hyrje) return null;
+  const meId = MEDITATIONS.find((m) => m.id === hyrje.id);
+  if (meId) return meId;
+
+  const kerkuar = pastro(hyrje.title);
+  return MEDITATIONS.find((m) => pastro(m.title) === kerkuar) ?? null;
+};
+
+export const rhythmPick = (step, day = 1) => {
+  /* Pranohet edhe vetëm qëllimi, siç thirrej para 20 nëntorit 2026. */
+  const hapi = typeof step === "string" ? { intent: step } : (step ?? {});
+  const intent = hapi.intent;
+
+  /*
+   * LISTA E CAKTUAR MERR PËRPARËSI.
+   *
+   * ⚠️  Rregulli i vjetër zgjidhte sipas qëllimit, dhe kjo e bënte ritmin të
+   *     varfër pa u parë: te `energy` kishte 5 meditime, te `calm` 3 dhe te
+   *     `sleep` 2 — pra hapi i darkës alternonte mes dy zërave gjithë vitin,
+   *     dhe 27 nga 37 meditimet nuk dilnin kurrë. Klientja e zgjidhi duke
+   *     caktuar vetë renditjen (20 nëntor 2026): 12 · 11 · 12.
+   *
+   * ⚠️  NUK BIE TE RREGULLI I VJETËR PËR NJË ZË TË MUNGUAR, vetëm e kapërcen.
+   *     Po të binte, një gabim shtypi te një rresht do ta nxirrte gjithë ditën
+   *     nga radha që klientja pret të shohë.
+   */
+  const lista = RHYTHM_ORDER[hapi.id];
+  if (Array.isArray(lista) && lista.length > 0) {
+    const fillimi = (((day - 1) % lista.length) + lista.length) % lista.length;
+    for (let hap = 0; hap < lista.length; hap += 1) {
+      const gjetur = gjejZerin(lista[(fillimi + hap) % lista.length]);
+      if (gjetur) return gjetur;
+    }
+    /* Asnjë zë i listës nuk u gjet — katalogu ende i pangarkuar. */
+  }
+
   const tePerQellimin = MEDITATIONS.filter(
     (m) => m.intent === intent && !PA_ZE_UDHEHEQES.has(m.techniqueId),
   );
