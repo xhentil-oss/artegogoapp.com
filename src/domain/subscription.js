@@ -248,24 +248,53 @@ export function describeSubscription(subscription, now = new Date()) {
   const plan = planById(subscription.planId);
 
   /*
-   * Muaji falas me kod — dhuratë, jo abonim.
+   * ⚠️  KUR SERVERI E KA DHËNË FUNDIN, AI ËSHTË FUNDI. PIKË.
    *
-   * ⚠️  Degë më vete sepse llogaritja e zakonshme NUK e përshkruan dot: ajo
-   *     niset nga prova dhe shton periudha faturimi, ndaj do të premtonte një
-   *     "faturim i radhës" që nuk ekziston. Fundi e thotë serveri, dhe asgjë
-   *     nuk rinovohet pas tij.
+   *     Llogaritja poshtë e nxjerr datën nga `startedAt + 3 ditë`, duke
+   *     supozuar se çdo abonim nis me provë. Për një abonim të paguar sot
+   *     drejtpërdrejt, ajo jep tri ditë në vend të një muaji — dhe profili i
+   *     shkruante klientes «Aksesi mbaron pas 3 ditë · 23 nëntor 2026» për një
+   *     muaj që ishte paguar vërtet dhe që te Stripe mbaronte më 20 dhjetor.
+   *     Numrat e saktë ekzistonin; ekrani thjesht nuk i lexonte.
+   *
+   *     `endsAt` vjen nga `subscription_end_at`, të cilën serveri e kopjon nga
+   *     Stripe. Ajo e di muajin, vitin, ditët e mbetura nga një ndryshim plani,
+   *     kuponat dhe zonën kohore të faturimit — gjëra që një shumëzim me 30
+   *     nuk i di dot. Mujori, vjetori dhe dhurata kalojnë të treja këtej.
+   *
+   *     Rruga e vjetër mbetet vetëm për regjistrime pa `endsAt`: demonstrimi
+   *     me orë të zhvendosur dhe abonimet e dyqaneve.
    */
-  if (subscription.serverStatus === "promo" && subscription.endsAt) {
-    const accessUntil = new Date(subscription.endsAt);
-    const stillValid = at < accessUntil;
-    return {
-      status: stillValid ? "promo" : "expired",
-      isPremium: stillValid,
-      plan,
-      daysLeft: stillValid ? daysBetween(at, accessUntil) : 0,
-      accessUntil,
-      renewsAt: null,
-    };
+  if (subscription.endsAt && subscription.serverStatus) {
+    const fundi = new Date(subscription.endsAt);
+    if (!Number.isNaN(fundi.getTime())) {
+      if (at >= fundi) {
+        return { status: "expired", isPremium: false, plan, daysLeft: 0, accessUntil: null, renewsAt: null };
+      }
+
+      /* Dhurata nuk rinovohet kurrë; një abonim i anuluar as ai. Të dyja
+         tregojnë "aksesi deri më", jo "faturimi i radhës". */
+      const paRinovim =
+        subscription.serverStatus === "promo" ||
+        subscription.serverStatus === "cancelled" ||
+        subscription.renewsAtEnd === false;
+
+      return {
+        status:
+          subscription.serverStatus === "promo"
+            ? "promo"
+            : paRinovim
+              ? "cancelled"
+              : subscription.serverStatus === "trial"
+                ? "trial"
+                : "active",
+        isPremium: true,
+        plan,
+        daysLeft: daysBetween(at, fundi),
+        accessUntil: paRinovim ? fundi : null,
+        renewsAt: paRinovim ? null : fundi,
+      };
+    }
   }
 
   const trialEnds = new Date(subscription.trialEndsAt);
