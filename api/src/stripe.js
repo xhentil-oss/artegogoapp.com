@@ -182,6 +182,15 @@ const checkout = {
 
 const subscriptions = {
   retrieve: (id) => call("GET", `/subscriptions/${encodeURIComponent(id)}`),
+  /**
+   * Abonimet e një klienti — çdo gjendje, edhe të anuluarat.
+   *
+   * ⚠️  `status: "all"` është me qëllim. Pyetja që i bëhet kësaj liste është
+   *     "a ka pasur ndonjëherë abonim ky klient", jo "a ka një sot" — dhe një
+   *     abonim i anuluar e ka konsumuar provën njësoj.
+   */
+  list: (customer, params = {}) =>
+    call("GET", "/subscriptions", { customer, status: "all", limit: 1, ...params }),
   update: (id, params) => call("POST", `/subscriptions/${encodeURIComponent(id)}`, params),
   /** Anulim i menjëhershëm — përdoret vetëm nga admini, kurrë nga ekrani. */
   cancel: (id) => call("DELETE", `/subscriptions/${encodeURIComponent(id)}`),

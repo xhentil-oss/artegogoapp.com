@@ -97,6 +97,29 @@ const FIELDS = `is_premium, subscription_status, subscription_plan, subscription
                 subscription_start_at, subscription_end_at, trial_used_at, cancelled_at,
                 stripe_customer_id, stripe_subscription_id, cancel_at_period_end`;
 
+/**
+ * A i takon ende kësaj llogarie prova 3-ditore?
+ *
+ * ⚠️  `trial_used_at` NUK MJAFTON VETË — kjo u pa te prodhimi, 20 nëntor 2026.
+ *
+ *     Shenja shkruhet vetëm nga dy rrugë: prova pa kartë, që e jep vetë
+ *     serveri, dhe `applySubscription`, kur Stripe na thotë se një provë u
+ *     hap. Nëse njëra nga ato dy rrugë nuk mbërrin deri te rreshti — webhook
+ *     i pakonfiguruar, ndërrim çelësash, fleta e mbyllur para se
+ *     `/checkout/confirm` të thirrej — shenja mbetet bosh ndërsa njeriu i ka
+ *     marrë vërtet tri ditët. Herën tjetër paywall-i ia ofron sërish, dhe
+ *     abonimi mujor i mbaron pas tri ditësh në vend që të zgjasë një muaj.
+ *
+ *     Prandaj pyetet edhe `stripe_subscription_id`: kush ka pasur ndonjëherë
+ *     një abonim te Stripe-i e ka kaluar tashmë këtë derë. Një lexim i
+ *     vetëm, dy dëshmi të pavarura.
+ *
+ *     E përdorin të treja vendet që vendosin për provën — `shape`, `/trial`
+ *     dhe `/checkout` — që ekrani dhe serveri të mos përgjigjen ndryshe.
+ */
+const trialEligible = (user) =>
+  !user.trial_used_at && !user.stripe_subscription_id;
+
 /** Gjendja e abonimit, në formën që pret aplikacioni. */
 function shape(user) {
   const active = hasPremium(user);
@@ -109,7 +132,10 @@ function shape(user) {
     endsAt: user.subscription_end_at,
     cancelled: Boolean(user.cancelled_at),
     cancelledAt: user.cancelled_at,
-    trialUsed: Boolean(user.trial_used_at),
+    /* Jo `trial_used_at` i zhveshur — shih `trialEligible`. Ky fakt e fsheh
+       butonin e provës te paywall-i, ndaj duhet të thotë të njëjtën gjë që
+       thotë `/checkout` kur vendos nëse ta shtojë provën. */
+    trialUsed: !trialEligible(user),
 
     /*
      * ⚠️  `cancelled` dhe `renewsAtEnd` NUK janë e njëjta gjë, dhe ekrani i
@@ -202,7 +228,7 @@ router.post("/trial", async (req, res, next) => {
       [req.userId]
     );
 
-    if (user.trial_used_at) {
+    if (!trialEligible(user)) {
       await connection.rollback();
       return res.status(409).json({ error: "Prova falas është përdorur tashmë.", ...shape(user) });
     }
@@ -630,7 +656,25 @@ router.post("/checkout", async (req, res, next) => {
 
     const customer = await ensureCustomer(req.userId, user, req.user);
     const skipTrial = req.body?.skipTrial === true;
-    const trialDays = user.trial_used_at || skipTrial ? null : TRIAL_DAYS;
+    let trialDays = skipTrial || !trialEligible(user) ? null : TRIAL_DAYS;
+
+    /*
+     * ⚠️  FJALËN E FUNDIT PËR PROVËN E KA STRIPE, JO RRESHTI YNË.
+     *
+     *     Databaza jonë e mëson provën e mëparshme vetëm nëse webhook-u ose
+     *     `/checkout/confirm` ka arritur të shkruajë. Stripe-i, përkundrazi, i
+     *     mban të gjitha abonimet e një klienti — edhe ato të anuluara, edhe
+     *     ato që mbaruan pa u paguar kurrë. Një lexim i vetëm, vetëm kur jemi
+     *     gati t'ia japim provën, e mbyll përfundimisht rrugën e tri ditëve të
+     *     dyta.
+     *
+     *     Kostoja është një kërkesë e vetme GET, dhe vetëm për llogaritë që
+     *     duken ende të pacenuara. Kush shtyp «Paguaj tani» nuk e prek fare.
+     */
+    if (trialDays) {
+      const meHerët = await stripe.subscriptions.list(customer);
+      if ((meHerët?.data?.length ?? 0) > 0) trialDays = null;
+    }
 
     const session = await stripe.checkout.createSession(
       {
