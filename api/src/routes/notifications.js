@@ -25,21 +25,72 @@ const SLOTS = ["morning", "noon", "evening"];
 /** Njoftimet e përdoruesit lidhen me `reminder_type`; pool-et me `slot`. */
 const SLOT_BY_REMINDER = { morning: "morning", midday: "noon", evening: "evening" };
 
+const FUSHAT_E_MEDITIMIT = `m.id, m.title, m.subgroup, m.duration_sec, m.is_premium,
+            c.slug AS category_slug, c.name AS category_name`;
+
+/**
+ * Dita e ritmit të kësaj llogarie.
+ *
+ * ⚠️  NUK ËSHTË DATA E KALENDARIT, dhe pikërisht kjo e mban njoftimin në hap
+ *     me ekranin. Ritmi ditor numëron ditët që njeriu KA PRAKTIKUAR; dikush
+ *     që kapërcen një javë e rimerr rrugën aty ku e la. Po ta zgjidhnim
+ *     njoftimin sipas datës, i njëjti çast do të premtonte një meditim dhe
+ *     kartela do të hapte një tjetër.
+ *
+ * ⚠️  SOTMJA PËRJASHTOHET, si te `domain/rhythm.js`. Përndryshe numri do të
+ *     kërcente mes njoftimit të mëngjesit dhe atij të darkës, sapo të kryhej
+ *     hapi i parë — dhe dy njoftimet e së njëjtës ditë do të vinin nga dy
+ *     ditë të ndryshme të listës.
+ */
+async function rhythmDay(userId, localDate) {
+  const row = await one(
+    `SELECT COUNT(DISTINCT \`date\`) AS ditet
+       FROM habits
+      WHERE user_id = ? AND habit_type LIKE 'ritual:%' AND \`date\` <> ?`,
+    [userId, localDate]
+  );
+  return Number(row?.ditet ?? 0) + 1;
+}
+
 /**
  * Meditimi i ditës për një çast.
  *
- * ⚠️  "Rastësor, por i qëndrueshëm brenda së njëjtës ditë."
+ * ⚠️  RENDITJE E CAKTUAR, JO E RASTËSISHME (kërkesë e klientes, 20 nëntor 2026).
  *
- *     `MD5(user + slot + datë + id)` jep pikërisht këtë: renditja duket e
- *     rastësishme, ndryshon çdo ditë dhe për çdo përdorues, por për të njëjtat
- *     hyrje kthen gjithmonë të njëjtin rresht. `RAND()` do të jepte një
- *     meditim tjetër sa herë hapej ekrani — dhe njoftimi i mëngjesit do të
- *     tregonte diçka tjetër nga ajo që hap aplikacioni.
+ *     Më parë zgjidhej me `MD5(user + slot + datë + id)` nga një pool i gjerë:
+ *     i qëndrueshëm brenda ditës, por i palidhur me ekranin e ritmit, i cili
+ *     zgjidhte sipas qëllimit. Pasoja ishte se njoftimi i mëngjesit premtonte
+ *     një meditim dhe kartela e ritmit hapte një tjetër.
+ *
+ *     Tani të dy anët lexojnë të njëjtën listë — ajo këtu te `position`, ajo e
+ *     ekranit te `data/dailyRhythmOrder.js` — dhe të njëjtën ditë ritmi.
+ *
+ * ⚠️  RRUGA E VJETËR MBETET, për rastin kur asnjë rresht i këtij çasti nuk ka
+ *     `position`: pra kur `122_ritmi_njoftimet.sql` nuk është ekzekutuar ende.
+ *     Pa të, një server i ringarkuar para SQL-së do t'i linte njoftimet pa
+ *     meditim fare.
  */
 async function pickForSlot(userId, slot, localDate) {
+  const lista = await query(
+    `SELECT ${FUSHAT_E_MEDITIMIT}
+       FROM notification_pools p
+       JOIN meditations m ON m.id = p.meditation_id
+       LEFT JOIN categories c ON c.id = m.category_id
+      WHERE p.slot = ? AND m.published_at IS NOT NULL AND p.\`position\` IS NOT NULL
+      ORDER BY p.\`position\``,
+    [slot]
+  );
+
+  if (lista.length > 0) {
+    const dita = await rhythmDay(userId, localDate);
+    /* `% length` dy herë: një numër i papritur negativ do të jepte indeks
+       jashtë listës. */
+    const i = (((dita - 1) % lista.length) + lista.length) % lista.length;
+    return lista[i];
+  }
+
   return one(
-    `SELECT m.id, m.title, m.subgroup, m.duration_sec, m.is_premium,
-            c.slug AS category_slug, c.name AS category_name
+    `SELECT ${FUSHAT_E_MEDITIMIT}
        FROM notification_pools p
        JOIN meditations m ON m.id = p.meditation_id
        LEFT JOIN categories c ON c.id = m.category_id

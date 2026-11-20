@@ -17,6 +17,7 @@ import { formatDate } from "../../domain/subscription.js";
 import { useNavigation } from "../../store/NavigationContext.jsx";
 import { useSession } from "../../store/SessionContext.jsx";
 import { usePlayback } from "../../hooks/usePlayback.js";
+import { useProgress } from "../../store/ProgressContext.jsx";
 import * as push from "../../services/push.js";
 import { useBodyScrollLock } from "../../hooks/useBodyScrollLock.js";
 
@@ -35,9 +36,12 @@ export function NotificationsSheet() {
   const { closeNotifications } = useNavigation();
   const { reminders, updateReminders, subscription } = useSession();
   const { playItems } = usePlayback();
+  const { rhythmDay } = useProgress();
   useBodyScrollLock();
 
-  const items = dailyNotifications(reminders);
+  /* Dita e ritmit, që njoftimi dhe kartela e ritmit të tregojnë të njëjtin
+     meditim për të njëjtin çast. */
+  const items = dailyNotifications(reminders, rhythmDay);
   const trial = trialEndingNotification(subscription);
 
   const toggle = (slotId) =>

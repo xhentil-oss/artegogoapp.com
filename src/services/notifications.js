@@ -1,5 +1,6 @@
 import { REMINDER_SLOTS } from "../data/reminders.js";
 import { picksForDay } from "../domain/dailyPick.js";
+import { rhythmPick } from "./contentRepository.js";
 import { dayKey } from "../lib/time.js";
 import { TRIAL_DAYS, effectiveNow } from "../domain/subscription.js";
 import { api, hasToken } from "./api.js";
@@ -29,15 +30,37 @@ import { api, hasToken } from "./api.js";
 const slotById = new Map(REMINDER_SLOTS.map((slot) => [slot.id, slot]));
 
 /**
+ * Çasti i njoftimit → hapi i ritmit ditor.
+ *
+ * Dy emërtime të ndryshme për të njëjtat tre çaste: kujtesat i quajnë
+ * `noon`, ritmi `midday`. Ndryshimi i njërit do të prekte databazën te
+ * `reminder_type`, ndaj lidhja bëhet këtu.
+ */
+const HAPI_I_RITMIT = { morning: "morning", noon: "midday", evening: "evening" };
+
+/**
  * Njoftimet e një dite, sipas oraresh të aktivizuara.
  *
+ * ⚠️  TË NJËJTAT MEDITIME SI RITMI DITOR (kërkesë e klientes, 20 nëntor 2026).
+ *
+ *     Më parë këto dy ekrane zgjidhnin veç e veç: ritmi sipas qëllimit,
+ *     njoftimet nga `notification_pools` me renditje MD5. Pasoja ishte se
+ *     njoftimi i mëngjesit premtonte një meditim dhe kartela e ritmit hapte
+ *     një tjetër — dy premtime të ndryshme për të njëjtin çast të ditës.
+ *
+ * ⚠️  DITA ËSHTË AJO E RITMIT, JO E KALENDARIT. `rhythmDay` numëron ditët
+ *     që kjo llogari ka praktikuar; pa të, njoftimi do të ecte me datën dhe
+ *     do të dilte nga hapi me kartelën sapo të kapërcehej një ditë.
+ *
  * @param {object} reminders gjendja nga onboarding-u: { morning: {enabled, time} … }
- * @param {string} key çelësi i ditës; sot nëse mungon
+ * @param {number} day dita e ritmit, duke nisur nga 1
+ * @param {string} key çelësi i ditës — vetëm për rrugën rezervë
  * @returns {{ slotId, label, time, enabled, meditation, title, body }[]}
  */
-export function dailyNotifications(reminders = {}, key = dayKey()) {
+export function dailyNotifications(reminders = {}, day = 1, key = dayKey()) {
   return picksForDay(key)
-    .map(({ slotId, meditation }) => {
+    .map(({ slotId, meditation: rezerve }) => {
+      const meditation = rhythmPick({ id: HAPI_I_RITMIT[slotId] }, day) ?? rezerve;
       const slot = slotById.get(slotId);
       const state = reminders[slotId] ?? {};
       if (!slot || !meditation) return null;
