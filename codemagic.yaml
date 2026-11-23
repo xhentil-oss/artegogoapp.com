@@ -57,12 +57,13 @@ workflows:
           xcode-project use-profiles
 
       # Apple nuk e pranon dy herë të njëjtin numër ndërtimi — si Play-i.
-      # Merret ai i fundit te App Store Connect dhe i shtohet një.
+      # `BUILD_NUMBER` e jep vetë Codemagic dhe rritet me çdo ndërtim, ndaj
+      # nuk ka si të përsëritet. Numri i versionit që sheh njeriu
+      # (`MARKETING_VERSION`) nuk preket: ai rri te projekti.
       - name: Numri i ndërtimit
         script: |
           cd ios/App
-          NUMRI=$(app-store-connect get-latest-app-store-build-number "$APP_APPLE_ID" 2>/dev/null || echo 0)
-          agvtool new-version -all $(($NUMRI + 1))
+          agvtool new-version -all "$BUILD_NUMBER"
 
       - name: Arkivimi
         script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
