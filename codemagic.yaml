@@ -1,0 +1,79 @@
+# ═══════════════════════════════════════════════════════════════
+#  NDËRTIMI I .ipa-së TE NJË MAC NË RE (Codemagic)
+# ═══════════════════════════════════════════════════════════════
+#
+# Pse ekziston ky skedar: `.ipa`-ja prodhohet vetëm te macOS, dhe projekti
+# punohet nga Windows. Codemagic e merr kodin nga GitHub-i, e ndërton te një
+# Mac i tyre dhe e dërgon drejt te App Store Connect. Asnjë Mac nuk blihet.
+#
+# ⚠️  NUK NDËRTON DOT PA LLOGARINË APPLE. Nënshkrimi kërkon një certifikatë që
+#     e lëshon Apple; pa Apple Developer Program (99 USD/vit) ky skedar nuk
+#     prodhon asgjë. Kjo nuk kapërcehet me asnjë cilësim.
+#
+# ⚠️  ASNJË FJALËKALIM NUK SHKRUHET KËTU. Depoja është publike. Çelësi i App
+#     Store Connect-it vendoset VETËM te Codemagic → Teams → Integrations →
+#     App Store Connect, me emrin `ndiej`. Ky skedar e thërret me emër.
+#
+# Përgatitja, një herë:
+#   1. codemagic.io → hyr me GitHub → zgjidh depon `artegogoapp.com`
+#   2. App Store Connect → Users and Access → Integrations → App Store Connect
+#      API → krijo një çelës (Admin ose App Manager) dhe shkarko `.p8`
+#   3. Codemagic → Integrations → App Store Connect → ngarko `.p8`-në,
+#      Issuer ID dhe Key ID → emërtoje `ndiej`
+#   4. Krijo aplikacionin te App Store Connect me `com.drartegogo.artegogo`
+#   5. Shtyp «Start new build»
+
+workflows:
+  ios:
+    name: NDIEJ — iOS
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    integrations:
+      app_store_connect: ndiej
+
+    environment:
+      node: 20
+      xcode: latest
+      vars:
+        BUNDLE_ID: "com.drartegogo.artegogo"
+        XCODE_PROJECT: "ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+
+    scripts:
+      - name: Varësitë
+        script: npm ci
+
+      # Lexon `.env.ios` dhe bën `cap sync ios`. Pa të, brenda app-it do të
+      # shkonte ndërtimi i webit, që e thërret API-në me rrugë relative.
+      - name: Faqja dhe sinkronizimi
+        script: npm run build:ios
+
+      - name: Certifikatat dhe profilet
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          keychain add-certificates
+          xcode-project use-profiles
+
+      # Apple nuk e pranon dy herë të njëjtin numër ndërtimi — si Play-i.
+      # Merret ai i fundit te App Store Connect dhe i shtohet një.
+      - name: Numri i ndërtimit
+        script: |
+          cd ios/App
+          NUMRI=$(app-store-connect get-latest-app-store-build-number "$APP_APPLE_ID" 2>/dev/null || echo 0)
+          agvtool new-version -all $(($NUMRI + 1))
+
+      - name: Arkivimi
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Shkon te TestFlight, jo te dyqani. Shqyrtimi i Apple-it kërkohet
+        # veçmas, me dorë — pra një ndërtim i gabuar nuk del kurrë publik.
+        submit_to_testflight: true
