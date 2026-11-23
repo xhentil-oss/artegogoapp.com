@@ -26,19 +26,53 @@ import { mkdirSync } from "node:fs";
 import { createInterface } from "node:readline";
 import path from "node:path";
 
-const DOSJA = path.join(process.env.USERPROFILE || process.env.HOME, "Desktop", "pamjet-ios");
+const DOSJA = path.join(
+  process.env.USERPROFILE || process.env.HOME,
+  "Desktop",
+  (process.argv[2] || "iphone").toLowerCase() === "ipad" ? "pamjet-ipad" : "pamjet-ios"
+);
 const ADRESA = "https://app.drartegogo.com";
 
-/* iPhone 16: 393 × 852 pikë, dendësi 3 → 1179 × 2556 piksel. */
-const PAJISJA = {
-  viewport: { width: 393, height: 852 },
-  deviceScaleFactor: 3,
-  isMobile: true,
-  hasTouch: true,
-  userAgent:
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 " +
-    "(KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+/**
+ * Pajisjet, me përmasat që Apple i pranon.
+ *
+ * ⚠️  NUMRAT NUK JANË TË ZGJEDHUR, JANË TË DHËNË. App Store Connect i refuzon
+ *     pamjet që nuk bien saktësisht te një nga madhësitë e veta. Pikët
+ *     shumëzuar me dendësinë japin pikselët:
+ *
+ *       iPhone 16      393 × 852   × 3  =  1179 × 2556
+ *       iPad Pro 13"  1032 × 1376  × 2  =  2064 × 2752
+ */
+const PAJISJET = {
+  iphone: {
+    emri: "iPhone 16 — 1179 × 2556",
+    viewport: { width: 393, height: 852 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+    userAgent:
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 " +
+      "(KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+  },
+  ipad: {
+    emri: 'iPad Pro 13" — 2064 × 2752',
+    viewport: { width: 1032, height: 1376 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    userAgent:
+      "Mozilla/5.0 (iPad; CPU OS 18_1 like Mac OS X) AppleWebKit/605.1.15 " +
+      "(KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+  },
 };
+
+/* `npm run pamjet` → iPhone;  `npm run pamjet -- ipad` → iPad. */
+const zgjedhja = (process.argv[2] || "iphone").toLowerCase();
+const PAJISJA = PAJISJET[zgjedhja];
+if (!PAJISJA) {
+  console.error(`Pajisje e panjohur: ${zgjedhja}. Pritet: iphone ose ipad.`);
+  process.exit(1);
+}
 
 mkdirSync(DOSJA, { recursive: true });
 
@@ -48,7 +82,7 @@ const page = await context.newPage();
 await page.goto(ADRESA, { waitUntil: "domcontentloaded" });
 
 console.log("\n────────────────────────────────────────────────");
-console.log("  Dritarja u hap me përmasat e iPhone 16.");
+console.log(`  Dritarja u hap: ${PAJISJA.emri}`);
 console.log("");
 console.log("  1. Hyr te llogaria brenda asaj dritareje");
 console.log("  2. Shko te ekrani që do të fotografosh");
@@ -72,7 +106,10 @@ for (;;) {
   const emri = path.join(DOSJA, `pamja-${String(numri).padStart(2, "0")}.png`);
   /* `fullPage: false` me qëllim: duam pikërisht dritaren, jo faqen e gjatë. */
   await page.screenshot({ path: emri, fullPage: false });
-  console.log(`   ✓ u ruajt  ${path.basename(emri)}  (1179 × 2556)\n`);
+  const { width, height } = PAJISJA.viewport;
+  const dnd = PAJISJA.deviceScaleFactor;
+  console.log(`   ✓ u ruajt  ${path.basename(emri)}  (${width * dnd} × ${height * dnd})
+`);
 }
 
 rl.close();
