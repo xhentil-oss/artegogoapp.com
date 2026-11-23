@@ -129,6 +129,37 @@ export async function redeemPromo(code) {
 export const isNative = () =>
   typeof window !== "undefined" && Boolean(window.Capacitor?.isNativePlatform?.());
 
+/** `ios`, `android` ose `web` — i njëjti emërtim që përdor Capacitor-i. */
+const platforma = () =>
+  (typeof window !== "undefined" && window.Capacitor?.getPlatform?.()) || "web";
+
+/**
+ * A lejohet arka e Stripe-it këtu?
+ *
+ * ⚠️  VENDIM I KLIENTES, 23 NËNTOR 2026 — dhe i matur, jo i rastësishëm.
+ *
+ *     Të dy dyqanet kërkojnë faturimin e tyre për përmbajtje dixhitale të
+ *     shitur brenda aplikacioneve të tyre: Apple te rregulli 3.1.1, Google te
+ *     politika e Payments. Prandaj Stripe-i ishte i ndaluar te çdo ndërtim
+ *     nativ.
+ *
+ *     Klientja zgjodhi ta provojë te iOS-i, me vetëdije se mund të refuzohet.
+ *     Arsyeja pse vlen vetëm për iOS është se pasojat nuk janë të njëjta:
+ *
+ *       · iOS  — app-i nuk është ende te dyqani. Shkelja kapet te shqyrtimi,
+ *                dhe çmimi i provës është një refuzim.
+ *       · Play — app-i është i GJALLË. Shkelja kapet pas publikimit, dhe
+ *                çmimi është paralajmërim me afat, pastaj heqje.
+ *
+ *     Ndaj Android-i mbetet i mbyllur. Mos e hiq atë kusht pa një vendim të
+ *     ri të shprehur: do të thoshte vënie në rrezik e një aplikacioni që
+ *     tashmë punon dhe që është miratuar.
+ *
+ *     Nëse Apple e refuzon, rruga tjetër është StoreKit — serveri është gati
+ *     (`POST /me/subscription/verify`), mungon vetëm ana e telefonit.
+ */
+export const stripeLejohet = () => !isNative() || platforma() === "ios";
+
 /**
  * Hap seancën e pagesës.
  *
@@ -163,7 +194,7 @@ export const isNative = () =>
 export async function purchase(planId = "year", { skipTrial = false } = {}) {
   const store = detectStore();
 
-  if (isNative()) {
+  if (!stripeLejohet()) {
     /* PROD: këtu thirret StoreKit / Play Billing dhe merret fatura e vërtetë,
        e cila pastaj shkon te `POST /me/subscription/verify`. */
     return {

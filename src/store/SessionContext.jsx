@@ -495,11 +495,12 @@ export function SessionProvider({ children }) {
        *     kur `trial_used_at` është bosh, ndaj ky buton nuk ka si të japë dy
        *     prova.
        *
-       *     Prova pa kartë (`/subscription/trial`) mbetet VETËM për
-       *     aplikacionin e paketuar, ku Stripe nuk lejohet të hyjë fare — shih
-       *     `services/billing.isNative`.
+       *     Prova pa kartë (`/subscription/trial`) mbetet për ato ndërtime ku
+       *     Stripe nuk lejohet të hyjë — sot vetëm Android-i i paketuar. Te
+       *     iOS-i u hap me vendim të klientes (23 nëntor 2026); arsyet dhe
+       *     rreziku janë shkruar te `services/billing.stripeLejohet`.
        */
-      if (!billing.isNative()) {
+      if (billing.stripeLejohet()) {
         const bought = await billing.purchase(planId, { skipTrial: false });
 
         /*
