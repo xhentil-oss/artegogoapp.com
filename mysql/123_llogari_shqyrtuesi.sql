@@ -18,6 +18,10 @@
 --    2. PA KYÇJE PAJISJEJE. `skip_session_lock = 1` — shih `api/src/auth.js`.
 --       Pa të, pajisja e dytë e shqyrtuesit e nxjerr të parën jashtë.
 --
+--    3. EMAIL I VERIFIKUAR. `POST /auth/login` e refuzon hyrjen kur
+--       `email_verified_at` është bosh. Shqyrtuesi nuk ka si ta hapë një
+--       kuti postare që nuk ekziston, ndaj verifikimi vendoset këtu.
+--
 --  ⚠️  PARA SE TË EKZEKUTOHET: llogaria duhet hapur nga vetë aplikacioni
 --      (Regjistrohu), me fjalëkalim të zgjedhur nga ti. Fjalëkalimi ruhet si
 --      hash i llogaritur nga serveri, ndaj nuk futet dot me SQL.
@@ -57,6 +61,8 @@ UPDATE users
        subscription_end_at   = '2035-01-01 00:00:00',
        -- Prova shënohet si e përdorur: llogaria nuk ka nevojë për të.
        trial_used_at         = COALESCE(trial_used_at, NOW()),
+       -- Pa këtë, `POST /auth/login` e refuzon hyrjen.
+       email_verified_at     = COALESCE(email_verified_at, NOW()),
        skip_session_lock     = 1
  WHERE email IN ('apple@drartegogo.com',
                  'play1@drartegogo.com',
@@ -71,7 +77,7 @@ UPDATE users
 --  nga aplikacioni.
 
 SELECT email, is_premium, subscription_status, subscription_plan,
-       subscription_end_at, skip_session_lock
+       subscription_end_at, email_verified_at, skip_session_lock
   FROM users
  WHERE email IN ('apple@drartegogo.com',
                  'play1@drartegogo.com',
