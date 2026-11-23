@@ -192,6 +192,24 @@ async function request(path, { method = "GET", body, auth = true } = {}) {
       payload?.code ?? null
     );
   }
+
+  /*
+   * ⚠️  NJË PËRGJIGJE E SUKSESSHME PA TRUP ËSHTË GABIM, JO VLERË.
+   *
+   *     Deri më 23 nëntor 2026 këtu kthehej `null`, dhe thirrësi e zbërthente
+   *     menjëherë: `establish({ token, user })` me `null` nxirrte te ekrani
+   *     «Cannot destructure property 'token' from null or undefined value» —
+   *     tekst i brendshëm JavaScript-i, te fusha ku njeriu pret një arsye.
+   *
+   *     Asnjë rrugë e API-së sonë nuk kthen 2xx pa JSON; `204` kapet më lart.
+   *     Pra kur ndodh, fajin e ka diçka mes nesh dhe serverit — një proxy, një
+   *     ndërprerje, një faqe gabimi e hostit. Statusi del te mesazhi, që ajo
+   *     «diçka» të mos mbetet e padukshme.
+   */
+  if (payload === null) {
+    throw new ApiError(`Serveri u përgjigj pa të dhëna (${response.status}).`, response.status);
+  }
+
   return payload;
 }
 
