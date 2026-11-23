@@ -26,6 +26,24 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!--
+	  LEJET E KAMERES DHE TE GALERISE.
+
+	  Paneli i adminit ka `<input type="file" accept="image/*">` dhe
+	  `accept="video/*"` per postimet e komunitetit. Te iOS-i, prekja e tij
+	  hap menune «Take Photo / Photo Library / Record Video». Pa keto tri
+	  rreshta aplikacioni BIE ne ate cast, dhe Apple e refuzon binarin qe i
+	  perdor keto nderfaqe pa nje shpjegim per perdoruesin.
+
+	  Teksti shfaqet fjale per fjale te dritarja e lejes — prandaj eshte ne
+	  shqip dhe thote perse, jo cfare.
+	-->
+	<key>NSCameraUsageDescription</key>
+	<string>Kamera përdoret vetëm kur zgjedh të fotografosh diçka për një postim te komuniteti.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Galeria hapet vetëm kur zgjedh një foto ose video për një postim te komuniteti.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Mikrofoni përdoret vetëm nëse regjistron një video për një postim te komuniteti.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

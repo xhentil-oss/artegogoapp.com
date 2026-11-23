@@ -19,6 +19,9 @@ ekziston për Windows.
 | Ikona | `ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png`, 1024×1024 pa kanal alfa |
 | Zëri në sfond | `UIBackgroundModes: audio` + `AVAudioSession(.playback, .spokenAudio)` te `AppDelegate.swift` |
 | Eksporti i kriptimit | `ITSAppUsesNonExemptEncryption = false` — heq pyetjen te çdo ngarkim |
+| Ekrani i nisjes | `Splash.imageset` — i bardhë me logon vjollcë, që të mos kërcejë ngjyra kur faqja ngarkohet |
+| Lejet | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` — pa to app-i bie te `<input type="file">` dhe Apple e refuzon binarin |
+| Versioni | `MARKETING_VERSION = 1.0.4`, `CURRENT_PROJECT_VERSION = 5` — të njëjtët me Android-in |
 | Ndërtimi | `npm run build:ios` → lexon `.env.ios` dhe bën `cap sync ios` |
 
 ### Pse `.env.ios` ekziston
@@ -62,15 +65,28 @@ Product → Archive → Distribute App.
 Apple Developer Program. Si organizatë kërkohet edhe një numër **D-U-N-S**
 (falas, disa ditë deri në dy javë).
 
-### 4. Pagesat — StoreKit
+### 4. Pagesat — StoreKit  ← **pengesa e vërtetë**
 
 Nuk është ndërtuar. Sot `billing.isNative()` e ndal Stripe-in te aplikacioni
 nativ dhe kthen mesazhin «Pagesat te aplikacioni kalojnë përmes App Store».
 Pra brenda app-it jepet vetëm prova 3-ditore dhe asgjë nuk blihet dot.
 
-Serveri është gati nga ana e tij: `POST /me/subscription/verify` e pret një
-faturë dyqani dhe e verifikon te `api/src/storeVerify.js`. Mungon vetëm ana e
-telefonit.
+Apple e refuzon këtë gjendje nën rregullin **3.1.1**: përmbajtja me pagesë
+duhet të shitet me In-App Purchase, dhe një aplikacion që të çon te faqja për
+të paguar nuk kalon.
+
+Çfarë duhet, me radhë:
+
+1. Llogaria Apple dhe dy produkte abonimi te App Store Connect (mujor, vjetor)
+   brenda një **Subscription Group** të vetëm.
+2. `APPLE_SHARED_SECRET` te cPanel → Setup Node.js App. Pa të,
+   `storeVerify.js` e kthen `not_configured` dhe `/verify` përgjigjet 501.
+3. Një shtojcë Capacitor për StoreKit te aplikacioni, që pas blerjes i dërgon
+   faturën te `POST /me/subscription/verify`.
+
+Serveri është gati nga ana e tij: `/verify` e pret faturën dhe vetëm pastaj
+hap aksesin. Mungon ana e telefonit — dhe ajo nuk provohet dot pa Mac dhe pa
+një pajisje të vërtetë.
 
 ### 5. Njoftimet
 
