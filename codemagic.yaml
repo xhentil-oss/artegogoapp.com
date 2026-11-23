@@ -33,7 +33,11 @@ workflows:
       app_store_connect: ndiej
 
     environment:
-      node: 20
+      # ⚠️  22, JO 20. Capacitor 8 e refuzon Node-in nën 22 me
+      #     «The Capacitor CLI requires NodeJS >=22.0.0» dhe ndërtimi bie te
+      #     `cap sync`, pasi faqja është ndërtuar tashmë — pra duket sikur
+      #     dështoi vetë ndërtimi i faqes.
+      node: 22
       xcode: latest
       vars:
         BUNDLE_ID: "com.drartegogo.artegogo"
