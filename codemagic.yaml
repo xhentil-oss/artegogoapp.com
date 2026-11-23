@@ -53,12 +53,22 @@ workflows:
       - name: Faqja dhe sinkronizimi
         script: npm run build:ios
 
+      # ⚠️  `--project` DUHET I DHËNË ME DORË.
+      #
+      #     Pa të, `use-profiles` kërkon `**/*.xcodeproj` nga rrënja e depos —
+      #     dhe te një projekt Capacitor ajo kërkesë e gjen edhe projektin te
+      #     `node_modules`, ndaj profili nuk i ngjitet gjithmonë atij të
+      #     duhurit. Pasoja ishte «App requires a provisioning profile» te
+      #     arkivimi, me hapin e certifikatave të kaluar me jeshile.
       - name: Certifikatat dhe profilet
         script: |
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --project "$XCODE_PROJECT"
+          # Që herën tjetër regjistri ta thotë vetë nëse profili u ngjit.
+          echo "— cilësimet e nënshkrimit —"
+          grep -nE "CODE_SIGN_STYLE|PROVISIONING_PROFILE_SPECIFIER|DEVELOPMENT_TEAM"             "$XCODE_PROJECT/project.pbxproj" || echo "ASNJË — profili nuk u ngjit"
 
       # Apple nuk e pranon dy herë të njëjtin numër ndërtimi — si Play-i.
       # `BUILD_NUMBER` e jep vetë Codemagic dhe rritet me çdo ndërtim, ndaj
