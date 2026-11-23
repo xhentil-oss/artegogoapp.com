@@ -33,6 +33,11 @@ workflows:
       app_store_connect: ndiej
 
     environment:
+      # Çelësi privat i certifikatës — `CERTIFICATE_PRIVATE_KEY`, i ruajtur si i
+      # sigurt te Codemagic. Pa grupin e emëruar këtu, variabla nuk arrin dot
+      # te ndërtimi edhe pse ekziston te paneli.
+      groups:
+        - appstore
       # ⚠️  22, JO 20. Capacitor 8 e refuzon Node-in nën 22 me
       #     «The Capacitor CLI requires NodeJS >=22.0.0» dhe ndërtimi bie te
       #     `cap sync`, pasi faqja është ndërtuar tashmë — pra duket sikur
@@ -63,7 +68,18 @@ workflows:
       - name: Certifikatat dhe profilet
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          # ⚠️  `--certificate-key` DUHET, EDHE PSE DUKET I TEPERT.
+          #
+          #     Pa të, komanda e gjen certifikatën te llogaria e Apple-it por
+          #     nuk e ruan dot: «Cannot save Signing Certificates without
+          #     certificate private key». Pastaj vazhdon pa gabim, me listë
+          #     bosh profilesh — dhe dështimi del tri hapa më vonë, te
+          #     arkivimi, ku duket sikur fajin e ka projekti.
+          #
+          #     Çelësi është i të njejtit njeri që e krijoi certifikatën. Apple
+          #     lejon vetëm dy certifikata shpërndarjeje; ky çelës ruhet e
+          #     ripërdoret, nuk krijohet një i ri me çdo ndërtim.
+          app-store-connect fetch-signing-files "$BUNDLE_ID"             --type IOS_APP_STORE             --certificate-key="@env:CERTIFICATE_PRIVATE_KEY"             --create
           keychain add-certificates
           xcode-project use-profiles --project "$XCODE_PROJECT"
           # Që herën tjetër regjistri ta thotë vetë nëse profili u ngjit.
