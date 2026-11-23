@@ -85,7 +85,8 @@ async function requireAuth(req, res, next) {
   try {
     const payload = jwt.verify(token, secret());
     const user = await one(
-      `SELECT id, email, name, is_admin, is_premium, subscription_end_at, timezone, session_id
+      `SELECT id, email, name, is_admin, is_premium, subscription_end_at, timezone, session_id,
+              skip_session_lock
          FROM users WHERE id = ?`,
       [payload.sub]
     );
@@ -98,7 +99,23 @@ async function requireAuth(req, res, next) {
      * token i skaduar, për të treguar arsyen e vërtetë në vend të një
      * "hyr sërish" pa shpjegim.
      */
-    if (user.session_id && payload.sid !== user.session_id) {
+    /*
+     * ⚠️  LLOGARITË E SHQYRTUESVE E KAPËRCEJNË KYÇJEN.
+     *
+     *     Rregulli "një llogari — një pajisje" mbron nga ndarja e abonimit, por
+     *     te shqyrtimi i dyqaneve kthehet kundër nesh: shqyrtuesit e Apple-it
+     *     dhe të Google-it punojnë në disa pajisje njëkohësisht, me të njëjtat
+     *     kredenciale. I dyti që hyn e nxjerr jashtë të parin, dhe shqyrtimi
+     *     mbyllet me "nuk arritëm të hyjmë te aplikacioni".
+     *
+     *     Google-it i jepen tri llogari dhe kjo mjaftonte. Apple pranon VETËM
+     *     një palë kredenciale, ndaj aty nuk ka si të shmanget me numër
+     *     llogarish — duhet përjashtim.
+     *
+     *     `skip_session_lock` vihet me dorë te databaza, vetëm për ato llogari.
+     *     Shih `mysql/123_llogari_shqyrtuesi.sql`.
+     */
+    if (user.session_id && payload.sid !== user.session_id && !user.skip_session_lock) {
       return res.status(401).json({
         error: "Llogaria u hap në një pajisje tjetër.",
         code: "session_replaced",
