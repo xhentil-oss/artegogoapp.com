@@ -21,7 +21,8 @@ ekziston për Windows.
 | Eksporti i kriptimit | `ITSAppUsesNonExemptEncryption = false` — heq pyetjen te çdo ngarkim |
 | Ekrani i nisjes | `Splash.imageset` — i bardhë me logon vjollcë, që të mos kërcejë ngjyra kur faqja ngarkohet |
 | Lejet | `NSCameraUsageDescription`, `NSPhotoLibraryUsageDescription`, `NSMicrophoneUsageDescription` — pa to app-i bie te `<input type="file">` dhe Apple e refuzon binarin |
-| Versioni | `MARKETING_VERSION = 1.0.4`, `CURRENT_PROJECT_VERSION = 5` — të njëjtët me Android-in |
+| Vetëm iPhone | `TARGETED_DEVICE_FAMILY = "1"`. Pamja është e telefonit (shirit poshtë, fletë 460 px); e deklaruar për iPad, Apple e shqyrton atje dhe e refuzon nën 2.4.1 — dhe kërkon pamje ekrani 13-inçëshe që nuk kanë kuptim |
+| Versioni | `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` — numrin e ndërtimit e vendos Codemagic |
 | Ndërtimi | `npm run build:ios` → lexon `.env.ios` dhe bën `cap sync ios` |
 
 ### Pse `.env.ios` ekziston
