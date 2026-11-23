@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "build:android": "vite build --mode android && cap sync android",
-    "build:ios": "vite build --mode ios && cap sync ios"
+    "build:ios": "vite build --mode ios && cap sync ios",
+    "pamjet": "node scripts/pamjet-ios.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.6.2",
@@ -30,6 +31,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.11.0",
+    "playwright": "^1.49.1",
     "vite": "^6.0.7"
   }
 }
