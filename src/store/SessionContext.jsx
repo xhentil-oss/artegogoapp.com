@@ -4,6 +4,7 @@ import * as auth from "../services/auth.js";
 import * as billing from "../services/billing.js";
 import { defaultReminders } from "../data/reminders.js";
 import { saveReminders, syncReminders } from "../services/reminders.js";
+import * as push from "../services/push.js";
 import { describeSubscription, fromServer } from "../domain/subscription.js";
 import { hasToken, onSessionEnded, onTokenChange } from "../services/api.js";
 
@@ -471,6 +472,60 @@ export function SessionProvider({ children }) {
       cancelled = true;
     };
   }, [ready, account, profile]);
+
+  /**
+   * NJOFTIMET NDIZEN VETË, SA HERË QË SHFLETUESI E LEJON.
+   *
+   * Kërkesë e klientes (24 nëntor 2026): kur dikush hap aplikacionin, kujtesat
+   * duhet të jenë tashmë aktive; fikja mbetet zgjedhje e tij te fleta e ziles.
+   *
+   * ⚠️  LEJA NUK JEPET DOT NGA KODI. `Notification.requestPermission()` e
+   *     vendos sistemi operativ, dhe asnjë aplikacion nuk e kapërcen atë —
+   *     përndryshe çdo faqe do të dërgonte njoftime pa pyetur. Ajo që mund të
+   *     bëjmë është ta kërkojmë në çastin e duhur, jo ta presim derisa njeriu
+   *     ta gjejë vetë butonin te zilja.
+   *
+   * Dy raste, dhe vetëm njëri sheh dialog:
+   *
+   *   · LEJA EKZISTON, ABONIMI JO — ndodh te një pajisje e dytë, pas pastrimit
+   *     të shfletuesit, ose kur abonimi skadon vetë. Këtu nuk duhet asnjë
+   *     dialog, ndaj rregullohet në heshtje. Ky është rasti më i shpeshtë te
+   *     përdoruesit që kthehen.
+   *
+   *   · NUK ËSHTË PYETUR KURRË — pyetet një herë, dhe vetëm një herë.
+   *
+   * ⚠️  DËSHTIMI KËTU ËSHTË I PRANUESHËM, HESHTJA JO. Safari dhe iOS e kërkojnë
+   *     lejen vetëm pas një prekjeje të njeriut; atje kjo thirrje bie pa bërë
+   *     asgjë, dhe butoni «Ndizi njoftimet» te fleta mbetet rruga. Prandaj
+   *     gabimet kapen dhe nuk shfaqen askund: një dialog që nuk doli nuk është
+   *     problem që përdoruesi duhet ta lexojë.
+   */
+  useEffect(() => {
+    if (!ready || !account) return;
+    let hequr = false;
+
+    (async () => {
+      const gjendja = await push.status().catch(() => null);
+      if (hequr || !gjendja?.supported || !gjendja.configured || gjendja.subscribed) return;
+
+      if (gjendja.permission === "granted") {
+        await push.enable().catch(() => {});
+        return;
+      }
+
+      if (gjendja.permission !== "default") return;
+      if (await storage.get(STORAGE_KEYS.pushAsked, false)) return;
+
+      /* Shënohet PARA se të pyetet: nëse dialogu mbyllet pa përgjigje, leja
+         mbetet `default` dhe pa këtë rresht do të dilte me çdo hapje. */
+      await storage.set(STORAGE_KEYS.pushAsked, true);
+      if (!hequr) await push.enable().catch(() => {});
+    })();
+
+    return () => {
+      hequr = true;
+    };
+  }, [ready, account]);
 
   /* ---------- abonimi ---------- */
 

@@ -125,6 +125,17 @@ export const STORAGE_KEYS = {
   postSaves: "post-saves",
   /** Ndryshimet e bëra nga paneli i admin-it (klasifikim, pool-e, programe…). */
   admin: "admin",
+  /**
+   * A i është kërkuar ndonjëherë leja e njoftimeve te kjo pajisje?
+   *
+   * ⚠️  RRI TE PAJISJA, JO TE LLOGARIA. Leja jepet nga shfletuesi dhe vlen për
+   *     pajisjen, jo për njeriun; po ta mbanim te serveri, hyrja nga një
+   *     telefon i dytë do të supozonte një leje që atje nuk ekziston.
+   *
+   *     Shërben vetëm që të mos pyetet dy herë. Një përdorues që e mbylli
+   *     dialogun një herë nuk duhet ta shohë sërish me çdo hapje.
+   */
+  pushAsked: "push-asked",
   /** Llogaria: vetëm email-i. Fjalëkalimi nuk ruhet — shih `services/auth.js`. */
   account: "account",
   /**
