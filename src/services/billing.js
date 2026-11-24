@@ -143,22 +143,25 @@ const platforma = () =>
  *     politika e Payments. Prandaj Stripe-i ishte i ndaluar te çdo ndërtim
  *     nativ.
  *
- *     Klientja zgjodhi ta provojë te iOS-i, me vetëdije se mund të refuzohet.
- *     Arsyeja pse vlen vetëm për iOS është se pasojat nuk janë të njëjta:
+ *     Klientja e hapi te iOS-i më 23 nëntor dhe te Android-i më 24, me
+ *     vetëdije se të dy dyqanet mund ta kundërshtojnë. Pasojat nuk janë të
+ *     njëjta, dhe kjo u tha para vendimit:
  *
- *       · iOS  — app-i nuk është ende te dyqani. Shkelja kapet te shqyrtimi,
- *                dhe çmimi i provës është një refuzim.
+ *       · iOS  — app-i nuk ishte ende te dyqani. Shkelja kapet te shqyrtimi,
+ *                dhe çmimi i provës është një refuzim: humbasin ditë.
  *       · Play — app-i është i GJALLË. Shkelja kapet pas publikimit, dhe
- *                çmimi është paralajmërim me afat, pastaj heqje.
+ *                çmimi është paralajmërim me afat, pastaj heqje nga dyqani.
  *
- *     Ndaj Android-i mbetet i mbyllur. Mos e hiq atë kusht pa një vendim të
- *     ri të shprehur: do të thoshte vënie në rrezik e një aplikacioni që
- *     tashmë punon dhe që është miratuar.
+ *     Lista mbetet e emëruar e jo thjesht `true`, që heqja e njërës platformë
+ *     të jetë një fjalë e vetme nëse ndonjëri dyqan ankohet.
  *
- *     Nëse Apple e refuzon, rruga tjetër është StoreKit — serveri është gati
- *     (`POST /me/subscription/verify`), mungon vetëm ana e telefonit.
+ *     Rruga tjetër, kur të duhet, është faturimi i vetë dyqaneve — StoreKit
+ *     dhe Play Billing. Serveri është gati (`POST /me/subscription/verify`);
+ *     mungon vetëm ana e telefonit.
  */
-export const stripeLejohet = () => !isNative() || platforma() === "ios";
+const LEJOHET_NATIV = new Set(["ios", "android"]);
+
+export const stripeLejohet = () => !isNative() || LEJOHET_NATIV.has(platforma());
 
 /**
  * Hap seancën e pagesës.
