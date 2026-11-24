@@ -20,6 +20,7 @@ import { FLUID, padTop, padBottom } from "../../theme/responsive.js";
 import { fmt } from "../../lib/format.js";
 import { shareText } from "../../lib/share.js";
 import { REASON, REASON_TEXT } from "../../services/audio.js";
+import { setNowPlaying } from "../../services/mediaSession.js";
 import { removeOffline, storeOffline, supportsOffline } from "../../services/offlineAudio.js";
 import { intentMeta } from "../../domain/intent.js";
 import { breathStateAt, breathingFor } from "../../domain/breathing.js";
@@ -60,6 +61,19 @@ export function PlayerSheet({ sequence }) {
   const [kopertinaDeshtoi, setKopertinaDeshtoi] = useState(null);
   const kopertina =
     engine.current?.cover && kopertinaDeshtoi !== currentId ? engine.current.cover : null;
+
+  /*
+   * EKRANI I KYÇUR MËSON ÇFARË PO LUHET.
+   *
+   * ⚠️  NUK PASTROHET KUR FLETA MBYLLET. Meditimi vazhdon te mini-luajtësi dhe
+   *     me ekranin e fikur; po ta fshinim këtu, titulli do të zhdukej nga
+   *     ekrani i kyçur pikërisht kur njeriu e vendos telefonin në xhep.
+   */
+  const titulli = engine.current?.title;
+  useEffect(() => {
+    if (!titulli) return;
+    setNowPlaying({ title: titulli, album: meta.label, cover: kopertina });
+  }, [titulli, meta.label, kopertina]);
 
   /**
    * UDHËZUESI I FRYMËMARRJES — vetëm për meditimet që e kërkojnë.
